@@ -1,0 +1,11 @@
+[workspace]
+
+resolver = "2"
+
+members = [
+    "execution-data",
+]
+
+[workspace.dependencies]
+clap = { version = "3.1.15", features = ["derive"] }
+anyhow = "1.0.99"
