@@ -1,45 +1,11 @@
-use avian3d::{math::*, prelude::*};
+use std::ffi::c_char;
+
 use bevy::prelude::*;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, input::common_conditions::input_just_pressed};
 use bevy_editor_cam::DefaultEditorCamPlugins;
 use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint};
-
-fn toggle_diagnostics_ui(mut settings: ResMut<PhysicsDiagnosticsUiSettings>) {
-    settings.enabled = !settings.enabled;
-}
-
-fn physics_paused(time: Res<Time<Physics>>) -> bool {
-    time.is_paused()
-}
-
-fn toggle_paused(mut time: ResMut<Time<Physics>>) {
-    if time.is_paused() {
-        time.unpause();
-    } else {
-        time.pause();
-    }
-}
-
-/// Advances the physics simulation by one `Time<Fixed>` time step.
-fn step(mut physics_time: ResMut<Time<Physics>>, fixed_time: Res<Time<Fixed>>) {
-    physics_time.advance_by(fixed_time.delta());
-}
-
-fn setup_key_instructions(mut commands: Commands) {
-    commands.spawn((
-        Text::new("U: Diagnostics UI | P: Pause/Unpause | Enter: Step"),
-        TextFont {
-            font_size: 10.0,
-            ..default()
-        },
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(5.0),
-            right: Val::Px(5.0),
-            ..default()
-        },
-    ));
-}
+use bevy_rapier3d::prelude::*;
+use bevy_rapier3d::rapier::prelude::IntegrationParameters;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum WheelSide {
@@ -80,13 +46,13 @@ impl MotorsTorque {
 
 #[derive(Component)]
 struct Motors {
-    left_axle: Vector,
-    right_axle: Vector,
+    left_axle: Vec3,
+    right_axle: Vec3,
 }
 
 #[derive(Component)]
 struct Wheel {
-    axle: Vector,
+    axle: Vec3,
     side: WheelSide,
 }
 
@@ -123,25 +89,25 @@ fn handle_motors_input(
 
 fn set_wheel_torque(
     torque: Res<MotorsTorque>,
-    mut query: Query<(&Wheel, &Transform, &mut ExternalTorque)>,
+    mut query: Query<(&Wheel, &Transform, &mut ExternalForce)>,
 ) {
-    for (wheel, transform, mut ext_torque) in &mut query {
+    for (wheel, transform, mut ext_impulse) in &mut query {
         let torque = torque.torque(wheel.side) * wheel.side.sign();
         let wheel_axle = transform.rotation * wheel.axle;
-        ext_torque.set_torque(wheel_axle * torque);
+        ext_impulse.torque = wheel_axle * torque;
     }
 }
 
 fn set_motors_torque(
     torque: Res<MotorsTorque>,
-    mut query: Query<(&Motors, &Transform, &mut ExternalTorque)>,
+    mut query: Query<(&Motors, &Transform, &mut ExternalForce)>,
 ) {
     for (motors, transform, mut ext_torque) in &mut query {
         let left_torque = torque.left_torque * WheelSide::Left.sign() * -1.0;
         let left_axle = transform.rotation * motors.left_axle;
         let right_torque = torque.right_torque * WheelSide::Right.sign() * -1.0;
         let right_axle = transform.rotation * motors.right_axle;
-        ext_torque.set_torque((left_axle * left_torque) + (right_axle * right_torque));
+        ext_torque.torque = (left_axle * left_torque) + (right_axle * right_torque);
     }
 }
 
@@ -149,34 +115,28 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
-            PhysicsPlugins::default(),
+            RapierPhysicsPlugin::<NoUserData>::default().with_custom_initialization(
+                RapierContextInitialization::InitializeDefaultRapierContext {
+                    rapier_configuration: {
+                        let mut config = RapierConfiguration::new(1f32);
+                        config.gravity = Vec3::NEG_Z * 9.81;
+                        config
+                    },
+                    integration_parameters: IntegrationParameters {
+                        length_unit: 1f32,
+                        ..default()
+                    },
+                },
+            ),
             DefaultEditorCamPlugins,
-            PhysicsDiagnosticsPlugin,
-            PhysicsDiagnosticsUiPlugin,
-            PhysicsDebugPlugin::default(),
+            RapierDebugRenderPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
         ))
-        // Configure the physics debug rendering.
-        .insert_gizmo_config(
-            PhysicsGizmos {
-                aabb_color: None,
-                ..PhysicsGizmos::all()
-            },
-            GizmoConfig::default(),
-        )
         // Add gravity to the physics simulation.
-        .insert_resource(Gravity(Vec3::NEG_Z * 9.81))
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)))
-        .insert_resource(SubstepCount(50))
         // Resource for motors torque values.
         .insert_resource(MotorsTorque::new())
-        // Configure the default physics diagnostics UI.
-        .insert_resource(PhysicsDiagnosticsUiSettings {
-            enabled: false,
-            ..default()
-        })
         // Spawn text instructions for keybinds.
-        .add_systems(Startup, setup_key_instructions)
         .add_systems(
             RunFixedMainLoop,
             (handle_motors_input, set_wheel_torque, set_motors_torque)
@@ -184,14 +144,6 @@ fn main() {
                 .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
         )
         // Add systems for toggling the diagnostics UI and pausing and stepping the simulation.
-        .add_systems(
-            Update,
-            (
-                toggle_diagnostics_ui.run_if(input_just_pressed(KeyCode::KeyU)),
-                toggle_paused.run_if(input_just_pressed(KeyCode::KeyP)),
-                step.run_if(physics_paused.and(input_just_pressed(KeyCode::Enter))),
-            ),
-        )
         .add_systems(Startup, setup)
         .run();
 }
@@ -213,81 +165,95 @@ fn setup(
     let _floor = commands
         .spawn((
             Mesh3d(cube_mesh.clone()),
-            Collider::cuboid(1.0, 1.0, 1.0),
+            Collider::cuboid(0.5, 0.5, 0.5),
             MeshMaterial3d(floor_material.clone()),
-            RigidBody::Static,
+            RigidBody::Fixed,
             Friction::new(0.5),
-            Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::new(50.0, 50.0, 0.1)),
+            Transform::from_xyz(0.0, 0.0, -4.0).with_scale(Vec3::new(50.0, 50.0, 0.1)),
         ))
         .id();
 
     // Static car body with motors
     let car_body = commands
         .spawn((
-            Mesh3d(cube_mesh.clone()),
-            Collider::cuboid(1.0, 1.0, 1.0),
+            Collider::cuboid(0.5, 0.5, 0.5),
             MeshMaterial3d(body_material.clone()),
             RigidBody::Dynamic,
-            Friction::new(0.05).with_combine_rule(CoefficientCombine::Min),
-            MassPropertiesBundle::from_shape(&Cuboid::from_size(Vec3::new(3.0, 0.9, 0.5)), 0.5),
-            Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(3.0, 0.9, 0.5)),
-            Motors {
-                left_axle: Vector::Y,
-                right_axle: Vector::NEG_Y,
+            Friction {
+                coefficient: 0.5,
+                combine_rule: CoefficientCombineRule::Min,
             },
-            ExternalTorque::ZERO,
+            ColliderMassProperties::Density(0.5),
+            Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(3.0, 0.9, 0.5)),
+            GlobalTransform::default(),
+            Motors {
+                left_axle: Vec3::Y,
+                right_axle: Vec3::NEG_Y,
+            },
+            ExternalForce::default(),
         ))
         .id();
-
-    // Left wheel
+    let left_wheel_joint = RevoluteJointBuilder::new(Vec3::Y)
+        .local_anchor1(Vec3::new(0.0, -0.5, 0.0))
+        .local_anchor2(Vec3::new(0.0, 0.5, 0.0));
     let left_wheel = commands
         .spawn((
-            Mesh3d(wheel_mesh.clone()),
-            Collider::cylinder(0.5, 1.0),
+            Collider::cylinder(0.5, 0.5),
             MeshMaterial3d(wheel_material.clone()),
-            Transform::from_xyz(0.0, 1.0, 0.0),
+            Transform::from_xyz(0.0, 3.0, 0.0),
+            GlobalTransform::default(),
             RigidBody::Dynamic,
-            Friction::new(0.95).with_combine_rule(CoefficientCombine::Max),
-            MassPropertiesBundle::from_shape(&Cuboid::from_length(1.0), 0.5),
+            Friction {
+                coefficient: 0.95,
+                combine_rule: CoefficientCombineRule::Max,
+            },
+            ColliderMassProperties::Density(0.5),
             Wheel {
-                axle: Vector::Y,
+                axle: Vec3::Y,
                 side: WheelSide::Left,
             },
-            ExternalTorque::ZERO,
+            ExternalForce::default(),
+            ImpulseJoint::new(car_body, left_wheel_joint),
         ))
         .id();
 
-    // Right wheel
+    let right_wheel_joint = RevoluteJointBuilder::new(Vec3::Y)
+        .local_anchor1(Vec3::new(0.0, 0.5, 0.0))
+        .local_anchor2(Vec3::new(0.0, -0.5, 0.0));
     let right_wheel = commands
         .spawn((
-            Mesh3d(wheel_mesh.clone()),
-            Collider::cylinder(0.5, 1.0),
+            Collider::cylinder(0.5, 0.5),
             MeshMaterial3d(wheel_material.clone()),
-            Transform::from_xyz(0.0, -1.0, 0.0),
+            Transform::from_xyz(0.0, -3.0, 0.0),
+            GlobalTransform::default(),
             RigidBody::Dynamic,
-            Friction::new(0.95).with_combine_rule(CoefficientCombine::Max),
-            MassPropertiesBundle::from_shape(&Cuboid::from_length(1.0), 0.5),
+            Friction {
+                coefficient: 0.95,
+                combine_rule: CoefficientCombineRule::Max,
+            },
+            ColliderMassProperties::Density(0.5),
             Wheel {
-                axle: Vector::NEG_Y,
+                axle: Vec3::NEG_Y,
                 side: WheelSide::Right,
             },
-            ExternalTorque::ZERO,
+            ExternalForce::default(),
+            ImpulseJoint::new(car_body, right_wheel_joint),
         ))
         .id();
 
-    // Connect left wheel
-    commands.spawn(
-        RevoluteJoint::new(car_body, left_wheel)
-            .with_aligned_axis(Vector::Y)
-            .with_local_anchor_1(Vector::Y * 1.0 + Vector::X * -0.5),
-    );
+    // // Connect left wheel
+    // commands.spawn(
+    //     RevoluteJoint::new(car_body, left_wheel)
+    //         .with_aligned_axis(Vector::Y)
+    //         .with_local_anchor_1(Vector::Y * 1.0 + Vector::X * -0.5),
+    // );
 
-    // Connect right wheel
-    commands.spawn(
-        RevoluteJoint::new(car_body, right_wheel)
-            .with_aligned_axis(Vector::Y)
-            .with_local_anchor_1(Vector::Y * -1.0 + Vector::X * -0.5),
-    );
+    // // Connect right wheel
+    // commands.spawn(
+    //     RevoluteJoint::new(car_body, right_wheel)
+    //         .with_aligned_axis(Vector::Y)
+    //         .with_local_anchor_1(Vector::Y * -1.0 + Vector::X * -0.5),
+    // );
 
     // Directional light
     commands.spawn((
