@@ -291,6 +291,11 @@ impl bindings::devices::Host for BotHost {
         Ok(PollOperationStatus::Pending)
     }
 
+    #[doc = " Wait for an async operation (returns when ready with the result or immediately with an error)"]
+    fn device_wait(&mut self, _handle: FutureHandle) -> Result<DeviceValue, PollError> {
+        Ok(DEVICE_VALUE_ZERO)
+    }
+
     #[doc = " Instructs the simulation to forget the handle to an async operation"]
     #[doc = " (is equivalent to dropping the future in Rust)"]
     fn forget_handle(&mut self, _handle: FutureHandle) -> () {}

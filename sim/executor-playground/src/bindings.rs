@@ -486,6 +486,8 @@ pub mod devices {
         fn device_operation_async(&mut self, operation: DeviceOperation) -> FutureHandle;
         /// Poll the status of an async operation (returns immediately)
         fn device_poll(&mut self, handle: FutureHandle) -> Result<PollOperationStatus, PollError>;
+        /// Wait for an async operation (returns when ready with the result or immediately with an error)
+        fn device_wait(&mut self, handle: FutureHandle) -> Result<DeviceValue, PollError>;
         /// Instructs the simulation to forget the handle to an async operation
         /// (is equivalent to dropping the future in Rust)
         fn forget_handle(&mut self, handle: FutureHandle) -> ();
@@ -504,6 +506,10 @@ pub mod devices {
         /// Poll the status of an async operation (returns immediately)
         fn device_poll(&mut self, handle: FutureHandle) -> Result<PollOperationStatus, PollError> {
             Host::device_poll(*self, handle)
+        }
+        /// Wait for an async operation (returns when ready with the result or immediately with an error)
+        fn device_wait(&mut self, handle: FutureHandle) -> Result<DeviceValue, PollError> {
+            Host::device_wait(*self, handle)
         }
         /// Instructs the simulation to forget the handle to an async operation
         /// (is equivalent to dropping the future in Rust)
@@ -546,6 +552,14 @@ pub mod devices {
             move |mut caller: wasmtime::StoreContextMut<'_, T>, (arg0,): (FutureHandle,)| {
                 let host = &mut host_getter(caller.data_mut());
                 let r = Host::device_poll(host, arg0);
+                Ok((r,))
+            },
+        )?;
+        inst.func_wrap(
+            "device-wait",
+            move |mut caller: wasmtime::StoreContextMut<'_, T>, (arg0,): (FutureHandle,)| {
+                let host = &mut host_getter(caller.data_mut());
+                let r = Host::device_wait(host, arg0);
                 Ok((r,))
             },
         )?;

@@ -368,6 +368,62 @@ pub mod devices {
         }
     }
     #[allow(unused_unsafe, clippy::all)]
+    /// Wait for an async operation (returns when ready with the result or immediately with an error)
+    pub fn device_wait(handle: FutureHandle) -> Result<DeviceValue, PollError> {
+        unsafe {
+            #[repr(align(1))]
+            struct RetArea([::core::mem::MaybeUninit<u8>; 9]);
+            let mut ret_area = RetArea([::core::mem::MaybeUninit::uninit(); 9]);
+            let ptr0 = ret_area.0.as_mut_ptr().cast::<u8>();
+            #[cfg(target_arch = "wasm32")]
+            #[link(wasm_import_module = "devices")]
+            unsafe extern "C" {
+                #[link_name = "device-wait"]
+                fn wit_import1(_: i32, _: *mut u8);
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            unsafe extern "C" fn wit_import1(_: i32, _: *mut u8) {
+                unreachable!()
+            }
+            unsafe { wit_import1(_rt::as_i32(handle), ptr0) };
+            let l2 = i32::from(*ptr0.add(0).cast::<u8>());
+            let result12 = match l2 {
+                0 => {
+                    let e = {
+                        let l3 = i32::from(*ptr0.add(1).cast::<u8>());
+                        let l4 = i32::from(*ptr0.add(2).cast::<u8>());
+                        let l5 = i32::from(*ptr0.add(3).cast::<u8>());
+                        let l6 = i32::from(*ptr0.add(4).cast::<u8>());
+                        let l7 = i32::from(*ptr0.add(5).cast::<u8>());
+                        let l8 = i32::from(*ptr0.add(6).cast::<u8>());
+                        let l9 = i32::from(*ptr0.add(7).cast::<u8>());
+                        let l10 = i32::from(*ptr0.add(8).cast::<u8>());
+                        DeviceValue {
+                            v0: l3 as u8,
+                            v1: l4 as u8,
+                            v2: l5 as u8,
+                            v3: l6 as u8,
+                            v4: l7 as u8,
+                            v5: l8 as u8,
+                            v6: l9 as u8,
+                            v7: l10 as u8,
+                        }
+                    };
+                    Ok(e)
+                }
+                1 => {
+                    let e = {
+                        let l11 = i32::from(*ptr0.add(1).cast::<u8>());
+                        PollError::_lift(l11 as u8)
+                    };
+                    Err(e)
+                }
+                _ => _rt::invalid_enum_discriminant(),
+            };
+            result12
+        }
+    }
+    #[allow(unused_unsafe, clippy::all)]
     /// Instructs the simulation to forget the handle to an async operation
     /// (is equivalent to dropping the future in Rust)
     pub fn forget_handle(handle: FutureHandle) -> () {
@@ -1014,9 +1070,9 @@ pub(crate) use __export_line_follower_robot_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1358] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xc4\x09\x01A\x02\x01\
-A\x06\x01B\x19\x01m\x03\x0einvalid-handle\x0fconsumed-handle\x0eexpired-handle\x04\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1393] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xe7\x09\x01A\x02\x01\
+A\x06\x01B\x1c\x01m\x03\x0einvalid-handle\x0fconsumed-handle\x0eexpired-handle\x04\
 \0\x0apoll-error\x03\0\0\x01y\x04\0\x07time-us\x03\0\x02\x01y\x04\0\x0dfuture-ha\
 ndle\x03\0\x04\x01r\x08\x02v0}\x02v1}\x02v2}\x02v3}\x02v4}\x02v5}\x02v6}\x02v7}\x04\
 \0\x0cdevice-value\x03\0\x06\x01q\x0c\x0eread-line-left\0\0\x0fread-line-right\0\
@@ -1027,13 +1083,14 @@ ndle\x03\0\x04\x01r\x08\x02v0}\x02v1}\x02v2}\x02v3}\x02v4}\x02v5}\x02v6}\x02v7}\
 \x03\0\x0a\x01|\x04\0\x0bmotor-power\x03\0\x0c\x01@\x01\x09operation\x09\0\x07\x04\
 \0\x19device-operation-blocking\x01\x0e\x01@\x01\x09operation\x09\0\x05\x04\0\x16\
 device-operation-async\x01\x0f\x01j\x01\x0b\x01\x01\x01@\x01\x06handle\x05\0\x10\
-\x04\0\x0bdevice-poll\x01\x11\x01@\x01\x06handle\x05\x01\0\x04\0\x0dforget-handl\
-e\x01\x12\x01@\x02\x04left\x0d\x05right\x0d\x01\0\x04\0\x10set-motors-power\x01\x13\
-\x03\0\x07devices\x05\0\x01B\x0e\x01r\x02\x04names\x05valuez\x04\0\x0bnamed-valu\
-e\x03\0\0\x01p\x01\x01q\x09\x04int8\0\0\x05int16\0\0\x05int32\0\0\x05uint8\0\0\x06\
-uint16\0\0\x06uint32\0\0\x05named\x01\x02\0\x04pad8\0\0\x05pad16\0\0\x04\0\x0ava\
-lue-kind\x03\0\x03\x01r\x02\x04names\x04kind\x04\x04\0\x0acsv-column\x03\0\x05\x01\
-@\x01\x04texts\x01\0\x04\0\x0awrite-line\x01\x07\x01p}\x01p\x06\x01k\x09\x01@\x03\
+\x04\0\x0bdevice-poll\x01\x11\x01j\x01\x07\x01\x01\x01@\x01\x06handle\x05\0\x12\x04\
+\0\x0bdevice-wait\x01\x13\x01@\x01\x06handle\x05\x01\0\x04\0\x0dforget-handle\x01\
+\x14\x01@\x02\x04left\x0d\x05right\x0d\x01\0\x04\0\x10set-motors-power\x01\x15\x03\
+\0\x07devices\x05\0\x01B\x0e\x01r\x02\x04names\x05valuez\x04\0\x0bnamed-value\x03\
+\0\0\x01p\x01\x01q\x09\x04int8\0\0\x05int16\0\0\x05int32\0\0\x05uint8\0\0\x06uin\
+t16\0\0\x06uint32\0\0\x05named\x01\x02\0\x04pad8\0\0\x05pad16\0\0\x04\0\x0avalue\
+-kind\x03\0\x03\x01r\x02\x04names\x04kind\x04\x04\0\x0acsv-column\x03\0\x05\x01@\
+\x01\x04texts\x01\0\x04\0\x0awrite-line\x01\x07\x01p}\x01p\x06\x01k\x09\x01@\x03\
 \x04names\x04data\x08\x03csv\x0a\x01\0\x04\0\x0awrite-file\x01\x0b\x03\0\x0bdiag\
 nostics\x05\x01\x01B\x08\x01r\x03\x01r}\x01g}\x01b}\x04\0\x05color\x03\0\0\x01r\x0c\
 \x04names\x0acolor-main\x01\x0fcolor-secondary\x01\x0awidth-axlev\x0clength-fron\

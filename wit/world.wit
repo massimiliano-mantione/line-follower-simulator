@@ -92,6 +92,9 @@ world line-follower-robot {
         /// Poll the status of an async operation (returns immediately)
         device-poll: func(handle: future-handle) -> result<poll-operation-status, poll-error>;
 
+        /// Wait for an async operation (returns when ready with the result or immediately with an error)
+        device-wait: func(handle: future-handle) -> result<device-value, poll-error>;
+
         /// Instructs the simulation to forget the handle to an async operation
         /// (is equivalent to dropping the future in Rust)
         forget-handle: func(handle: future-handle);
