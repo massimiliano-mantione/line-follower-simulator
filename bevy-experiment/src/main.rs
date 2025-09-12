@@ -1,5 +1,6 @@
 use std::ffi::c_char;
 
+use bevy::math::VectorSpace;
 use bevy::prelude::*;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, input::common_conditions::input_just_pressed};
 use bevy_editor_cam::DefaultEditorCamPlugins;
@@ -66,9 +67,9 @@ fn handle_motors_input(
     let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
 
     let forward = if up {
-        1.0
-    } else if down {
         -1.0
+    } else if down {
+        1.0
     } else {
         0.0
     };
@@ -191,16 +192,20 @@ fn setup(
                 right_axle: Vec3::NEG_Y,
             },
             ExternalForce::default(),
+            Velocity::zero(),
         ))
         .id();
-    let left_wheel_joint = RevoluteJointBuilder::new(Vec3::Y)
-        .local_anchor1(Vec3::new(0.0, -0.5, 0.0))
-        .local_anchor2(Vec3::new(0.0, 0.5, 0.0));
+
+    let wheel_joints_x = 1.5;
+
+    let left_wheel_joint: RevoluteJointBuilder = RevoluteJointBuilder::new(Vec3::Y)
+        .local_anchor1(Vec3::new(wheel_joints_x, 0.5, 0.0))
+        .local_anchor2(Vec3::new(0.0, -0.5, 0.0));
     let left_wheel = commands
         .spawn((
             Collider::cylinder(0.5, 0.5),
             MeshMaterial3d(wheel_material.clone()),
-            Transform::from_xyz(0.0, 3.0, 0.0),
+            Transform::from_xyz(wheel_joints_x, 1.0, 0.0),
             GlobalTransform::default(),
             RigidBody::Dynamic,
             Friction {
@@ -218,13 +223,13 @@ fn setup(
         .id();
 
     let right_wheel_joint = RevoluteJointBuilder::new(Vec3::Y)
-        .local_anchor1(Vec3::new(0.0, 0.5, 0.0))
-        .local_anchor2(Vec3::new(0.0, -0.5, 0.0));
+        .local_anchor1(Vec3::new(wheel_joints_x, -0.5, 0.0))
+        .local_anchor2(Vec3::new(0.0, 0.5, 0.0));
     let right_wheel = commands
         .spawn((
             Collider::cylinder(0.5, 0.5),
             MeshMaterial3d(wheel_material.clone()),
-            Transform::from_xyz(0.0, -3.0, 0.0),
+            Transform::from_xyz(wheel_joints_x, -1.0, 0.0),
             GlobalTransform::default(),
             RigidBody::Dynamic,
             Friction {
