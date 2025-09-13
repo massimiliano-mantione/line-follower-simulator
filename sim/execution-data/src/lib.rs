@@ -15,6 +15,13 @@ pub struct ExecutionData {
     pub steps: Vec<ExecutionStep>,
 }
 
+/// Motor drivers duty cycles.
+#[derive(Clone, Copy)]
+pub struct MotorDriversDutyCycles {
+    pub left: i16,
+    pub right: i16,
+}
+
 /// Motor angles in radians.
 #[derive(Clone, Copy)]
 pub struct MotorAngles {
@@ -81,6 +88,9 @@ pub trait SimulationStepper {
     fn get_gyro(&self) -> GyroData;
     /// Get the current IMU fused data.
     fn get_imu_fused_data(&self) -> ImuFusedData;
+
+    /// Set motor drivers duty cycles.
+    fn set_motor_drivers_duty_cycles(&mut self, duty_cycles: MotorDriversDutyCycles);
 
     /// Get the collected execution data.
     fn get_data(&self) -> ExecutionData;
