@@ -1,5 +1,9 @@
+use std::rc::Rc;
+use std::sync::Arc;
+
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
-use bevy::math::VectorSpace;
+use bevy::ecs::system::RunSystemOnce;
+use bevy::ecs::world;
 use bevy::prelude::*;
 use bevy_editor_cam::DefaultEditorCamPlugins;
 use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint};
@@ -112,14 +116,15 @@ fn set_motors_torque(
 
 fn ray_cast_example(
     read_rapier_context: ReadRapierContext,
-    query_body: Query<(&Motors, &GlobalTransform)>,
+    body_query: Query<(&Motors, &GlobalTransform)>,
+    gt_query: Query<&GlobalTransform>,
 ) {
-    for (_, body_tf) in &query_body {
+    for (_, body_tf) in body_query {
         let origin = body_tf.translation();
         let dir = body_tf.rotation().mul_vec3(Vec3::X);
         let max_toi = 10.0;
 
-        let rapier_context = read_rapier_context.single().ok().unwrap();
+        let rapier_context = read_rapier_context.single().unwrap();
 
         if let Some((entity, intersection)) = rapier_context.cast_ray_and_get_normal(
             origin,
@@ -129,40 +134,15 @@ fn ray_cast_example(
             QueryFilter::default(),
         ) {
             let point: Vec3 = intersection.point.into();
-            let normal: Vec3 = intersection.normal.into();
+
+            let gt = gt_query.get(entity).unwrap();
+
             println!(
-                "Ray from {:?} hit {:?} at {} normal {}",
-                origin, entity, point, normal
-            );
-        } else if let Some((entity, toi)) =
-            rapier_context.cast_ray(origin, dir, max_toi, true, QueryFilter::default())
-        {
-            let point = origin + dir * toi;
-            println!(
-                "Ray from {:?} hit {:?} at {} (toi={})",
-                origin, entity, point, toi
+                "Ray from {:?} hit {:?} at {} gt {:?}",
+                origin, entity, point, gt
             );
         } else {
             println!("Ray from {:?} hit nothing", origin);
-        }
-    }
-}
-
-fn _ray_cast_example_old(
-    query_floor: Query<(&Collider, &GlobalTransform), (Without<Wheel>, Without<Motors>)>,
-    query_body: Query<(&Motors, &GlobalTransform)>,
-) {
-    for (collider, floor_transform) in &query_floor {
-        for (_, body_transform) in &query_body {
-            let intersection = collider.cast_ray_and_get_normal(
-                floor_transform.translation(),
-                floor_transform.rotation(),
-                body_transform.translation(),
-                body_transform.rotation().to_euler(EulerRot::ZXY).into(),
-                10.0,
-                true,
-            );
-            println!("Point: {}", intersection.map_or(Vec3::ZERO, |r| r.point));
         }
     }
 }
@@ -195,14 +175,13 @@ fn main() {
         // Spawn text instructions for keybinds.
         .add_systems(
             RunFixedMainLoop,
-            (
-                handle_motors_input,
-                set_wheel_torque,
-                set_motors_torque,
-                ray_cast_example,
-            )
+            (handle_motors_input, set_wheel_torque, set_motors_torque)
                 .chain()
                 .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+        )
+        .add_systems(
+            RunFixedMainLoop,
+            ray_cast_example.in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
         )
         // Add systems for toggling the diagnostics UI and pausing and stepping the simulation.
         .add_systems(Startup, setup)
