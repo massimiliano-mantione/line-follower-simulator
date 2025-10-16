@@ -433,17 +433,27 @@ fn set_motors_torque(
     // }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum BotPosition {
+    OnTrack,
+    Out,
+    End,
+}
+
+#[derive(Component)]
+struct BotPositionDetector {}
+
 #[derive(Component)]
 struct LineSensor {}
 
 fn compute_sensor_readings(
     read_rapier_context: ReadRapierContext,
-    sensors_query: Query<(&LineSensor, &GlobalTransform)>,
+    sensors_query: Query<&GlobalTransform, With<LineSensor>>,
     track_segments_query: Query<&TrackSegment>,
 ) {
     let rapier_context = read_rapier_context.single().unwrap();
     println!("--- Sensor readings ---");
-    for (_, sensor_tf) in sensors_query {
+    for sensor_tf in sensors_query {
         let origin = sensor_tf.translation();
         let dir = Vec3::NEG_Z; // sensor_tf.rotation().mul_vec3(Vec3::NEG_Z);
         let max_toi = 0.1;
@@ -463,6 +473,38 @@ fn compute_sensor_readings(
         }
     }
     println!("-----------------------");
+}
+
+fn compute_bot_position(
+    read_rapier_context: ReadRapierContext,
+    bot_query: Query<&GlobalTransform, With<BotPositionDetector>>,
+    track_segments_query: Query<&TrackSegment>,
+) {
+    let rapier_context = read_rapier_context.single().unwrap();
+    let origin = bot_query.single().unwrap().translation();
+    let dir = Vec3::NEG_Z;
+    let max_toi = 0.1;
+
+    let bot_position = if let Some((entity, _)) = rapier_context.cast_ray_and_get_normal(
+        origin,
+        dir,
+        max_toi,
+        true,
+        QueryFilter::default().predicate(&|entity| track_segments_query.get(entity).is_ok()),
+    ) {
+        // Bot is over the track
+        // println!("Ray from {:.2} hit {} at {:.2}", origin, entity, point);
+
+        if track_segments_query.get(entity).unwrap() == &TrackSegment::End {
+            BotPosition::End
+        } else {
+            BotPosition::OnTrack
+        }
+    } else {
+        // println!("Ray from {:.2} hit nothing", origin);
+        BotPosition::Out
+    };
+    println!("bot position: {:?}", bot_position);
 }
 
 fn main() {
@@ -506,7 +548,9 @@ fn main() {
         )
         .add_systems(
             RunFixedMainLoop,
-            compute_sensor_readings.in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
+            (compute_sensor_readings, compute_bot_position)
+                .chain()
+                .in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
         )
         // Add systems for toggling the diagnostics UI and pausing and stepping the simulation.
         .add_systems(Startup, (setup_bot, setup_track, setup_ui).chain())
@@ -600,6 +644,7 @@ fn setup_bot(mut commands: Commands) {
                 left_axle: Vec3::X,
                 right_axle: Vec3::NEG_X,
             },
+            BotPositionDetector {},
             ExternalForce::default(),
             Velocity::zero(),
         ))
@@ -685,54 +730,6 @@ fn setup_bot(mut commands: Commands) {
             ),
         ));
     }
-
-    // let wheel_joints_x = 1.5;
-
-    // let left_wheel_joint: RevoluteJointBuilder = RevoluteJointBuilder::new(Vec3::Y)
-    //     .local_anchor1(Vec3::new(wheel_joints_x, 0.5, 0.0))
-    //     .local_anchor2(Vec3::new(0.0, -0.5, 0.0));
-    // let _left_wheel = commands
-    //     .spawn((
-    //         Collider::cylinder(0.5, 0.5),
-    //         Transform::from_xyz(wheel_joints_x, 1.0, 0.0),
-    //         GlobalTransform::default(),
-    //         RigidBody::Dynamic,
-    //         Friction {
-    //             coefficient: 0.95,
-    //             combine_rule: CoefficientCombineRule::Max,
-    //         },
-    //         ColliderMassProperties::Density(1.0),
-    //         Wheel {
-    //             axle: Vec3::Y,
-    //             side: WheelSide::Left,
-    //         },
-    //         ExternalForce::default(),
-    //         ImpulseJoint::new(body, left_wheel_joint),
-    //     ))
-    //     .id();
-
-    // let right_wheel_joint = RevoluteJointBuilder::new(Vec3::Y)
-    //     .local_anchor1(Vec3::new(wheel_joints_x, -0.5, 0.0))
-    //     .local_anchor2(Vec3::new(0.0, 0.5, 0.0));
-    // let _right_wheel = commands
-    //     .spawn((
-    //         Collider::cylinder(0.5, 0.5),
-    //         Transform::from_xyz(wheel_joints_x, -1.0, 0.0),
-    //         GlobalTransform::default(),
-    //         RigidBody::Dynamic,
-    //         Friction {
-    //             coefficient: 0.95,
-    //             combine_rule: CoefficientCombineRule::Max,
-    //         },
-    //         ColliderMassProperties::Density(1.0),
-    //         Wheel {
-    //             axle: Vec3::NEG_Y,
-    //             side: WheelSide::Right,
-    //         },
-    //         ExternalForce::default(),
-    //         ImpulseJoint::new(body, right_wheel_joint),
-    //     ))
-    //     .id();
 }
 
 fn setup_track(mut commands: Commands, track: Res<Track>) {
@@ -748,16 +745,6 @@ fn setup_track(mut commands: Commands, track: Res<Track>) {
 }
 
 fn setup_ui(mut commands: Commands) {
-    // // Directional light
-    // commands.spawn((
-    //     DirectionalLight {
-    //         illuminance: 2000.0,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     Transform::default().looking_at(Vec3::new(-1.0, -1.5, -2.5), Vec3::Z),
-    // ));
-
     // Camera
     commands.spawn((
         Camera3d::default(),
