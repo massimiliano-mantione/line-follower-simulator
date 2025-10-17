@@ -36,16 +36,17 @@ const fn erf(x: f32) -> f32 {
 
 // Reflection function (R(x)) using Gaussian approximation for the line reflection
 fn line_reflection(x: f32) -> f32 {
-    const LINE_SIZE: f32 = 0.02; // Line width in meters (20mm = 0.02m)
-    let sigma: f32 = 5.0; // Standard deviation for Gaussian function (can be adjusted)
+    // const LINE_SIZE: f32 = 0.02; // Line width in meters (20mm = 0.02m)
+    // let sigma: f32 = 5.0; // Standard deviation for Gaussian function (can be adjusted)
 
-    let line_width_mm = LINE_SIZE * 1000.0; // Convert LINE_SIZE to millimeters
+    // let line_width_mm = LINE_SIZE * 1000.0; // Convert LINE_SIZE to millimeters
 
-    let a = (line_width_mm / 2.0 - x) / (sigma * (2.0f32).sqrt());
-    let b = (line_width_mm / 2.0 + x) / (sigma * (2.0f32).sqrt());
+    // let a = (line_width_mm / 2.0 - x) / (sigma * (2.0f32).sqrt());
+    // let b = (line_width_mm / 2.0 + x) / (sigma * (2.0f32).sqrt());
 
-    let overlap = 0.5 * (erf(a) + erf(b));
-    100.0 * (1.0 - overlap)
+    // let overlap = 0.5 * (erf(a) + erf(b));
+    // 100.0 * (1.0 - overlap)
+    x
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -333,15 +334,33 @@ impl TrackSegment {
         }
     }
 
-    pub fn intersection_to_sensor_value(&self, intersection: Option<Vec3>, transform: Vec3) -> f32 {
+    pub fn intersection_to_sensor_value(
+        &self,
+        intersection: Option<Vec3>,
+        transform: &GlobalTransform,
+    ) -> f32 {
         match intersection {
             Some(point) => {
-                let point = point - transform;
-                // Compute the local X coordinate of the intersection point
-                // relative to the centerline of the track segment
-                let local_x = 0.0; // Placeholder for actual computation
+                let local_point = point_to_new_origin(point, transform);
 
-                line_reflection(local_x * 1000.0) // Convert to mm
+                match *self {
+                    TrackSegment::Start | TrackSegment::End => line_reflection(local_point.x),
+                    TrackSegment::Straight(_) => line_reflection(local_point.x),
+                    TrackSegment::NinetyDegTurn(data) => {
+                        let turn_y = (data.line_half_length - TRACK_HALF_WIDTH) / 2.0;
+                        let dist_to_line =
+                            if local_point.y < data.side.sign() * local_point.x + turn_y {
+                                local_point.x
+                            } else {
+                                data.side.sign() * (local_point.y - turn_y)
+                            };
+                        line_reflection(dist_to_line)
+                    }
+                    TrackSegment::CyrcleTurn(data) => {
+                        let dist_to_line = (local_point.length() - data.radius) * data.side.sign();
+                        line_reflection(dist_to_line)
+                    }
+                }
             }
             None => 100.0,
         }
@@ -521,13 +540,13 @@ fn compute_sensor_readings(
             let point: Vec3 = intersection.point.into();
             let (track_segment, transform) = track_segments_query.get(entity).unwrap();
             println!(
-                "Ray from {:.2} hit {} at {:.2}",
-                origin,
+                "Ray hit {} at {:.2} X {:.2}",
                 entity,
                 point_to_new_origin(point, transform),
+                track_segment.intersection_to_sensor_value(Some(point), transform)
             );
         } else {
-            println!("Ray from {:.2} hit nothing", origin);
+            println!("Ray hit nothing");
         }
     }
     println!("-----------------------");
