@@ -2,7 +2,6 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
-use bevy::scene::ron::de;
 use bevy::text::cosmic_text::Angle;
 use bevy_editor_cam::DefaultEditorCamPlugins;
 use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint};
@@ -17,36 +16,39 @@ const TRACK_TIPS_LENGTH: f32 = 0.5;
 const TRACK_Z_OFFSET: f32 = -TRACK_HALF_HEIGHT - FLOOR_HEIGHT;
 const TRACK_CIRCLE_SEGMENTS_PER_PI: usize = 40;
 
-// Error function (erf) approximation using a numerical method
-const fn erf(x: f32) -> f32 {
-    let t = 1.0 / (1.0 + 0.5 * x);
-    let tau = t
-        * (-x * x
-            + 1.26551223
-            + t * (1.00002368
-                + t * (0.37409196
-                    + t * (0.09678418
-                        + t * (-0.18628806
-                            + t * (0.27886807
-                                + t * (-1.13520398
-                                    + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
-
-    1.0 - tau
-}
-
-// Reflection function (R(x)) using Gaussian approximation for the line reflection
 fn line_reflection(x: f32) -> f32 {
-    // const LINE_SIZE: f32 = 0.02; // Line width in meters (20mm = 0.02m)
-    // let sigma: f32 = 5.0; // Standard deviation for Gaussian function (can be adjusted)
+    const LINE_SIZE: f32 = 0.02; // 20 mm
 
-    // let line_width_mm = LINE_SIZE * 1000.0; // Convert LINE_SIZE to millimeters
+    // Model: black line of width LINE_SIZE centered at 0 on a white floor.
+    // The sensor doesn't have infinite spatial resolution, so we smooth the
+    // transition between black and white across a finite transition region.
+    // We return 0.0 for pure black, 100.0 for pure white.
 
-    // let a = (line_width_mm / 2.0 - x) / (sigma * (2.0f32).sqrt());
-    // let b = (line_width_mm / 2.0 + x) / (sigma * (2.0f32).sqrt());
+    // Transition width (how quickly the sensor goes from black to white).
+    // Using one line-width gives a reasonably soft sensor response; tweak if needed.
+    const TRANSITION: f32 = LINE_SIZE;
 
-    // let overlap = 0.5 * (erf(a) + erf(b));
-    // 100.0 * (1.0 - overlap)
-    x
+    // Treat NaN/inf as far away (white)
+    if !x.is_finite() {
+        return 100.0;
+    }
+
+    let half = LINE_SIZE * 0.5;
+    let d = x.abs();
+
+    if d <= half {
+        // Fully over the black line
+        0.0
+    } else if d >= half + TRANSITION {
+        // Far enough to see full white
+        100.0
+    } else {
+        // Smooth interpolation between black and white using smoothstep
+        let t = (d - half) / TRANSITION; // normalized 0..1
+        // smoothstep (cubic hermite) -> smooth start/end
+        let s = t * t * (3.0 - 2.0 * t);
+        100.0 * s
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
