@@ -406,23 +406,23 @@ impl DeviceValueRaw {
     pub fn with_u16(self, index: usize, value: u16) -> Self {
         match index {
             0 => Self {
-                v0: (value >> 8) as u8,
-                v1: value as u8,
+                v0: value as u8,
+                v1: (value >> 8) as u8,
                 ..self
             },
             1 => Self {
-                v2: (value >> 8) as u8,
-                v3: value as u8,
+                v2: value as u8,
+                v3: (value >> 8) as u8,
                 ..self
             },
             2 => Self {
-                v4: (value >> 8) as u8,
-                v5: value as u8,
+                v4: value as u8,
+                v5: (value >> 8) as u8,
                 ..self
             },
             3 => Self {
-                v6: (value >> 8) as u8,
-                v7: value as u8,
+                v6: value as u8,
+                v7: (value >> 8) as u8,
                 ..self
             },
             _ => self,
@@ -436,17 +436,17 @@ impl DeviceValueRaw {
     pub fn with_u32(self, index: usize, value: u32) -> Self {
         match index {
             0 => Self {
-                v0: (value >> 24) as u8,
-                v1: (value >> 16) as u8,
-                v2: (value >> 8) as u8,
-                v3: value as u8,
+                v0: value as u8,
+                v1: (value >> 8) as u8,
+                v2: (value >> 16) as u8,
+                v3: (value >> 24) as u8,
                 ..self
             },
             1 => Self {
-                v4: (value >> 24) as u8,
-                v5: (value >> 16) as u8,
-                v6: (value >> 8) as u8,
-                v7: value as u8,
+                v4: value as u8,
+                v5: (value >> 8) as u8,
+                v6: (value >> 16) as u8,
+                v7: (value >> 24) as u8,
                 ..self
             },
             _ => self,
@@ -475,9 +475,9 @@ impl DeviceValueRaw {
 
     pub fn from_gyro_data(gyro_data: GyroData) -> Self {
         Self::zero()
-            .with_i16(0, gyro_data.roll_angular_speed.to_radians() as i16)
-            .with_i16(1, gyro_data.pitch_angular_speed.to_radians() as i16)
-            .with_i16(2, gyro_data.yaw_angular_speed.to_radians() as i16)
+            .with_i16(0, gyro_data.roll_angular_speed as i16)
+            .with_i16(1, gyro_data.pitch_angular_speed as i16)
+            .with_i16(2, gyro_data.yaw_angular_speed as i16)
     }
 
     pub fn from_imu_fused_data(imu_data: ImuFusedData) -> Self {
