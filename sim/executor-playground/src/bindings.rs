@@ -519,7 +519,7 @@ pub mod devices {
             handle: FutureHandle,
         ) -> wasmtime::Result<Result<PollOperationStatus, PollError>>;
         /// Signal future values poll loop start and end to the simulation host
-        fn poll_loop(&mut self, current_fuel: u64, start: bool);
+        fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()>;
         /// Instructs the simulation to forget the handle to an async operation
         /// (is equivalent to dropping the future in Rust)
         fn forget_handle(&mut self, handle: FutureHandle) -> ();
@@ -557,7 +557,7 @@ pub mod devices {
             Host::device_poll(*self, current_fuel, handle)
         }
         /// Signal future values poll loop start and end to the simulation host
-        fn poll_loop(&mut self, current_fuel: u64, start: bool) {
+        fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
             Host::poll_loop(*self, current_fuel, start)
         }
         /// Instructs the simulation to forget the handle to an async operation
@@ -617,7 +617,7 @@ pub mod devices {
             move |mut caller: wasmtime::StoreContextMut<'_, T>, (arg0,): (bool,)| {
                 let current_fuel = caller.get_fuel()?;
                 let host = &mut host_getter(caller.data_mut());
-                Host::poll_loop(host, current_fuel, arg0);
+                Host::poll_loop(host, current_fuel, arg0)?;
                 Ok(())
             },
         )?;

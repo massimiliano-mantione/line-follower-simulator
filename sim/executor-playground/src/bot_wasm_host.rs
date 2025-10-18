@@ -511,6 +511,13 @@ impl FutureReadyCondition {
             FutureReadyCondition::IsInactive => true,
         }
     }
+
+    pub fn wakeup_point(&self) -> Option<TimeUs> {
+        match *self {
+            FutureReadyCondition::ReadyAt(time) => Some(time),
+            FutureReadyCondition::IsActive | FutureReadyCondition::IsInactive => None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -642,6 +649,8 @@ pub struct BotHost<S: SimulationStepper> {
     current_fuel: u64,
     skipped_fuel: u64,
 
+    first_wakeup_point: Option<TimeUs>,
+
     workdir_path: Option<PathBuf>,
     output_log: bool,
     log_lines: Vec<String>,
@@ -725,8 +734,18 @@ impl<S: SimulationStepper> bindings::devices::Host for BotHost<S> {
         self.step_until_time(current_time);
         let r = match self.futures_by_id.get_mut(&handle.id) {
             Some(f) => match f.value {
-                FutureValueStatus::Pending => Ok(PollOperationStatus::Pending),
+                FutureValueStatus::Pending => {
+                    if let (Some(new_wakeup_point), Some(current_wakeup_point)) =
+                        (f.ready_condition.wakeup_point(), self.first_wakeup_point)
+                    {
+                        if new_wakeup_point < current_wakeup_point {
+                            self.first_wakeup_point = Some(new_wakeup_point);
+                        }
+                    }
+                    Ok(PollOperationStatus::Pending)
+                }
                 FutureValueStatus::Ready(device_value_raw) => {
+                    self.first_wakeup_point = None;
                     f.value = FutureValueStatus::Consumed;
                     Ok(PollOperationStatus::Ready(device_value_raw.into()))
                 }
@@ -738,8 +757,19 @@ impl<S: SimulationStepper> bindings::devices::Host for BotHost<S> {
     }
 
     #[doc = " Signal future values poll loop start and end to the simulation host"]
-    fn poll_loop(&mut self, current_fuel: u64, start: bool) {
-        println!("poll loop: {} (current fuel: {})", start, current_fuel);
+    fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
+        let current_time = self.setup_current_time(current_fuel)?;
+        if start {
+            self.first_wakeup_point = Some(current_time);
+        } else {
+            if let Some(wakeup_point) = self.first_wakeup_point {
+                if wakeup_point > current_time {
+                    self.set_current_time(wakeup_point)?;
+                }
+                self.first_wakeup_point = None;
+            }
+        }
+        Ok(())
     }
 
     #[doc = " Instructs the simulation to forget the handle to an async operation"]
@@ -988,6 +1018,7 @@ impl<S: SimulationStepper> BotHost<S> {
             total_simulation_time,
             current_fuel: fuel_for_time_us(total_simulation_time),
             skipped_fuel: 0,
+            first_wakeup_point: None,
             stepper,
             workdir_path,
             output_log,
