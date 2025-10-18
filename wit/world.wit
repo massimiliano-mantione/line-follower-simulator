@@ -98,8 +98,8 @@ world line-follower-robot {
         /// Poll the status of an async operation (returns immediately)
         device-poll: func(handle: future-handle) -> result<poll-operation-status, poll-error>;
 
-        /// Advance one step in the physical simulation
-        world-step: func();
+        /// Signal future values poll loop start and end to the simulation host
+        poll-loop: func(start: bool);
 
         /// Instructs the simulation to forget the handle to an async operation
         /// (is equivalent to dropping the future in Rust)

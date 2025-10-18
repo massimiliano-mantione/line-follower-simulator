@@ -6,7 +6,7 @@ edition = "2024"
 [workspace]
 
 [dependencies]
-wit-bindgen-rt = { version = "0.44.0", features = ["bitflags"] }
+wit-bindgen = { version = "0.46.0", features = ["bitflags"] }
 
 [lib]
 crate-type = ["cdylib"]

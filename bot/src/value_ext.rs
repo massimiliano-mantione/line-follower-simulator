@@ -1,4 +1,4 @@
-use crate::bindings::devices::DeviceValue;
+use crate::line_follower_robot::devices::DeviceValue;
 
 pub trait DeviceValueExt {
     fn get_bool(&self, index: usize) -> bool;

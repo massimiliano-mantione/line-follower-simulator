@@ -737,13 +737,9 @@ impl<S: SimulationStepper> bindings::devices::Host for BotHost<S> {
         Ok(r)
     }
 
-    #[doc = " Advance one step in the physical simulation"]
-    fn world_step(&mut self, current_fuel: u64) -> wasmtime::Result<()> {
-        let current_time = self.setup_current_time(current_fuel)?;
-        self.step();
-        let end_time = self.stepper.get_time_us().max(current_time);
-        self.set_current_time(end_time)?;
-        Ok(())
+    #[doc = " Signal future values poll loop start and end to the simulation host"]
+    fn poll_loop(&mut self, current_fuel: u64, start: bool) {
+        println!("poll loop: {} (current fuel: {})", start, current_fuel);
     }
 
     #[doc = " Instructs the simulation to forget the handle to an async operation"]
