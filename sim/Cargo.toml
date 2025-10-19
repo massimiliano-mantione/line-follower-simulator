@@ -3,7 +3,7 @@
 resolver = "2"
 
 members = [
-    "execution-data", "executor", "executor-playground", "physical-simulator", "sim", "visualizer-playground",
+    "execution-data", "executor", "sim",
 ]
 
 exclude = [
@@ -14,5 +14,4 @@ exclude = [
 clap = { version = "3.1.15", features = ["derive"] }
 anyhow = "1.0.99"
 rapier3d = { version = "0.28.0", features = [ "simd-stable" ] }
-three-d = {version = "0.18.2", features = ["egui", "egui-gui", "text"]}
 wasmtime = "36.0.2"

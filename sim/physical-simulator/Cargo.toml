@@ -1,8 +1,0 @@
-[package]
-name = "physical-simulator"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-rapier3d = {workspace = true}
-execution-data = {path = "../execution-data"}
