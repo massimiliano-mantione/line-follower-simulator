@@ -675,19 +675,9 @@ fn compute_bot_position(
     println!("bot position: {:?}", bot_position);
 }
 
-// fn time_checker(time: Res<Time>) {
-//     static mut LAST: f32 = 0.0;
-
-//     let now = time.elapsed_secs();
-//     let delta = now - unsafe { LAST };
-
-//     // println!("Time: {:.6} Delta: {:.6}", now, delta);
-//     unsafe {
-//         LAST = now;
-//     }
-
-//     println!("Time diff: {:.10}", time.delta_secs() - delta);
-// }
+fn time_checker(time: Res<Time<Fixed>>) {
+    println!("Fixed dt: {}", time.delta_secs());
+}
 
 fn main() {
     App::new()
@@ -707,6 +697,8 @@ fn main() {
             RapierDebugRenderPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
         ))
+        // Set fixed timestep
+        .insert_resource(Time::<Fixed>::from_hz(10000.0))
         // Add gravity to the physics simulation.
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)))
         // Resource for motors pwm values.
@@ -730,7 +722,7 @@ fn main() {
         )
         .add_systems(
             RunFixedMainLoop,
-            (compute_sensor_readings, compute_bot_position)
+            (compute_sensor_readings, compute_bot_position, time_checker)
                 .chain()
                 .in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
         )
