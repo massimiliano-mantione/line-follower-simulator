@@ -315,6 +315,22 @@ impl From<DeviceOperation> for FutureOperation {
 }
 
 impl FutureOperation {
+    pub fn name(&self) -> &'static str {
+        match self {
+            FutureOperation::ReadLineLeft => "ReadLineLeft",
+            FutureOperation::ReadLineRight => "ReadLineRight",
+            FutureOperation::ReadMotorAngles => "ReadMotorAngles",
+            FutureOperation::ReadAccel => "ReadAccel",
+            FutureOperation::ReadGyro => "ReadGyro",
+            FutureOperation::ReadImuFusedData => "ReadImuFusedData",
+            FutureOperation::GetTime => "GetTime",
+            FutureOperation::Sleep => "Sleep",
+            FutureOperation::GetEnabled => "GetEnabled",
+            FutureOperation::WaitEnabled => "WaitEnabled",
+            FutureOperation::WaitDisabled => "WaitDisabled",
+        }
+    }
+
     pub fn compute_value(
         &self,
         stepper: &impl SimulationStepper,
@@ -495,6 +511,16 @@ pub enum FutureReadyCondition {
     IsInactive,
 }
 
+impl std::fmt::Display for FutureReadyCondition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FutureReadyCondition::ReadyAt(time) => write!(f, "READY at {}", time),
+            FutureReadyCondition::IsActive => write!(f, "wait ACTIVE"),
+            FutureReadyCondition::IsInactive => write!(f, "wait INACTIVE"),
+        }
+    }
+}
+
 impl FutureReadyCondition {
     pub fn is_time_based(&self) -> bool {
         match self {
@@ -512,10 +538,12 @@ impl FutureReadyCondition {
         }
     }
 
-    pub fn wakeup_point(&self) -> Option<TimeUs> {
+    pub fn wakeup_point<S: SimulationStepper>(&self, current_time: TimeUs, stepper: &S) -> TimeUs {
         match *self {
-            FutureReadyCondition::ReadyAt(time) => Some(time),
-            FutureReadyCondition::IsActive | FutureReadyCondition::IsInactive => None,
+            FutureReadyCondition::ReadyAt(time) => time,
+            FutureReadyCondition::IsActive | FutureReadyCondition::IsInactive => {
+                stepper.get_time_us_at_next_step_after(current_time)
+            }
         }
     }
 }
@@ -525,6 +553,20 @@ pub enum FutureValueStatus {
     Pending,
     Ready(DeviceValueRaw),
     Consumed,
+}
+
+impl std::fmt::Display for FutureValueStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FutureValueStatus::Pending => write!(f, "Pending"),
+            FutureValueStatus::Ready(value) => write!(
+                f,
+                "Ready({} {} {} {} {} {} {} {})",
+                value.v0, value.v1, value.v2, value.v3, value.v4, value.v5, value.v6, value.v7
+            ),
+            FutureValueStatus::Consumed => write!(f, "Consumed"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -643,13 +685,52 @@ pub fn time_us_for_fuel(fuel: u64) -> TimeUs {
     ((fuel * FUEL_UNIT_NS) / 1000) as TimeUs
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum WakeupPoint {
+    AtTime(TimeUs),
+    Missing,
+    Disabled,
+}
+
+impl std::fmt::Display for WakeupPoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            WakeupPoint::AtTime(time) => write!(f, "AtTime({})", time),
+            WakeupPoint::Missing => write!(f, "Missing"),
+            WakeupPoint::Disabled => write!(f, "Disabled"),
+        }
+    }
+}
+
+impl WakeupPoint {
+    pub fn set_time(&mut self, new_wakeup_time: TimeUs) {
+        match *self {
+            WakeupPoint::AtTime(current_wakeup_time) => {
+                if new_wakeup_time < current_wakeup_time {
+                    *self = WakeupPoint::AtTime(new_wakeup_time);
+                }
+            }
+            WakeupPoint::Missing => *self = WakeupPoint::AtTime(new_wakeup_time),
+            WakeupPoint::Disabled => {}
+        }
+    }
+
+    pub fn disable(&mut self) {
+        *self = WakeupPoint::Disabled;
+    }
+
+    pub fn clear(&mut self) {
+        *self = WakeupPoint::Missing;
+    }
+}
+
 pub struct BotHost<S: SimulationStepper> {
     stepper: S,
     total_simulation_time: TimeUs,
     current_fuel: u64,
     skipped_fuel: u64,
 
-    first_wakeup_point: Option<TimeUs>,
+    first_wakeup_point: WakeupPoint,
 
     workdir_path: Option<PathBuf>,
     output_log: bool,
@@ -735,17 +816,12 @@ impl<S: SimulationStepper> bindings::devices::Host for BotHost<S> {
         let r = match self.futures_by_id.get_mut(&handle.id) {
             Some(f) => match f.value {
                 FutureValueStatus::Pending => {
-                    if let (Some(new_wakeup_point), Some(current_wakeup_point)) =
-                        (f.ready_condition.wakeup_point(), self.first_wakeup_point)
-                    {
-                        if new_wakeup_point < current_wakeup_point {
-                            self.first_wakeup_point = Some(new_wakeup_point);
-                        }
-                    }
+                    self.first_wakeup_point
+                        .set_time(f.ready_condition.wakeup_point(current_time, &self.stepper));
                     Ok(PollOperationStatus::Pending)
                 }
                 FutureValueStatus::Ready(device_value_raw) => {
-                    self.first_wakeup_point = None;
+                    self.first_wakeup_point.disable();
                     f.value = FutureValueStatus::Consumed;
                     Ok(PollOperationStatus::Ready(device_value_raw.into()))
                 }
@@ -760,14 +836,16 @@ impl<S: SimulationStepper> bindings::devices::Host for BotHost<S> {
     fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
         let current_time = self.setup_current_time(current_fuel)?;
         if start {
-            self.first_wakeup_point = Some(current_time);
+            self.update_futures(current_time);
+            self.first_wakeup_point.clear();
         } else {
-            if let Some(wakeup_point) = self.first_wakeup_point {
+            if let WakeupPoint::AtTime(wakeup_point) = self.first_wakeup_point {
                 if wakeup_point > current_time {
                     self.set_current_time(wakeup_point)?;
+                    self.step_until_time(wakeup_point);
                 }
-                self.first_wakeup_point = None;
             }
+            self.first_wakeup_point.disable();
         }
         Ok(())
     }
@@ -1018,7 +1096,7 @@ impl<S: SimulationStepper> BotHost<S> {
             total_simulation_time,
             current_fuel: fuel_for_time_us(total_simulation_time),
             skipped_fuel: 0,
-            first_wakeup_point: None,
+            first_wakeup_point: WakeupPoint::Disabled,
             stepper,
             workdir_path,
             output_log,
@@ -1077,9 +1155,7 @@ impl<S: SimulationStepper> BotHost<S> {
         Ok(())
     }
 
-    pub fn step(&mut self) {
-        self.stepper.step();
-
+    fn update_futures(&mut self, current_time: TimeUs) {
         if !self.futures_by_activity.is_empty() {
             let is_active = self.stepper.is_active();
             let mut missing = Vec::new();
@@ -1114,14 +1190,13 @@ impl<S: SimulationStepper> BotHost<S> {
         }
 
         if !self.futures_by_ready_time.is_empty() {
-            let now = self.stepper.get_time_us();
             let mut to_remove = Vec::new();
 
             for rt in self
                 .futures_by_ready_time
                 .iter()
                 .copied()
-                .take_while(|rt| rt.ready_at <= now)
+                .take_while(|rt| rt.ready_at <= current_time)
             {
                 match self.futures_by_id.get_mut(&rt.id) {
                     Some(f) => {
@@ -1147,8 +1222,13 @@ impl<S: SimulationStepper> BotHost<S> {
         }
     }
 
+    pub fn step(&mut self) {
+        self.stepper.step();
+        self.update_futures(self.stepper.get_time_us());
+    }
+
     pub fn step_until_time(&mut self, target_time: TimeUs) {
-        while self.stepper.get_time_at_next_step_us() < target_time {
+        while self.stepper.get_time_us_at_next_step() <= target_time {
             self.step();
         }
     }

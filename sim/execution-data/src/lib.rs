@@ -69,13 +69,22 @@ pub trait SimulationStepper {
     fn get_time_us(&self) -> u32;
 
     /// Get the time that the simulation will reach at the next step.
-    fn get_time_at_next_step_us(&self) -> u32 {
+    fn get_time_us_at_next_step(&self) -> u32 {
         self.get_time_us() + Self::STEP_US
+    }
+
+    fn get_time_us_at_next_step_after(&self, time_us: u32) -> u32 {
+        let stray_time = time_us % Self::STEP_US;
+        if stray_time == 0 {
+            time_us
+        } else {
+            time_us + Self::STEP_US - stray_time
+        }
     }
 
     /// Perform steps to reach the required time
     fn step_until_time_us(&mut self, target_time_us: u32) {
-        while self.get_time_at_next_step_us() <= target_time_us {
+        while self.get_time_us_at_next_step() <= target_time_us {
             self.step();
         }
     }
