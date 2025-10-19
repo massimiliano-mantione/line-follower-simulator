@@ -7,6 +7,7 @@ edition = "2024"
 
 [dependencies]
 wit-bindgen = { version = "0.46.0", features = ["bitflags"] }
+futures-lite = "2.6.1"
 
 [lib]
 crate-type = ["cdylib"]

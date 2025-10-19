@@ -40,17 +40,25 @@ impl Guest for Component {
 pub async fn simple_async_loop() -> Result<(), PollError> {
     for i in 1..1000 {
         let time = device_operation_blocking(DeviceOperation::GetTime);
-        let gyro = device_operation_async(DeviceOperation::ReadGyro)
-            .into_future()
-            .await?;
+
+        let (gyro, accel) = futures_lite::future::zip(
+            device_operation_async(DeviceOperation::ReadGyro).into_future(),
+            device_operation_async(DeviceOperation::ReadAccel).into_future(),
+        )
+        .await;
+        let (gyro, accel) = (gyro?, accel?);
         write_line(&format!(
-            "log: {} time {} gyro {} {} {} {}",
+            "log: {} time {} gyro {} {} {} {} accel {} {} {} {}",
             i,
             time.get_u32(0),
             gyro.get_i16(0),
             gyro.get_i16(1),
             gyro.get_i16(2),
-            gyro.get_i16(3)
+            gyro.get_i16(3),
+            accel.get_i16(0),
+            accel.get_i16(1),
+            accel.get_i16(2),
+            accel.get_i16(3),
         ));
         device_operation_async(DeviceOperation::SleepFor(1_000_000))
             .into_future()

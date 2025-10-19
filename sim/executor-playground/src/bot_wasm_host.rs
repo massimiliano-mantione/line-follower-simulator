@@ -484,9 +484,9 @@ impl DeviceValueRaw {
 
     pub fn from_accel_data(accel_data: AccelData) -> Self {
         Self::zero()
-            .with_u16(0, accel_data.front as u16)
-            .with_u16(1, accel_data.side as u16)
-            .with_u16(2, accel_data.vertical as u16)
+            .with_i16(0, (accel_data.front * 100.0) as i16)
+            .with_i16(1, (accel_data.side * 100.0) as i16)
+            .with_i16(2, (accel_data.vertical * 100.0) as i16)
     }
 
     pub fn from_gyro_data(gyro_data: GyroData) -> Self {

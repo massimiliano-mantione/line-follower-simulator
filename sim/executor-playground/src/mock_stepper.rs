@@ -53,7 +53,7 @@ impl execution_data::SimulationStepper for MockStepper {
         execution_data::AccelData {
             front: 0.0,
             side: 0.0,
-            vertical: 9.81,
+            vertical: -9.81,
         }
     }
 
