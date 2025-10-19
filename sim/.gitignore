@@ -26,3 +26,5 @@ target
 # Additional files to ignore (robot outputs)
 *.log
 *.bin
+*.csv
+log.txt
