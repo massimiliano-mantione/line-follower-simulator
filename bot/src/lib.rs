@@ -38,7 +38,7 @@ impl Guest for Component {
 }
 
 pub async fn simple_async_run() {
-    for i in 1..1000 {
+    for i in 1..50 {
         let time = device_operation_blocking(DeviceOperation::GetTime);
 
         let (gyro, accel) = futures_lite::future::zip(
@@ -66,7 +66,7 @@ pub async fn simple_async_run() {
 }
 
 pub fn simple_blocking_run() {
-    for i in 1..1000 {
+    for i in 1..50 {
         poll_loop(true);
         let time = device_operation_blocking(DeviceOperation::GetTime);
         let gyro = device_operation_blocking(DeviceOperation::ReadGyro);
