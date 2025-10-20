@@ -1,4 +1,4 @@
-use bevy::{ecs::resource::Resource, transform::components::Transform};
+use bevy::{ecs::resource::Resource, math::Vec3, transform::components::Transform};
 
 #[derive(Clone, Copy)]
 pub struct ExecutionStep {
@@ -45,12 +45,32 @@ pub struct GyroData {
     pub yaw_angular_speed: f32,
 }
 
+impl From<Vec3> for GyroData {
+    fn from(value: Vec3) -> Self {
+        Self {
+            roll_angular_speed: value.y,
+            pitch_angular_speed: value.x,
+            yaw_angular_speed: value.z,
+        }
+    }
+}
+
 /// Fused IMU data in radians.
 #[derive(Clone, Copy, Default)]
 pub struct ImuFusedData {
     pub roll: f32,
     pub pitch: f32,
     pub yaw: f32,
+}
+
+impl From<Vec3> for ImuFusedData {
+    fn from(value: Vec3) -> Self {
+        Self {
+            roll: value.y,
+            pitch: value.x,
+            yaw: value.z,
+        }
+    }
 }
 
 /// Bot logical positions

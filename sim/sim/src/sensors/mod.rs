@@ -3,10 +3,12 @@ use bevy::prelude::*;
 use execution_data::SensorsData;
 
 pub mod bot_position;
+pub mod imu;
 pub mod line_sensors;
 pub mod motor_angles;
 
 use bot_position::compute_bot_position;
+use imu::compute_imu_data;
 use line_sensors::compute_sensor_readings;
 use motor_angles::compute_motor_angles_position;
 
@@ -17,6 +19,16 @@ fn print_sensors_data(sensors_data: Res<SensorsData>) {
         "motor angles: l {} r {}",
         sensors_data.motor_angles.left, sensors_data.motor_angles.right
     );
+    println!(
+        "gyro: r {:.4} p {:.4} y {:.4}",
+        sensors_data.gyro.roll_angular_speed,
+        sensors_data.gyro.pitch_angular_speed,
+        sensors_data.gyro.yaw_angular_speed
+    );
+    println!(
+        "imu: r {:.4} p {:.4} y {:.4}",
+        sensors_data.imu_fused.roll, sensors_data.imu_fused.pitch, sensors_data.imu_fused.yaw
+    );
 }
 
 pub fn add_sensors(app: &mut App) {
@@ -26,6 +38,7 @@ pub fn add_sensors(app: &mut App) {
             compute_sensor_readings,
             compute_bot_position,
             compute_motor_angles_position,
+            compute_imu_data,
             print_sensors_data,
         )
             .chain()
