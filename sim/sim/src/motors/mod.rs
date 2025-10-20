@@ -91,7 +91,7 @@ fn pwm_to_torque(
     // These are rough; tune to your robot size.
     const NO_LOAD_RPM: f32 = 2000.0;
     const NO_LOAD_OMEGA: f32 = NO_LOAD_RPM / 60.0 * std::f32::consts::TAU; // rad/s
-    const STALL_TORQUE: f32 = 0.01; // N·m at PWM = 1.0 and zero speed
+    const STALL_TORQUE: f32 = 0.02; // N·m at PWM = 1.0 and zero speed
 
     // Saturate PWM
     let pwm = pwm.clamp(-1.0, 1.0);
@@ -177,7 +177,7 @@ fn apply_motors_pwm(
         let wheel_axle = transform.rotation * wheel.axle.abs();
         ext_impulse.torque = -wheel_axle * torque;
 
-        body_torque += motors_axle.axle(wheel.side) * torque;
+        body_torque += motors_axle.axle(wheel.side).abs() * torque;
 
         // println!(
         //     "Wheel {:?} torque {:.10} vel {:.2}",

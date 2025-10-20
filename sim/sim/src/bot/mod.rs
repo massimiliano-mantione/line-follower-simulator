@@ -12,8 +12,8 @@ const BOT_BODY_HEIGHT: f32 = 0.01;
 const BOT_BUMPER_DIAMETER: f32 = BOT_BODY_HEIGHT / 2.0;
 const BOT_BUMPER_WIDTH: f32 = BOT_BODY_WIDTH / 2.0;
 
-const BOT_BODY_WEIGHT: f32 = 0.5;
-const BOT_WHEEL_WEIGHT: f32 = 0.05;
+const BOT_BODY_WEIGHT: f32 = 0.1;
+const BOT_WHEEL_WEIGHT: f32 = 0.02;
 
 fn setup_bot(mut commands: Commands) {
     // Axle width from wheel to wheel (in mm, 100 to 200)
@@ -37,7 +37,8 @@ fn setup_bot(mut commands: Commands) {
 
     let body_world = Vec3::new(
         0.0,
-        (length_front - length_back) / 2.0,
+        // (length_front - length_back) / 2.0,
+        0.0,
         clearing_back + (BOT_BODY_HEIGHT * 0.5) + BOT_BUMPER_DIAMETER,
     );
 
@@ -45,6 +46,7 @@ fn setup_bot(mut commands: Commands) {
     let front_bumper_world = Vec3::new(0.0, length_front, BOT_BUMPER_DIAMETER / 2.0);
     let back_bumper_world = Vec3::new(0.0, -length_back, BOT_BUMPER_DIAMETER / 2.0 + clearing_back);
 
+    let body_front_length = length_back / 2.0;
     // Static body with motors
     let body = commands
         .spawn((
@@ -54,7 +56,17 @@ fn setup_bot(mut commands: Commands) {
                     Quat::IDENTITY,
                     Collider::cuboid(
                         BOT_BODY_WIDTH * 0.5,
-                        (length_front + length_back) * 0.5,
+                        // (length_front + length_back) * 0.5,
+                        length_back,
+                        BOT_BODY_HEIGHT * 0.5,
+                    ),
+                ),
+                (
+                    Vec3::new(0.0, length_front - body_front_length / 2.0, 0.0),
+                    Quat::IDENTITY,
+                    Collider::cuboid(
+                        BOT_BODY_WIDTH * 0.5,
+                        body_front_length * 0.5,
                         BOT_BODY_HEIGHT * 0.5,
                     ),
                 ),

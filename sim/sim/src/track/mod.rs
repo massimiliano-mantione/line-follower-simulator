@@ -6,7 +6,7 @@ use bevy_rapier3d::prelude::*;
 
 use crate::utils::{Side, rotate_vec2};
 
-const FLOOR_HEIGHT: f32 = 0.03;
+const FLOOR_HEIGHT: f32 = 0.01;
 const FLOOR_SIZE: f32 = 20.0;
 pub const TRACK_HALF_WIDTH: f32 = 0.1;
 const TRACK_HALF_HEIGHT: f32 = 0.001;
