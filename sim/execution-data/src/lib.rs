@@ -1,14 +1,11 @@
-use rapier3d::math;
+use bevy::{ecs::resource::Resource, transform::components::Transform};
 
 #[derive(Clone, Copy)]
 pub struct ExecutionStep {
-    pub time_s: f32,
-    pub body_rotation: math::Rotation<f32>,
-    pub body_translation: math::Vector<f32>,
-    pub left_wheel_rotation: math::Rotation<f32>,
-    pub left_wheel_translation: math::Vector<f32>,
-    pub right_wheel_rotation: math::Rotation<f32>,
-    pub right_wheel_translation: math::Vector<f32>,
+    pub time_us: u32,
+    pub body_transform: Transform,
+    pub left_wheel_transform: Transform,
+    pub right_wheel_transform: Transform,
 }
 
 pub struct ExecutionData {
@@ -16,21 +13,21 @@ pub struct ExecutionData {
 }
 
 /// Motor drivers duty cycles.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct MotorDriversDutyCycles {
     pub left: i16,
     pub right: i16,
 }
 
 /// Motor angles in radians.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct MotorAngles {
     pub left: f32,
     pub right: f32,
 }
 
 /// Accelerometer data in m/s².
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct AccelData {
     pub front: f32,
     pub side: f32,
@@ -38,7 +35,7 @@ pub struct AccelData {
 }
 
 /// Gyroscope data in rad/s.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct GyroData {
     pub roll_angular_speed: f32,
     pub pitch_angular_speed: f32,
@@ -46,11 +43,20 @@ pub struct GyroData {
 }
 
 /// Fused IMU data in radians.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct ImuFusedData {
     pub roll: f32,
     pub pitch: f32,
     pub yaw: f32,
+}
+
+/// Wrapper for all sensors data.
+#[derive(Clone, Copy, Resource, Default)]
+pub struct SensorsData {
+    pub motor_angles: MotorAngles,
+    pub accel: AccelData,
+    pub gyro: GyroData,
+    pub imu_fused: ImuFusedData,
 }
 
 pub trait SimulationStepper {
