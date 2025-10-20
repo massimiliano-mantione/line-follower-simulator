@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use execution_data::{MotorDriversDutyCycles, PWM_MAX, PWM_MIN};
 
-use crate::utils::Side;
+use crate::utils::{GetBySide, Side};
 
 #[derive(Component)]
 pub struct Wheel {
@@ -39,30 +40,8 @@ impl Motors {
     }
 }
 
-#[derive(Resource)]
-pub struct MotorsPwm {
-    pub left_pwm: f32,
-    pub right_pwm: f32,
-}
-
-impl MotorsPwm {
-    pub fn new() -> Self {
-        Self {
-            left_pwm: 0.0,
-            right_pwm: 0.0,
-        }
-    }
-
-    pub fn pwm(&self, side: Side) -> f32 {
-        match side {
-            Side::Left => self.left_pwm,
-            Side::Right => self.right_pwm,
-        }
-    }
-}
-
 fn pwm_to_torque(
-    pwm: f32,     // -1.0 .. 1.0
+    pwm: i16,     // -1000 .. 1000
     ang_vel: f32, // rad/s
     gear_ratio_num: u32,
     gear_ratio_den: u32,
@@ -81,7 +60,7 @@ fn pwm_to_torque(
     const STALL_TORQUE: f32 = 0.02; // N·m at PWM = 1.0 and zero speed
 
     // Saturate PWM
-    let pwm = pwm.clamp(-1.0, 1.0);
+    let pwm = (pwm.clamp(PWM_MIN, PWM_MAX) as f32) / (PWM_MAX as f32);
 
     // Gear ratio as floating point (motor rotations per wheel rotation).
     let gear_ratio = if gear_ratio_den == 0 {
@@ -124,7 +103,7 @@ fn pwm_to_torque(
 }
 
 fn apply_motors_pwm(
-    pwm: Res<MotorsPwm>,
+    pwm: Res<MotorDriversDutyCycles>,
     mut wheels_query: Query<(&Wheel, &Transform, &Velocity, &mut ExternalForce), Without<Motors>>,
     mut motors_query: Query<(&Motors, &Transform, &mut ExternalForce), Without<Wheel>>,
 ) {
@@ -153,7 +132,7 @@ fn apply_motors_pwm(
 
     for (wheel, transform, velocity, mut ext_impulse) in &mut wheels_query {
         let ang_vel = -velocity.angvel.dot(transform.rotation * wheel.axle.abs()); // rad/s
-        let pwm_value = pwm.pwm(wheel.side);
+        let pwm_value = pwm.get_by_side(wheel.side);
         let torque = pwm_to_torque(
             pwm_value,
             ang_vel,
@@ -177,10 +156,11 @@ fn apply_motors_pwm(
 }
 
 pub fn add_motors(app: &mut App) {
-    app.insert_resource(MotorsPwm::new()).add_systems(
-        RunFixedMainLoop,
-        (apply_motors_pwm)
-            .chain()
-            .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
-    );
+    app.insert_resource(MotorDriversDutyCycles::default())
+        .add_systems(
+            RunFixedMainLoop,
+            (apply_motors_pwm)
+                .chain()
+                .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+        );
 }

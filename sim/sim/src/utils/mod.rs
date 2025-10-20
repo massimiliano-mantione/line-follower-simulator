@@ -1,5 +1,6 @@
 use bevy::math::{EulerRot, Vec2, Vec3};
 use bevy::transform::components::GlobalTransform;
+use execution_data::MotorDriversDutyCycles;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Side {
@@ -18,6 +19,19 @@ impl Side {
 
 pub trait SetBySide<T: Copy> {
     fn set_by_side(&mut self, side: Side, value: T);
+}
+
+pub trait GetBySide<T: Copy> {
+    fn get_by_side(&self, side: Side) -> T;
+}
+
+impl GetBySide<i16> for MotorDriversDutyCycles {
+    fn get_by_side(&self, side: Side) -> i16 {
+        match side {
+            Side::Left => self.left,
+            Side::Right => self.right,
+        }
+    }
 }
 
 /// Helper to rotate a Vec2 by angle in radians

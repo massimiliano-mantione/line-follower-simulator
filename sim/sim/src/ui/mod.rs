@@ -1,34 +1,35 @@
 use bevy::prelude::*;
 use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint};
+use execution_data::{MotorDriversDutyCycles, PWM_MAX};
 
-use crate::motors::MotorsPwm;
-
-fn handle_motors_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut pwm: ResMut<MotorsPwm>) {
+fn handle_motors_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut pwm: ResMut<MotorDriversDutyCycles>,
+) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
     let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
     let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
 
     let forward = if up {
-        1.0
+        1
     } else if down {
-        -1.0
+        -1
     } else {
-        0.0
+        0
     };
     let side = if left {
-        -1.0
+        -1
     } else if right {
-        1.0
+        1
     } else {
-        0.0
+        0
     };
 
-    const MAX_PWM: f32 = 1.0;
-    const USE_PWM: f32 = 1.0;
+    const USE_PWM: i16 = PWM_MAX / 2;
 
-    pwm.left_pwm = (forward * USE_PWM + side * USE_PWM).clamp(-MAX_PWM, MAX_PWM);
-    pwm.right_pwm = (forward * USE_PWM - side * USE_PWM).clamp(-MAX_PWM, MAX_PWM);
+    pwm.left = (forward * USE_PWM + side * USE_PWM).clamp(-PWM_MAX, PWM_MAX);
+    pwm.right = (forward * USE_PWM - side * USE_PWM).clamp(-PWM_MAX, PWM_MAX);
 }
 
 fn setup_ui(mut commands: Commands) {

@@ -12,8 +12,11 @@ pub struct ExecutionData {
     pub steps: Vec<ExecutionStep>,
 }
 
+pub const PWM_MAX: i16 = 1000;
+pub const PWM_MIN: i16 = -1000;
+
 /// Motor drivers duty cycles.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Resource, Default)]
 pub struct MotorDriversDutyCycles {
     pub left: i16,
     pub right: i16,
@@ -51,17 +54,12 @@ pub struct ImuFusedData {
 }
 
 /// Bot logical positions
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum BotPosition {
+    #[default]
     OnTrack,
     Out,
     End,
-}
-
-impl Default for BotPosition {
-    fn default() -> Self {
-        BotPosition::OnTrack
-    }
 }
 
 /// Wrapper for all sensors data.
