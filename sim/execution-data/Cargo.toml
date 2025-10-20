@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
-rapier3d = {workspace = true}
+bevy = { workspace = true }

@@ -13,5 +13,7 @@ exclude = [
 [workspace.dependencies]
 clap = { version = "3.1.15", features = ["derive"] }
 anyhow = "1.0.99"
-rapier3d = { version = "0.28.0", features = [ "simd-stable" ] }
 wasmtime = "36.0.2"
+bevy_rapier3d = { version = "*", features = [ "debug-render-3d" ] }
+bevy = { version = "0.16.1", features = ["dynamic_linking", "bevy_picking"] }
+bevy_editor_cam = "0.6.0"

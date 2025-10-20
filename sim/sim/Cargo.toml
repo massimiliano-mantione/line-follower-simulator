@@ -7,6 +7,6 @@ edition = "2024"
 clap = {workspace = true}
 execution-data = { path = "../execution-data" }
 executor = { path = "../executor" }
-bevy_rapier3d = { version = "*", features = [ "debug-render-3d" ] }
-bevy = { version = "0.16.1", features = ["dynamic_linking", "bevy_picking"] }
-bevy_editor_cam = "0.6.0"
+bevy_rapier3d = { workspace = true }
+bevy = { workspace = true }
+bevy_editor_cam = { workspace = true }
