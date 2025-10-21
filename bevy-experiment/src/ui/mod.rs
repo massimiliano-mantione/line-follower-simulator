@@ -3,7 +3,7 @@ use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint};
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::{
     EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
-    egui::{self, Color32},
+    egui::{self, Color32, Id, Modal, Stroke, Ui},
 };
 
 use crate::motors::MotorsPwm;
@@ -71,7 +71,7 @@ pub fn add_ui_setup(app: &mut App) {
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)));
 }
 
-fn gui_example(mut contexts: EguiContexts) -> Result {
+fn gui_example(mut contexts: EguiContexts, mut gui_state: ResMut<GuiState>) -> Result {
     let ctx = contexts.ctx_mut()?;
 
     ctx.style_mut(|style| style.visuals.panel_fill = Color32::from_rgba_unmultiplied(0, 0, 0, 0));
@@ -95,7 +95,21 @@ fn gui_example(mut contexts: EguiContexts) -> Result {
         .resizable(false)
         .show_separator_line(false)
         .show(ctx, |ui| {
-            ui.label("Right fixed panel");
+            ui.vertical(|ui| {
+                ui.label("Robots");
+                ui.separator();
+                if bot_name(ui, "Test BOT", Color32::RED, Color32::BLUE) {
+                    gui_state.as_mut().bot_with_pending_remove = Some(BotName {
+                        name: "Test BOT".to_string(),
+                        c1: Color32::RED,
+                        c2: Color32::BLUE,
+                    })
+                }
+            });
+
+            if ask_bot_remove(ui, gui_state.as_mut()) == Some(true) {
+                gui_state.as_mut().bot_with_pending_remove = None;
+            }
         });
 
     Ok(())
@@ -117,4 +131,90 @@ fn setup_gui(mut commands: Commands, mut egui_global_settings: ResMut<EguiGlobal
             ..default()
         },
     ));
+
+    commands.insert_resource(GuiState::default());
+}
+
+fn bot_name(ui: &mut Ui, name: &str, c1: Color32, c2: Color32) -> bool {
+    let val = (c1.r() + c1.g() + c1.b()) / 3;
+    let color = if val < 128 {
+        Color32::WHITE
+    } else {
+        Color32::BLACK
+    };
+    egui::Frame::default()
+        .fill(c1)
+        .stroke(Stroke {
+            color: c2,
+            width: 8.0,
+        })
+        .corner_radius(8)
+        .inner_margin(8)
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(name).color(color).strong())
+        })
+        .inner
+        .clicked()
+}
+
+struct BotName {
+    name: String,
+    c1: Color32,
+    c2: Color32,
+}
+
+#[derive(Resource, Default)]
+struct GuiState {
+    bot_with_pending_remove: Option<BotName>,
+}
+
+fn ask_bot_remove(ui: &mut Ui, gui_state: &mut GuiState) -> Option<bool> {
+    let mut response = Some(false);
+    if let Some(bot_with_pending_remove) = &gui_state.bot_with_pending_remove {
+        let modal = Modal::new(Id::new("Modal B")).show(ui.ctx(), |ui| {
+            ui.vertical_centered(|ui| {
+                ui.heading("Remove? Are you sure?");
+
+                ui.add_space(8.0);
+
+                bot_name(
+                    ui,
+                    &bot_with_pending_remove.name,
+                    bot_with_pending_remove.c1,
+                    bot_with_pending_remove.c2,
+                );
+
+                ui.add_space(8.0);
+
+                let mut yes = false;
+                let mut no = false;
+                egui::Sides::new().show(
+                    ui,
+                    |ui| {
+                        if ui.button("Yes Please").clicked() {
+                            yes = true;
+                            ui.close();
+                        }
+                    },
+                    |ui| {
+                        if ui.button("No Thanks").clicked() {
+                            no = true;
+                            ui.close();
+                        }
+                    },
+                );
+                if yes {
+                    response = Some(true);
+                }
+                if no {
+                    response = Some(false);
+                }
+            })
+        });
+
+        if modal.should_close() {
+            gui_state.bot_with_pending_remove = None;
+        }
+    }
+    response
 }
