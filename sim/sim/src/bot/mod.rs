@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use crate::app_builder::BotConfigWrapper;
 use crate::motors::{Motors, Wheel};
 use crate::sensors::bot_position::BotPositionDetector;
 use crate::sensors::line_sensors::LineSensor;
@@ -17,25 +18,27 @@ const BOT_BUMPER_WIDTH: f32 = BOT_BODY_WIDTH / 2.0;
 const BOT_BODY_WEIGHT: f32 = 0.1;
 const BOT_WHEEL_WEIGHT: f32 = 0.02;
 
-fn setup_bot(mut commands: Commands) {
+fn setup_bot(mut commands: Commands, config_wrapper: Res<BotConfigWrapper>) {
+    let config = &config_wrapper.config;
+
     // Axle width from wheel to wheel (in mm, 100 to 200)
-    let width_axle: f32 = 100.0 / 1000.0;
+    let width_axle: f32 = config.width_axle / 1000.0;
     // Length from wheel axles to front (in mm, 100 to 300)
-    let length_front: f32 = 100.0 / 1000.0;
+    let length_front: f32 = config.length_front / 1000.0;
     // Length from wheel axles to back (in mm, 10 to 50)
-    let length_back: f32 = 20.0 / 1000.0;
+    let length_back: f32 = config.length_back / 1000.0;
     // Clearing from robot to ground at the robot back (in mm, from 1 to wheels radius)
-    let clearing_back: f32 = 10.0 / 1000.0;
+    let clearing_back: f32 = config.clearing_back / 1000.0;
     // Diameter of robot wheels (in mm, from 20 to 40)
-    let wheel_diameter: f32 = 20.0 / 1000.0;
+    let wheel_diameter: f32 = config.wheel_diameter / 1000.0;
     // Transmission gear ratio numerator (from 1 to 100)
-    let gear_ratio_num: u32 = 1;
+    let gear_ratio_num: u32 = config.gear_ratio_num;
     // Transmission gear ratio denumerator (from 1 to 100)
-    let gear_ratio_den: u32 = 1;
+    let gear_ratio_den: u32 = config.gear_ratio_den;
     // Spacing of line sensors (in mm, from 1 to 15)
-    let front_sensors_spacing: f32 = 10.0 / 1000.0;
+    let front_sensors_spacing: f32 = config.front_sensors_spacing / 1000.0;
     // Height of line sensors from the ground (in mm, from 1 to wheels radius)
-    let front_sensors_height: f32 = 2.0 / 1000.0;
+    let front_sensors_height: f32 = config.front_sensors_height / 1000.0;
 
     let body_world = Vec3::new(
         0.0,
