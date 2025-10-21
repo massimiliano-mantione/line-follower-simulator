@@ -80,7 +80,7 @@ impl execution_data::SimulationStepper for MockStepper {
         // Do nothing
     }
 
-    fn get_data(&self) -> execution_data::ExecutionData {
+    fn get_data(&mut self) -> execution_data::ExecutionData {
         execution_data::ExecutionData { steps: Vec::new() }
     }
 

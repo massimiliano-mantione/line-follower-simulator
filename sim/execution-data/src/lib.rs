@@ -173,7 +173,7 @@ pub trait SimulationStepper {
     fn set_motor_drivers_duty_cycles(&mut self, duty_cycles: MotorDriversDutyCycles);
 
     /// Get the collected execution data.
-    fn get_data(&self) -> ExecutionData;
+    fn get_data(&mut self) -> ExecutionData;
 
     fn is_active(&self) -> bool;
 }

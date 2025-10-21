@@ -8,6 +8,7 @@ mod app_builder;
 mod bot;
 mod data;
 mod motors;
+mod runner;
 mod sensors;
 mod track;
 mod ui;
