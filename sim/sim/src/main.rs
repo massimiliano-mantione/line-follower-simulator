@@ -1,8 +1,6 @@
 use clap::{self, Parser, Subcommand};
-use executor::{
-    test_run,
-    wasm_bindings::exports::robot::{Color, Configuration},
-};
+use executor::test_run;
+use runner::simulator_runner;
 
 mod app_builder;
 mod bot;
@@ -13,8 +11,6 @@ mod sensors;
 mod track;
 mod ui;
 mod utils;
-
-use crate::app_builder::create_app;
 
 #[derive(Parser)]
 #[clap(name = "sim")]
@@ -69,35 +65,8 @@ fn main() -> executor::wasmtime::Result<()> {
                 input, output, logs
             );
 
-            let bot_config = Configuration {
-                name: "bot test".into(),
-                color_main: Color { r: 0, g: 255, b: 0 },
-                color_secondary: Color {
-                    r: 255,
-                    g: 0,
-                    b: 255,
-                },
-                width_axle: 100.0,
-                length_front: 100.0,
-                length_back: 20.0,
-                clearing_back: 10.0,
-                wheel_diameter: 20.0,
-                gear_ratio_num: 1,
-                gear_ratio_den: 1,
-                front_sensors_spacing: 10.0,
-                front_sensors_height: 2.0,
-            };
-            create_app(app_builder::AppType::Simulator(bot_config))
-                .set_runner(|mut app| {
-                    loop {
-                        println!("In main loop");
-                        app.update();
-                        if let Some(exit) = app.should_exit() {
-                            return exit;
-                        }
-                    }
-                })
-                .run();
+            let (data, _cfg) = simulator_runner(input, output, logs)?;
+            println!("data has {} frames", data.steps.len());
         }
         Command::Test {
             input,

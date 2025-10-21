@@ -1,8 +1,10 @@
-use bevy::app::App;
-use execution_data::{ExecutionData, MotorDriversDutyCycles, SensorsData};
-use executor::wasmtime;
+use bevy::app::{App, AppExit};
+use execution_data::{ExecutionData, MotorDriversDutyCycles, SensorsData, SimulationStepper};
+use executor::{wasm_bindings::exports::robot::Configuration, wasm_executor, wasmtime};
 
-struct AppWrapper {
+use crate::app_builder::{self, create_app};
+
+pub struct AppWrapper {
     app: App,
     sensors_data: SensorsData,
 }
@@ -131,8 +133,50 @@ impl execution_data::SimulationStepper for RunnerStepper {
     }
 }
 
-pub fn simulator_runner(input: String, output: String, logs: bool) -> wasmtime::Result<()> {
-    // let stepper = RunnerStepper::new(AppWrapper::new(app));
+pub fn simulator_runner(
+    input: String,
+    output: String,
+    logs: bool,
+) -> wasmtime::Result<(ExecutionData, Configuration)> {
+    // Load the component from disk
+    let wasm_bytes = std::fs::read(&input)?;
 
-    Ok(())
+    // Get configuration
+    let result_cfg = wasm_executor::get_robot_configuration(&wasm_bytes)?;
+    println!("Robot configuration: {:#?}", &result_cfg);
+
+    let (result_sender, result_receiver) = std::sync::mpsc::channel();
+
+    let runner_cfg = result_cfg.clone();
+    create_app(app_builder::AppType::Simulator(runner_cfg.clone()))
+        .set_runner(move |app| {
+            let app_wrapper = AppWrapper::new(app);
+            let mut stepper = RunnerStepper::new(app_wrapper);
+
+            // Run robot logic
+            match wasm_executor::run_robot_simulation(
+                &wasm_bytes,
+                runner_cfg,
+                executor::TOTAL_SIMULATION_TIME_US,
+                Some(output.into()),
+                logs,
+            ) {
+                Ok(_) => {
+                    result_sender.send(Ok(stepper.get_data())).ok();
+                    AppExit::Success
+                }
+                Err(err) => {
+                    result_sender
+                        .send(Err(wasmtime::Error::msg(err.to_string())))
+                        .ok();
+                    AppExit::error()
+                }
+            }
+        })
+        .run();
+
+    match result_receiver.recv() {
+        Ok(result) => result.map(move |data| (data, result_cfg)),
+        Err(_) => Err(wasmtime::Error::msg("Failed to receive result")),
+    }
 }

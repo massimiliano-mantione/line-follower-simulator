@@ -5,7 +5,7 @@ pub mod wasm_bindings;
 pub mod wasm_executor;
 pub mod wasm_host;
 
-const TOTAL_SIMULATION_TIME_US: TimeUs = 60_000_000;
+pub const TOTAL_SIMULATION_TIME_US: TimeUs = 60_000_000;
 
 pub fn test_run(input: String, output: String, logs: bool) -> wasmtime::Result<()> {
     // Load the component from disk

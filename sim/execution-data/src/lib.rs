@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use bevy::{ecs::resource::Resource, math::Vec3, transform::components::Transform};
 
 #[derive(Clone, Copy)]
@@ -29,6 +27,12 @@ impl ExecutionStep {
 #[derive(Clone, Resource, Default)]
 pub struct ExecutionData {
     pub steps: Vec<ExecutionStep>,
+}
+
+impl ExecutionData {
+    pub fn empty() -> Self {
+        Self { steps: Vec::new() }
+    }
 }
 
 pub const PWM_MAX: i16 = 1000;
