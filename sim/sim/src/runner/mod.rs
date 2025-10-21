@@ -154,24 +154,24 @@ pub fn simulator_runner(
             let stepper = RunnerStepper::new(app_wrapper);
 
             // Run robot logic
-            match wasm_executor::run_robot_simulation(
+            let sim_result = wasm_executor::run_robot_simulation(
                 &wasm_bytes,
                 stepper,
                 executor::TOTAL_SIMULATION_TIME_US,
                 Some(output.into()),
                 logs,
-            ) {
-                Ok(data) => {
-                    result_sender.send(Ok(data)).ok();
-                    AppExit::Success
-                }
-                Err(err) => {
-                    result_sender
-                        .send(Err(wasmtime::Error::msg(err.to_string())))
-                        .ok();
-                    AppExit::error()
-                }
-            }
+            );
+
+            // Prepare bevy app result
+            let app_result = if sim_result.is_ok() {
+                AppExit::Success
+            } else {
+                AppExit::error()
+            };
+
+            // Send result back
+            result_sender.send(sim_result).ok();
+            app_result
         })
         .run();
 
