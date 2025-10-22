@@ -1,3 +1,5 @@
+use std::{path::PathBuf, sync::Mutex};
+
 use bevy_editor_cam::prelude::{EditorCam, OrbitConstraint, motion::CurrentMotion};
 
 use bevy::{prelude::*, render::view::RenderLayers};
@@ -5,8 +7,14 @@ use bevy_egui::{
     EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
     egui::{self, Color32, Id, Modal, Response, Stroke, Ui},
 };
-use bevy_rapier3d::na::RealField;
-use egui_material_icons::icons;
+use egui_file_dialog::FileDialog;
+use egui_material_icons::icons::{
+    ICON_ADD, ICON_BUILD, ICON_CANCEL, ICON_CHECK, ICON_DELETE, ICON_EAST, ICON_EXIT_TO_APP,
+    ICON_FAST_FORWARD, ICON_FAST_REWIND, ICON_HELP, ICON_NORTH, ICON_NORTH_EAST, ICON_NORTH_WEST,
+    ICON_PAUSE, ICON_PLAY_ARROW, ICON_SKIP_NEXT, ICON_SKIP_PREVIOUS, ICON_SOUTH, ICON_SOUTH_EAST,
+    ICON_SOUTH_WEST, ICON_ZOOM_IN, ICON_ZOOM_OUT,
+};
+use egui_material_icons::icons::{ICON_CENTER_FOCUS_WEAK, ICON_WEST};
 
 use crate::motors::MotorsPwm;
 
@@ -116,19 +124,19 @@ impl CameraFront {
 fn camera_icon(side: CameraSide, front: CameraFront) -> &'static str {
     match side {
         CameraSide::Left => match front {
-            CameraFront::Front => icons::ICON_NORTH_WEST,
-            CameraFront::Center => icons::ICON_WEST,
-            CameraFront::Back => icons::ICON_SOUTH_WEST,
+            CameraFront::Front => ICON_NORTH_WEST,
+            CameraFront::Center => ICON_WEST,
+            CameraFront::Back => ICON_SOUTH_WEST,
         },
         CameraSide::Center => match front {
-            CameraFront::Front => icons::ICON_NORTH,
-            CameraFront::Center => icons::ICON_CENTER_FOCUS_WEAK,
-            CameraFront::Back => icons::ICON_SOUTH,
+            CameraFront::Front => ICON_NORTH,
+            CameraFront::Center => ICON_CENTER_FOCUS_WEAK,
+            CameraFront::Back => ICON_SOUTH,
         },
         CameraSide::Right => match front {
-            CameraFront::Front => icons::ICON_NORTH_EAST,
-            CameraFront::Center => icons::ICON_EAST,
-            CameraFront::Back => icons::ICON_SOUTH_EAST,
+            CameraFront::Front => ICON_NORTH_EAST,
+            CameraFront::Center => ICON_EAST,
+            CameraFront::Back => ICON_SOUTH_EAST,
         },
     }
 }
@@ -162,12 +170,6 @@ fn gui_example(
 
     let (_, mut e_cam, mut ec_transform) = camera.single_mut()?;
 
-    // let ff = icons::ICON_FAST_FORWARD;
-    // let fr = icons::ICON_FAST_REWIND;
-    // let hh = icons::ICON_HELP;
-    // let ll = icons::ICON_UPLOAD;
-    // let lf = icons::ICON_UPLOAD_FILE;
-
     egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(false)
         .default_height(gui_state.base_text_size * 1.8)
@@ -175,7 +177,7 @@ fn gui_example(
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let size = gui_state.base_text_size * 4.0;
-                if icon_button(ui, icons::ICON_BUILD, size).clicked() {
+                if icon_button(ui, ICON_BUILD, size).clicked() {
                     gui_state.show_test_ui = !gui_state.show_test_ui;
                 }
                 ui.separator();
@@ -187,28 +189,28 @@ fn gui_example(
                     }
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if icon_button(ui, icons::ICON_ZOOM_IN, size).clicked() {
+                        if icon_button(ui, ICON_ZOOM_IN, size).clicked() {
                             gui_state.base_text_size -= 1.0;
                             gui_state.base_text_size = gui_state.base_text_size.max(3.0);
                         }
-                        if icon_button(ui, icons::ICON_ZOOM_OUT, size).clicked() {
+                        if icon_button(ui, ICON_ZOOM_OUT, size).clicked() {
                             gui_state.base_text_size += 1.0;
                         }
                     });
                 } else {
-                    if icon_button(ui, icons::ICON_SKIP_PREVIOUS, size).clicked() {
+                    if icon_button(ui, ICON_SKIP_PREVIOUS, size).clicked() {
                         gui_state.play_time_sec = 0.0;
                     }
                     if gui_state.play_active {
-                        if icon_button(ui, icons::ICON_PAUSE, size).clicked() {
+                        if icon_button(ui, ICON_PAUSE, size).clicked() {
                             gui_state.play_active = false;
                         }
                     } else {
-                        if icon_button(ui, icons::ICON_PLAY_ARROW, size).clicked() {
+                        if icon_button(ui, ICON_PLAY_ARROW, size).clicked() {
                             gui_state.play_active = true;
                         }
                     }
-                    if icon_button(ui, icons::ICON_SKIP_NEXT, size).clicked() {
+                    if icon_button(ui, ICON_SKIP_NEXT, size).clicked() {
                         gui_state.play_time_sec = gui_state.play_max_sec;
                     }
 
@@ -217,24 +219,31 @@ fn gui_example(
                     ui.add_space(size / 2.0);
 
                     let max_time = gui_state.play_max_sec;
-                    ui.add(egui::Slider::new(
-                        &mut gui_state.play_time_sec,
-                        0.0..=max_time,
-                    ));
+                    ui.add(
+                        egui::Slider::new(&mut gui_state.play_time_sec, 0.0..=max_time)
+                            .show_value(false),
+                    );
 
-                    if icon_button(ui, icons::ICON_ZOOM_IN, size).clicked() {
+                    if icon_button(ui, ICON_ZOOM_IN, size).clicked() {
                         gui_state.base_text_size -= 1.0;
                         gui_state.base_text_size = gui_state.base_text_size.max(3.0);
                     }
-                    if icon_button(ui, icons::ICON_ZOOM_OUT, size).clicked() {
+                    if icon_button(ui, ICON_ZOOM_OUT, size).clicked() {
                         gui_state.base_text_size += 1.0;
                     }
-                    if icon_button(ui, icons::ICON_ADD, size).clicked() {
-                        println!("ADD BOT");
+                    if icon_button(ui, ICON_ADD, size).clicked() {
+                        gui_state.file_dialog.pick_file();
                     }
+                    gui_state.file_dialog.update(ctx);
+                    if let Some(path) = gui_state.file_dialog.take_picked() {
+                        let sender = gui_state.get_bot_sender();
+                        std::thread::spawn(move || {
+                            process_new_bot(path, sender);
+                        });
+                    }
+                    gui_state.handle_new_bots();
                 }
             });
-            //ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         });
 
     let cb_size = gui_state.base_text_size * 3.0;
@@ -392,6 +401,9 @@ struct BotName {
 #[derive(Resource)]
 struct GuiState {
     show_test_ui: bool,
+    file_dialog: FileDialog,
+    new_bot_sender: Mutex<std::sync::mpsc::Sender<std::io::Result<Vec<u8>>>>,
+    new_bot_receiver: Mutex<std::sync::mpsc::Receiver<std::io::Result<Vec<u8>>>>,
     base_text_size: f32,
     play_time_sec: f32,
     play_active: bool,
@@ -401,8 +413,12 @@ struct GuiState {
 
 impl Default for GuiState {
     fn default() -> Self {
+        let (sender, receiver) = std::sync::mpsc::channel();
         Self {
             show_test_ui: true,
+            file_dialog: FileDialog::new(),
+            new_bot_sender: Mutex::new(sender),
+            new_bot_receiver: Mutex::new(receiver),
             base_text_size: 8.0,
             play_time_sec: 0.0,
             play_active: false,
@@ -410,6 +426,25 @@ impl Default for GuiState {
             bot_with_pending_remove: None,
         }
     }
+}
+
+impl GuiState {
+    pub fn get_bot_sender(&self) -> std::sync::mpsc::Sender<std::io::Result<Vec<u8>>> {
+        self.new_bot_sender.lock().unwrap().clone()
+    }
+
+    pub fn handle_new_bots(&self) {
+        while let Ok(bot) = self.new_bot_receiver.lock().unwrap().try_recv() {
+            match bot {
+                Ok(bot) => println!("new bot code: len {}", bot.len()),
+                Err(err) => error!("Error receiving new bot: {}", err),
+            }
+        }
+    }
+}
+
+fn process_new_bot(path: PathBuf, sender: std::sync::mpsc::Sender<std::io::Result<Vec<u8>>>) {
+    sender.send(std::fs::read(path)).unwrap();
 }
 
 fn ask_bot_remove(ui: &mut Ui, gui_state: &mut GuiState) -> Option<bool> {
@@ -436,17 +471,13 @@ fn ask_bot_remove(ui: &mut Ui, gui_state: &mut GuiState) -> Option<bool> {
                 egui::Sides::new().show(
                     ui,
                     |ui| {
-                        if icon_button(ui, icons::ICON_DELETE, gui_state.base_text_size * 4.0)
-                            .clicked()
-                        {
+                        if icon_button(ui, ICON_DELETE, gui_state.base_text_size * 4.0).clicked() {
                             yes = true;
                             ui.close();
                         }
                     },
                     |ui| {
-                        if icon_button(ui, icons::ICON_CANCEL, gui_state.base_text_size * 4.0)
-                            .clicked()
-                        {
+                        if icon_button(ui, ICON_CANCEL, gui_state.base_text_size * 4.0).clicked() {
                             no = true;
                             ui.close();
                         }
