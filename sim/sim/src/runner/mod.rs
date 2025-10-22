@@ -105,14 +105,6 @@ impl execution_data::SimulationStepper for RunnerStepper {
         self.app_wrapper.sensors_data().motor_angles
     }
 
-    fn get_accel(&self) -> execution_data::AccelData {
-        execution_data::AccelData {
-            front: 0.0,
-            side: 0.0,
-            vertical: -9.81,
-        }
-    }
-
     fn get_gyro(&self) -> execution_data::GyroData {
         self.app_wrapper.sensors_data().gyro
     }

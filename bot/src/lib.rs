@@ -43,7 +43,7 @@ pub async fn simple_async_run() {
 
         let (gyro, accel) = futures_lite::future::zip(
             device_operation_async(DeviceOperation::ReadGyro).into_future(),
-            device_operation_async(DeviceOperation::ReadAccel).into_future(),
+            device_operation_async(DeviceOperation::ReadImuFusedData).into_future(),
         )
         .await;
         write_line(&format!(

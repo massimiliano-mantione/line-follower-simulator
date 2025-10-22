@@ -36,25 +36,24 @@ world line-follower-robot {
         /// The set of all possible device operations
         variant device-operation {
             /// Read left bank of line sensors (8 u8 values),
-            /// ready every 100us
+            /// ready every period
             read-line-left,
             /// Read right bank of line sensors (8 u8 values),
-            /// ready every 100us
+            /// ready every period
             read-line-right,
             /// Read angle position of motors (2 u16 values),
-            /// ready every 100us
+            /// ready every period
             read-motor-angles,
-            /// Read accelerometer (3 i16 values: front, side and vertical acceleration),
-            /// ready every 100us
-            read-accel,
             /// Read gyroscope (3 i16 values: roll, pitch and yaw angular velocity),
-            /// ready every 100us
+            /// ready every 2 periods
             read-gyro,
             /// Read IMU fused data (3 i16 values: : roll, pitch and yaw angles),
-            /// ready every 10_000us
+            /// ready every 10 period
             read-imu-fused-data,
             /// Get time elapsed since initialization in microseconds (1 u32 value), always available
             get-time,
+            /// Get the simulation period microseconds (1 u32 value) and the number of periods computed so far (another u32 value), always available
+            get-period,
             /// Sleep for the provided duration (in microseconds, no output)
             sleep-for(time-us),
             /// Sleep until the provided time instant (in microseconds, no output)

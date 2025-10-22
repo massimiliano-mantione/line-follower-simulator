@@ -6,8 +6,7 @@ use std::{
 };
 
 use execution_data::{
-    AccelData, ExecutionData, GyroData, ImuFusedData, MotorAngles, MotorDriversDutyCycles,
-    SimulationStepper,
+    ExecutionData, GyroData, ImuFusedData, MotorAngles, MotorDriversDutyCycles, SimulationStepper,
 };
 
 use crate::wasm_bindings::{
@@ -285,10 +284,10 @@ pub enum FutureOperation {
     ReadLineLeft,
     ReadLineRight,
     ReadMotorAngles,
-    ReadAccel,
     ReadGyro,
     ReadImuFusedData,
     GetTime,
+    GetPeriod,
     Sleep,
     GetEnabled,
     WaitEnabled,
@@ -301,10 +300,10 @@ impl From<DeviceOperation> for FutureOperation {
             DeviceOperation::ReadLineLeft => FutureOperation::ReadLineLeft,
             DeviceOperation::ReadLineRight => FutureOperation::ReadLineRight,
             DeviceOperation::ReadMotorAngles => FutureOperation::ReadMotorAngles,
-            DeviceOperation::ReadAccel => FutureOperation::ReadAccel,
             DeviceOperation::ReadGyro => FutureOperation::ReadGyro,
             DeviceOperation::ReadImuFusedData => FutureOperation::ReadImuFusedData,
             DeviceOperation::GetTime => FutureOperation::GetTime,
+            DeviceOperation::GetPeriod => FutureOperation::GetPeriod,
             DeviceOperation::SleepFor(_) => FutureOperation::Sleep,
             DeviceOperation::SleepUntil(_) => FutureOperation::Sleep,
             DeviceOperation::GetEnabled => FutureOperation::GetEnabled,
@@ -320,10 +319,10 @@ impl FutureOperation {
             FutureOperation::ReadLineLeft => "ReadLineLeft",
             FutureOperation::ReadLineRight => "ReadLineRight",
             FutureOperation::ReadMotorAngles => "ReadMotorAngles",
-            FutureOperation::ReadAccel => "ReadAccel",
             FutureOperation::ReadGyro => "ReadGyro",
             FutureOperation::ReadImuFusedData => "ReadImuFusedData",
             FutureOperation::GetTime => "GetTime",
+            FutureOperation::GetPeriod => "GetPeriod",
             FutureOperation::Sleep => "Sleep",
             FutureOperation::GetEnabled => "GetEnabled",
             FutureOperation::WaitEnabled => "WaitEnabled",
@@ -347,12 +346,14 @@ impl FutureOperation {
             FutureOperation::ReadMotorAngles => {
                 DeviceValueRaw::from_motor_angles(stepper.get_motor_angles())
             }
-            FutureOperation::ReadAccel => DeviceValueRaw::from_accel_data(stepper.get_accel()),
             FutureOperation::ReadGyro => DeviceValueRaw::from_gyro_data(stepped_data.gyro_data),
             FutureOperation::ReadImuFusedData => {
                 DeviceValueRaw::from_imu_fused_data(stepped_data.imu_fused_data)
             }
             FutureOperation::GetTime => DeviceValueRaw::zero().with_u32(0, current_time),
+            FutureOperation::GetPeriod => DeviceValueRaw::zero()
+                .with_u32(0, stepper.step_us())
+                .with_u32(1, stepper.get_step_count() as u32),
             FutureOperation::Sleep => DeviceValueRaw::zero(),
             FutureOperation::GetEnabled => {
                 DeviceValueRaw::zero().with_u8(0, if stepper.is_active() { 1 } else { 0 })
@@ -481,13 +482,6 @@ impl DeviceValueRaw {
         Self::zero()
             .with_u16(0, (angles.left * (u16::MAX as f32) / (PI * 2.0)) as u16)
             .with_u16(1, (angles.right * (u16::MAX as f32) / (PI * 2.0)) as u16)
-    }
-
-    pub fn from_accel_data(accel_data: AccelData) -> Self {
-        Self::zero()
-            .with_i16(0, (accel_data.front * 100.0) as i16)
-            .with_i16(1, (accel_data.side * 100.0) as i16)
-            .with_i16(2, (accel_data.vertical * 100.0) as i16)
     }
 
     pub fn from_gyro_data(gyro_data: GyroData) -> Self {
@@ -628,7 +622,6 @@ impl DeviceOperationExt for DeviceOperation {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadAccel
             | DeviceOperation::ReadGyro
             | DeviceOperation::ReadImuFusedData => {
                 let step_time = stepper.step_us();
@@ -646,7 +639,7 @@ impl DeviceOperationExt for DeviceOperation {
             DeviceOperation::SleepUntil(deadline) => {
                 FutureReadyCondition::ReadyAt(deadline.max(current_time))
             }
-            DeviceOperation::GetTime | DeviceOperation::GetEnabled => {
+            DeviceOperation::GetTime | DeviceOperation::GetPeriod | DeviceOperation::GetEnabled => {
                 FutureReadyCondition::ReadyAt(current_time)
             }
             DeviceOperation::WaitEnabled => FutureReadyCondition::IsActive,
@@ -659,8 +652,8 @@ impl DeviceOperationExt for DeviceOperation {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadAccel
             | DeviceOperation::GetTime
+            | DeviceOperation::GetPeriod
             | DeviceOperation::GetEnabled
             | DeviceOperation::WaitEnabled
             | DeviceOperation::WaitDisabled
@@ -676,10 +669,10 @@ impl DeviceOperationExt for DeviceOperation {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadAccel
             | DeviceOperation::ReadGyro
             | DeviceOperation::ReadImuFusedData
             | DeviceOperation::GetTime
+            | DeviceOperation::GetPeriod
             | DeviceOperation::GetEnabled
             | DeviceOperation::WaitEnabled
             | DeviceOperation::WaitDisabled => 0,
@@ -747,7 +740,7 @@ impl WakeupPoint {
 }
 
 #[derive(Clone, Copy, Default)]
-struct SteppedData {
+pub struct SteppedData {
     pub gyro_data: GyroData,
     pub imu_fused_data: ImuFusedData,
 }
@@ -783,10 +776,10 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadAccel
             | DeviceOperation::ReadGyro
             | DeviceOperation::ReadImuFusedData
             | DeviceOperation::GetTime
+            | DeviceOperation::GetPeriod
             | DeviceOperation::GetEnabled => {
                 let start_time = self.setup_current_time(current_fuel)?;
                 let op: FutureOperation = operation.into();

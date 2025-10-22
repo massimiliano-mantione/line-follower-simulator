@@ -54,25 +54,24 @@ pub mod devices {
   #[derive(Clone, Copy)]
   pub enum DeviceOperation {
     /// Read left bank of line sensors (8 u8 values),
-    /// ready every 100us
+    /// ready every period
     ReadLineLeft,
     /// Read right bank of line sensors (8 u8 values),
-    /// ready every 100us
+    /// ready every period
     ReadLineRight,
     /// Read angle position of motors (2 u16 values),
-    /// ready every 100us
+    /// ready every period
     ReadMotorAngles,
-    /// Read accelerometer (3 i16 values: front, side and vertical acceleration),
-    /// ready every 100us
-    ReadAccel,
     /// Read gyroscope (3 i16 values: roll, pitch and yaw angular velocity),
-    /// ready every 100us
+    /// ready every 2 periods
     ReadGyro,
     /// Read IMU fused data (3 i16 values: : roll, pitch and yaw angles),
-    /// ready every 10_000us
+    /// ready every 10 period
     ReadImuFusedData,
     /// Get time elapsed since initialization in microseconds (1 u32 value), always available
     GetTime,
+    /// Get the simulation period microseconds (1 u32 value) and the number of periods computed so far (another u32 value), always available
+    GetPeriod,
     /// Sleep for the provided duration (in microseconds, no output)
     SleepFor(TimeUs),
     /// Sleep until the provided time instant (in microseconds, no output)
@@ -96,9 +95,6 @@ pub mod devices {
         DeviceOperation::ReadMotorAngles => {
           f.debug_tuple("DeviceOperation::ReadMotorAngles").finish()
         }
-        DeviceOperation::ReadAccel => {
-          f.debug_tuple("DeviceOperation::ReadAccel").finish()
-        }
         DeviceOperation::ReadGyro => {
           f.debug_tuple("DeviceOperation::ReadGyro").finish()
         }
@@ -107,6 +103,9 @@ pub mod devices {
         }
         DeviceOperation::GetTime => {
           f.debug_tuple("DeviceOperation::GetTime").finish()
+        }
+        DeviceOperation::GetPeriod => {
+          f.debug_tuple("DeviceOperation::GetPeriod").finish()
         }
         DeviceOperation::SleepFor(e) => {
           f.debug_tuple("DeviceOperation::SleepFor").field(e).finish()
@@ -167,16 +166,16 @@ pub mod devices {
         DeviceOperation::ReadMotorAngles=> {
           (2i32, 0i32)
         }
-        DeviceOperation::ReadAccel=> {
+        DeviceOperation::ReadGyro=> {
           (3i32, 0i32)
         }
-        DeviceOperation::ReadGyro=> {
+        DeviceOperation::ReadImuFusedData=> {
           (4i32, 0i32)
         }
-        DeviceOperation::ReadImuFusedData=> {
+        DeviceOperation::GetTime=> {
           (5i32, 0i32)
         }
-        DeviceOperation::GetTime=> {
+        DeviceOperation::GetPeriod=> {
           (6i32, 0i32)
         }
         DeviceOperation::SleepFor(e) => (7i32, _rt::as_i32(e)),
@@ -242,16 +241,16 @@ pub mod devices {
         DeviceOperation::ReadMotorAngles=> {
           (2i32, 0i32)
         }
-        DeviceOperation::ReadAccel=> {
+        DeviceOperation::ReadGyro=> {
           (3i32, 0i32)
         }
-        DeviceOperation::ReadGyro=> {
+        DeviceOperation::ReadImuFusedData=> {
           (4i32, 0i32)
         }
-        DeviceOperation::ReadImuFusedData=> {
+        DeviceOperation::GetTime=> {
           (5i32, 0i32)
         }
-        DeviceOperation::GetTime=> {
+        DeviceOperation::GetPeriod=> {
           (6i32, 0i32)
         }
         DeviceOperation::SleepFor(e) => (7i32, _rt::as_i32(e)),
@@ -317,16 +316,16 @@ pub mod devices {
         DeviceOperation::ReadMotorAngles=> {
           (2i32, 0i32)
         }
-        DeviceOperation::ReadAccel=> {
+        DeviceOperation::ReadGyro=> {
           (3i32, 0i32)
         }
-        DeviceOperation::ReadGyro=> {
+        DeviceOperation::ReadImuFusedData=> {
           (4i32, 0i32)
         }
-        DeviceOperation::ReadImuFusedData=> {
+        DeviceOperation::GetTime=> {
           (5i32, 0i32)
         }
-        DeviceOperation::GetTime=> {
+        DeviceOperation::GetPeriod=> {
           (6i32, 0i32)
         }
         DeviceOperation::SleepFor(e) => (7i32, _rt::as_i32(e)),
@@ -998,31 +997,31 @@ pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1359] = *b"\
 A\x06\x01B\x19\x01y\x04\0\x07time-us\x03\0\0\x01r\x02\x02idy\x08ready-at\x01\x04\
 \0\x0dfuture-handle\x03\0\x02\x01r\x08\x02v0}\x02v1}\x02v2}\x02v3}\x02v4}\x02v5}\
 \x02v6}\x02v7}\x04\0\x0cdevice-value\x03\0\x04\x01q\x0c\x0eread-line-left\0\0\x0f\
-read-line-right\0\0\x11read-motor-angles\0\0\x0aread-accel\0\0\x09read-gyro\0\0\x13\
-read-imu-fused-data\0\0\x08get-time\0\0\x09sleep-for\x01\x01\0\x0bsleep-until\x01\
-\x01\0\x0bget-enabled\0\0\x0cwait-enabled\0\0\x0dwait-disabled\0\0\x04\0\x10devi\
-ce-operation\x03\0\x06\x01q\x02\x07pending\0\0\x05ready\x01\x05\0\x04\0\x15poll-\
-operation-status\x03\0\x08\x01|\x04\0\x0bmotor-power\x03\0\x0a\x01@\x01\x09opera\
-tion\x07\0\x05\x04\0\x1adevice-operation-immediate\x01\x0c\x04\0\x19device-opera\
-tion-blocking\x01\x0c\x01@\x01\x09operation\x07\0\x03\x04\0\x16device-operation-\
-async\x01\x0d\x01@\x01\x06handle\x03\0\x09\x04\0\x0bdevice-poll\x01\x0e\x01@\x01\
-\x05start\x7f\x01\0\x04\0\x09poll-loop\x01\x0f\x01@\x01\x06handle\x03\x01\0\x04\0\
-\x0dforget-handle\x01\x10\x01@\x02\x04left\x0b\x05right\x0b\x01\0\x04\0\x10set-m\
-otors-power\x01\x11\x03\0\x07devices\x05\0\x01B\x0e\x01r\x02\x04names\x05valuez\x04\
-\0\x0bnamed-value\x03\0\0\x01p\x01\x01q\x09\x04int8\0\0\x05int16\0\0\x05int32\0\0\
-\x05uint8\0\0\x06uint16\0\0\x06uint32\0\0\x05named\x01\x02\0\x04pad8\0\0\x05pad1\
-6\0\0\x04\0\x0avalue-kind\x03\0\x03\x01r\x02\x04names\x04kind\x04\x04\0\x0acsv-c\
-olumn\x03\0\x05\x01@\x01\x04texts\x01\0\x04\0\x0awrite-line\x01\x07\x01p}\x01p\x06\
-\x01k\x09\x01@\x03\x04names\x04data\x08\x03csv\x0a\x01\0\x04\0\x0awrite-file\x01\
-\x0b\x03\0\x0bdiagnostics\x05\x01\x01B\x08\x01r\x03\x01r}\x01g}\x01b}\x04\0\x05c\
-olor\x03\0\0\x01r\x0c\x04names\x0acolor-main\x01\x0fcolor-secondary\x01\x0awidth\
--axlev\x0clength-frontv\x0blength-backv\x0dclearing-backv\x0ewheel-diameterv\x0e\
-gear-ratio-numy\x0egear-ratio-deny\x15front-sensors-spacingv\x14front-sensors-he\
-ightv\x04\0\x0dconfiguration\x03\0\x02\x01@\0\0\x03\x04\0\x05setup\x01\x04\x01@\0\
-\x01\0\x04\0\x03run\x01\x05\x04\0\x05robot\x05\x02\x04\01component:line-follower\
--robot/line-follower-robot\x04\0\x0b\x19\x01\0\x13line-follower-robot\x03\0\0\0G\
-\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.238.0\x10wit-bindgen\
--rust\x060.45.0";
+read-line-right\0\0\x11read-motor-angles\0\0\x09read-gyro\0\0\x13read-imu-fused-\
+data\0\0\x08get-time\0\0\x0aget-period\0\0\x09sleep-for\x01\x01\0\x0bsleep-until\
+\x01\x01\0\x0bget-enabled\0\0\x0cwait-enabled\0\0\x0dwait-disabled\0\0\x04\0\x10\
+device-operation\x03\0\x06\x01q\x02\x07pending\0\0\x05ready\x01\x05\0\x04\0\x15p\
+oll-operation-status\x03\0\x08\x01|\x04\0\x0bmotor-power\x03\0\x0a\x01@\x01\x09o\
+peration\x07\0\x05\x04\0\x1adevice-operation-immediate\x01\x0c\x04\0\x19device-o\
+peration-blocking\x01\x0c\x01@\x01\x09operation\x07\0\x03\x04\0\x16device-operat\
+ion-async\x01\x0d\x01@\x01\x06handle\x03\0\x09\x04\0\x0bdevice-poll\x01\x0e\x01@\
+\x01\x05start\x7f\x01\0\x04\0\x09poll-loop\x01\x0f\x01@\x01\x06handle\x03\x01\0\x04\
+\0\x0dforget-handle\x01\x10\x01@\x02\x04left\x0b\x05right\x0b\x01\0\x04\0\x10set\
+-motors-power\x01\x11\x03\0\x07devices\x05\0\x01B\x0e\x01r\x02\x04names\x05value\
+z\x04\0\x0bnamed-value\x03\0\0\x01p\x01\x01q\x09\x04int8\0\0\x05int16\0\0\x05int\
+32\0\0\x05uint8\0\0\x06uint16\0\0\x06uint32\0\0\x05named\x01\x02\0\x04pad8\0\0\x05\
+pad16\0\0\x04\0\x0avalue-kind\x03\0\x03\x01r\x02\x04names\x04kind\x04\x04\0\x0ac\
+sv-column\x03\0\x05\x01@\x01\x04texts\x01\0\x04\0\x0awrite-line\x01\x07\x01p}\x01\
+p\x06\x01k\x09\x01@\x03\x04names\x04data\x08\x03csv\x0a\x01\0\x04\0\x0awrite-fil\
+e\x01\x0b\x03\0\x0bdiagnostics\x05\x01\x01B\x08\x01r\x03\x01r}\x01g}\x01b}\x04\0\
+\x05color\x03\0\0\x01r\x0c\x04names\x0acolor-main\x01\x0fcolor-secondary\x01\x0a\
+width-axlev\x0clength-frontv\x0blength-backv\x0dclearing-backv\x0ewheel-diameter\
+v\x0egear-ratio-numy\x0egear-ratio-deny\x15front-sensors-spacingv\x14front-senso\
+rs-heightv\x04\0\x0dconfiguration\x03\0\x02\x01@\0\0\x03\x04\0\x05setup\x01\x04\x01\
+@\0\x01\0\x04\0\x03run\x01\x05\x04\0\x05robot\x05\x02\x04\01component:line-follo\
+wer-robot/line-follower-robot\x04\0\x0b\x19\x01\0\x13line-follower-robot\x03\0\0\
+\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.238.0\x10wit-bind\
+gen-rust\x060.45.0";
 
 #[inline(never)]
 #[doc(hidden)]

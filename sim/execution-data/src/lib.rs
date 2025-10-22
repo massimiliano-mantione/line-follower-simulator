@@ -52,14 +52,6 @@ pub struct MotorAngles {
     pub right: f32,
 }
 
-/// Accelerometer data in m/s².
-#[derive(Clone, Copy, Default)]
-pub struct AccelData {
-    pub front: f32,
-    pub side: f32,
-    pub vertical: f32,
-}
-
 /// Gyroscope data in rad/s.
 #[derive(Clone, Copy, Default)]
 pub struct GyroData {
@@ -109,7 +101,6 @@ pub enum BotPosition {
 #[derive(Clone, Copy, Resource, Default)]
 pub struct SensorsData {
     pub motor_angles: MotorAngles,
-    pub accel: AccelData,
     pub gyro: GyroData,
     pub imu_fused: ImuFusedData,
     pub line_sensors: [f32; 16],
@@ -161,8 +152,6 @@ pub trait SimulationStepper {
     fn get_line_sensors_right(&self) -> [f32; 8];
     /// Get the current motor angles.
     fn get_motor_angles(&self) -> MotorAngles;
-    /// Get the current accelerometer data.
-    fn get_accel(&self) -> AccelData;
     /// Get the current gyroscope data.
     fn get_gyro(&self) -> GyroData;
     /// Get the current IMU fused data.

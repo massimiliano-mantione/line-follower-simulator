@@ -53,14 +53,6 @@ impl execution_data::SimulationStepper for MockStepper {
         }
     }
 
-    fn get_accel(&self) -> execution_data::AccelData {
-        execution_data::AccelData {
-            front: 0.0,
-            side: 0.0,
-            vertical: -9.81,
-        }
-    }
-
     fn get_gyro(&self) -> execution_data::GyroData {
         execution_data::GyroData {
             roll_angular_speed: 0.0,

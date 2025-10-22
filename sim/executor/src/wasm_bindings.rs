@@ -242,7 +242,7 @@ pub mod devices {
     /// Valid configurations are:
     /// - up to 8 independent u8 values, used by line sensors and enabled signal
     /// - up to 4 s16 or u16 values (adjacent bytes combined in little endian order),
-    ///   used by motor angles, accel, gyro and IMU data
+    ///   used by motor angles, gyro and IMU data
     /// - up to 2 s32 or u32 values (adjacent bytes combined in little endian order),
     ///   used by time values
     /// - values can be unused (unused bytes are set to zero)
@@ -308,32 +308,31 @@ pub mod devices {
     #[component(variant)]
     pub enum DeviceOperation {
         /// Read left bank of line sensors (8 u8 values),
-        /// ready every 100us
+        /// ready every period
         #[component(name = "read-line-left")]
         ReadLineLeft,
         /// Read right bank of line sensors (8 u8 values),
-        /// ready every 100us
+        /// ready every period
         #[component(name = "read-line-right")]
         ReadLineRight,
         /// Read angle position of motors (2 u16 values),
-        /// ready every 100us
+        /// ready every period
         #[component(name = "read-motor-angles")]
         ReadMotorAngles,
-        /// Read accelerometer (3 i16 values: front, side and vertical acceleration),
-        /// ready every 100us
-        #[component(name = "read-accel")]
-        ReadAccel,
         /// Read gyroscope (3 i16 values: roll, pitch and yaw angular velocity),
-        /// ready every 100us
+        /// ready every 2 periods
         #[component(name = "read-gyro")]
         ReadGyro,
         /// Read IMU fused data (3 i16 values: : roll, pitch and yaw angles),
-        /// ready every 10_000us
+        /// ready every 10 periods
         #[component(name = "read-imu-fused-data")]
         ReadImuFusedData,
         /// Get time elapsed since initialization in microseconds (1 u32 value), always available
         #[component(name = "get-time")]
         GetTime,
+        /// Get the simulation period microseconds (1 u32 value) and the number of periods computed so far (another u32 value), always available
+        #[component(name = "get-period")]
+        GetPeriod,
         /// Sleep for the provided duration (in microseconds, no output)
         #[component(name = "sleep-for")]
         SleepFor(TimeUs),
@@ -366,10 +365,10 @@ pub mod devices {
             ReadLineLeft: [wasmtime::ValRaw; 0],
             ReadLineRight: [wasmtime::ValRaw; 0],
             ReadMotorAngles: [wasmtime::ValRaw; 0],
-            ReadAccel: [wasmtime::ValRaw; 0],
             ReadGyro: [wasmtime::ValRaw; 0],
             ReadImuFusedData: [wasmtime::ValRaw; 0],
             GetTime: [wasmtime::ValRaw; 0],
+            GetPeriod: [wasmtime::ValRaw; 0],
             SleepFor: T7,
             SleepUntil: T8,
             GetEnabled: [wasmtime::ValRaw; 0],
