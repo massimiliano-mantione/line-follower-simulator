@@ -18,3 +18,6 @@ bevy_rapier3d = { version = "*", features = [ "debug-render-3d" ] }
 bevy = { version = "0.16.1", features = ["dynamic_linking", "bevy_picking"] }
 # bevy = { version = "0.16.1", features = ["bevy_picking"] }
 bevy_editor_cam = "0.6.0"
+bevy_egui = "0.36.0"
+egui-file-dialog = "=0.11.0"
+egui_material_icons = "=0.4.0"

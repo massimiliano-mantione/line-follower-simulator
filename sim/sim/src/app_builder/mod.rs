@@ -6,7 +6,7 @@ use executor::wasm_bindings::exports::robot::Configuration;
 
 use crate::bot::BotPlugin;
 use crate::track::TrackPlugin;
-use crate::ui::{CameraSetupPlugin, KeyboardInputTestPlugin};
+use crate::ui::GuiSetup;
 use crate::utils::EntityFeatures;
 
 #[derive(Resource)]
@@ -71,8 +71,7 @@ pub struct WindowSetupPlugin;
 impl Plugin for WindowSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
-            .insert_resource(Time::from_hz(120.0))
-            .add_plugins(CameraSetupPlugin);
+            .insert_resource(Time::from_hz(120.0));
     }
 }
 
@@ -116,9 +115,7 @@ pub fn create_app(app_type: AppType, step_period_us: u32) -> App {
         TrackPlugin::new(app_type.entity_features()),
     ));
 
-    if matches!(app_type, AppType::Test(_)) {
-        app.add_plugins(KeyboardInputTestPlugin);
-    }
+    app.add_plugins(GuiSetup::new(app_type.entity_features()));
 
     app_type
         .into_configuration()
