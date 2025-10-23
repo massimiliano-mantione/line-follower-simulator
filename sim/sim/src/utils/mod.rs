@@ -17,6 +17,15 @@ impl Side {
     }
 }
 
+impl std::fmt::Display for Side {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Side::Left => write!(f, "L"),
+            Side::Right => write!(f, "R"),
+        }
+    }
+}
+
 pub trait SetBySide<T: Copy> {
     fn set_by_side(&mut self, side: Side, value: T);
 }
