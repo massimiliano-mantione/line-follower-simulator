@@ -50,6 +50,7 @@ pub fn point_to_new_origin(point: Vec3, transform: &GlobalTransform) -> Vec2 {
     )
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum EntityFeatures {
     Physics,
     Visualization,

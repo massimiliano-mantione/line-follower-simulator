@@ -375,39 +375,42 @@ impl TrackSegment {
         }
     }
 
-    // pub fn mesh(&self) -> Mesh {
-    //     match *self {
-    //         TrackSegment::Start | TrackSegment::End => {
-    //             Collider::cuboid(TRACK_HALF_WIDTH, TRACK_TIPS_LENGTH / 2.0, TRACK_HALF_HEIGHT)
-    //         }
-    //         TrackSegment::Straight(data) => {
-    //             Collider::cuboid(TRACK_HALF_WIDTH, data.length / 2.0, TRACK_HALF_HEIGHT)
-    //         }
-    //         TrackSegment::NinetyDegTurn(data) => {
-    //             let hl: f32 = (data.line_half_length + TRACK_HALF_WIDTH) / 2.0;
-    //             let ht = (data.line_half_length - TRACK_HALF_WIDTH) / 2.0;
-    //             // Collider::cuboid(hl, hl, TRACK_HALF_HEIGHT);
-    //             Collider::compound(vec![
-    //                 (
-    //                     Vec3::ZERO,
-    //                     Quat::IDENTITY,
-    //                     Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
-    //                 ),
-    //                 (
-    //                     Vec3::new(ht * -data.side.sign(), ht, 0.0),
-    //                     Quat::from_rotation_z(FRAC_PI_2),
-    //                     Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
-    //                 ),
-    //             ])
-    //         }
-    //         TrackSegment::CyrcleTurn(data) => arc_mesh(
-    //             data.radius,
-    //             TRACK_HALF_WIDTH * 2.0,
-    //             data.angle.to_radians(),
-    //             data.side,
-    //         ),
-    //     }
-    // }
+    pub fn mesh(&self) -> Mesh {
+        match *self {
+            TrackSegment::Start | TrackSegment::End => {
+                // Collider::cuboid(TRACK_HALF_WIDTH, TRACK_TIPS_LENGTH / 2.0, TRACK_HALF_HEIGHT)
+                quad_mesh(0.1, 0.1)
+            }
+            TrackSegment::Straight(data) => {
+                // Collider::cuboid(TRACK_HALF_WIDTH, data.length / 2.0, TRACK_HALF_HEIGHT)
+                quad_mesh(0.1, 0.1)
+            }
+            TrackSegment::NinetyDegTurn(data) => {
+                // let hl: f32 = (data.line_half_length + TRACK_HALF_WIDTH) / 2.0;
+                // let ht = (data.line_half_length - TRACK_HALF_WIDTH) / 2.0;
+                // // Collider::cuboid(hl, hl, TRACK_HALF_HEIGHT);
+                // Collider::compound(vec![
+                //     (
+                //         Vec3::ZERO,
+                //         Quat::IDENTITY,
+                //         Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
+                //     ),
+                //     (
+                //         Vec3::new(ht * -data.side.sign(), ht, 0.0),
+                //         Quat::from_rotation_z(FRAC_PI_2),
+                //         Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
+                //     ),
+                // ])
+                quad_mesh(0.1, 0.1)
+            }
+            TrackSegment::CyrcleTurn(data) => arc_mesh(
+                data.radius,
+                TRACK_HALF_WIDTH * 2.0,
+                data.angle.to_radians(),
+                data.side,
+            ),
+        }
+    }
 
     pub fn transform(&self, origin: SegmentTransform) -> Transform {
         let transform_origin = match *self {
@@ -450,6 +453,33 @@ impl TrackSegment {
                 )),
         }
     }
+
+    pub fn spawn(
+        &self,
+        origin: SegmentTransform,
+        features: EntityFeatures,
+        commands: &mut Commands,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+        let entity = commands.spawn((*self, self.transform(origin))).id();
+        if features.has_physics() {
+            commands.entity(entity).insert((
+                self.collider(),
+                RigidBody::Fixed,
+                Friction {
+                    coefficient: 0.5,
+                    combine_rule: CoefficientCombineRule::Average,
+                },
+            ));
+        }
+        if features.has_visualization() {
+            commands.entity(entity).insert((
+                Mesh3d(meshes.add(self.mesh())),
+                MeshMaterial3d(materials.add(Color::srgba(0.0, 0.0, 0.0, 1.0))),
+            ));
+        }
+    }
 }
 
 #[derive(Resource)]
@@ -466,26 +496,34 @@ impl Track {
         }
     }
 
-    pub fn spawn_bundles(&self, mut commands: Commands) {
+    pub fn spawn_bundles(
+        &self,
+        features: EntityFeatures,
+        mut commands: Commands,
+        mut meshes: ResMut<Assets<Mesh>>,
+        mut materials: ResMut<Assets<StandardMaterial>>,
+    ) {
         let mut segment_origin = self.origin;
 
         for segment in &self.segments {
-            commands.spawn((
-                segment.collider(),
-                *segment,
-                segment.transform(segment_origin),
-                RigidBody::Fixed,
-                Friction {
-                    coefficient: 0.5,
-                    combine_rule: CoefficientCombineRule::Average,
-                },
-            ));
+            segment.spawn(
+                segment_origin,
+                features,
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+            );
             segment_origin = segment.compute_next_origin(segment_origin);
         }
     }
 }
 
-fn setup_track(mut commands: Commands, track: Res<Track>) {
+fn setup_track(
+    mut commands: Commands,
+    track: Res<Track>,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
+) {
     // Static floor
     commands.spawn((
         Collider::cuboid(FLOOR_SIZE / 2.0, FLOOR_SIZE / 2.0, FLOOR_HEIGHT / 2.0),
@@ -494,7 +532,7 @@ fn setup_track(mut commands: Commands, track: Res<Track>) {
         Transform::from_xyz(0.0, 0.0, -FLOOR_HEIGHT / 2.0),
     ));
 
-    track.spawn_bundles(commands);
+    track.spawn_bundles(EntityFeatures::Visualization, commands, meshes, materials);
 }
 
 pub struct TrackPlugin {
