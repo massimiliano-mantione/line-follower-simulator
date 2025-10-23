@@ -128,11 +128,14 @@ pub fn setup_bot_model(
             CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP),
             Velocity::zero(),
             ExternalForce::default(),
-            ImpulseJoint::new(
+            MultibodyJoint::new(
                 body,
-                RevoluteJointBuilder::new(Vec3::X)
-                    .local_anchor1(wheel_world - body_world) // parent's local anchor
-                    .local_anchor2(Vec3::ZERO),
+                TypedJoint::RevoluteJoint(
+                    RevoluteJointBuilder::new(Vec3::X)
+                        .local_anchor1(wheel_world - body_world) // parent's local anchor
+                        .local_anchor2(Vec3::ZERO)
+                        .build(),
+                ),
             ),
         ));
     }
