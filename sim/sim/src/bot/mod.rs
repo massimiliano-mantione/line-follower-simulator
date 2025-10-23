@@ -45,6 +45,5 @@ pub fn setup_bot_entities(mut commands: Commands) {
     commands.spawn(BotBodyMarker);
     for side in [Side::Left, Side::Right] {
         commands.spawn(Wheel::new(Vec3::NEG_X * side.sign(), side));
-        commands.spawn(Wheel::new(Vec3::NEG_X * side.sign(), side));
     }
 }
