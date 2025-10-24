@@ -253,6 +253,10 @@ fn runner_gui_update(
             }
         });
 
+    if ctx.is_using_pointer() {
+        e_cam.current_motion = CurrentMotion::Stationary;
+    }
+
     Ok(())
 }
 
@@ -376,6 +380,10 @@ fn test_gui_update(
         (forward * gui_state.pwm_fwd_cmd + side * gui_state.pwm_side_cmd).clamp(-PWM_MAX, PWM_MAX);
     pwm.right =
         (forward * gui_state.pwm_fwd_cmd - side * gui_state.pwm_side_cmd).clamp(-PWM_MAX, PWM_MAX);
+
+    if ctx.is_using_pointer() {
+        e_cam.current_motion = CurrentMotion::Stationary;
+    }
 
     Ok(())
 }
