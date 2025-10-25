@@ -12,7 +12,8 @@ use imu::compute_imu_data;
 use line_sensors::compute_sensor_readings;
 use motor_angles::compute_motor_angles_position;
 
-fn _print_sensors_data(sensors_data: Res<SensorsData>) {
+#[allow(unused)]
+fn print_sensors_data(sensors_data: Res<SensorsData>) {
     println!("line sensors: {:?}", sensors_data.line_sensors);
     println!("bot position: {:?}", sensors_data.bot_position);
     println!(

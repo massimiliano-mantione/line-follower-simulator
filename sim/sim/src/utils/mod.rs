@@ -66,6 +66,16 @@ pub enum EntityFeatures {
     PhysicsAndVisualization,
 }
 
+impl std::fmt::Display for EntityFeatures {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EntityFeatures::Physics => write!(f, "Physics"),
+            EntityFeatures::Visualization => write!(f, "Visualization"),
+            EntityFeatures::PhysicsAndVisualization => write!(f, "PhysicsAndVisualization"),
+        }
+    }
+}
+
 impl EntityFeatures {
     pub fn has_physics(&self) -> bool {
         match self {

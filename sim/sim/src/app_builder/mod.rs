@@ -64,6 +64,16 @@ pub enum AppType {
     Visualizer(VisualizerData),
 }
 
+impl std::fmt::Display for AppType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppType::Simulator(_) => write!(f, "Simulator"),
+            AppType::Test(_) => write!(f, "Test"),
+            AppType::Visualizer(_) => write!(f, "Visualizer"),
+        }
+    }
+}
+
 impl AppType {
     fn entity_features(&self) -> EntityFeatures {
         match self {

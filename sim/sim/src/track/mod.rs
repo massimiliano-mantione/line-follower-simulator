@@ -520,6 +520,7 @@ impl Track {
 
 fn setup_track(
     mut commands: Commands,
+    features: EntityFeatures,
     track: Res<Track>,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
@@ -532,7 +533,7 @@ fn setup_track(
         Transform::from_xyz(0.0, 0.0, -FLOOR_HEIGHT / 2.0),
     ));
 
-    track.spawn_bundles(EntityFeatures::Visualization, commands, meshes, materials);
+    track.spawn_bundles(features, commands, meshes, materials);
 }
 
 pub struct TrackPlugin {
@@ -547,7 +548,7 @@ impl TrackPlugin {
 
 impl Plugin for TrackPlugin {
     fn build(&self, app: &mut App) {
-        // #TODO: add collider or meshes depending on self.features
+        let features = self.features;
         app.insert_resource(Track::new(vec![
             TrackSegment::start(),
             TrackSegment::straight(2.0),
@@ -557,6 +558,14 @@ impl Plugin for TrackPlugin {
             TrackSegment::cyrcle_turn(2.0, Angle::from_degrees(60.0), Side::Right),
             TrackSegment::end(),
         ]))
-        .add_systems(Startup, setup_track);
+        .add_systems(
+            Startup,
+            move |commands: Commands,
+                  track: Res<Track>,
+                  meshes: ResMut<Assets<Mesh>>,
+                  materials: ResMut<Assets<StandardMaterial>>| {
+                setup_track(commands, features, track, meshes, materials)
+            },
+        );
     }
 }
