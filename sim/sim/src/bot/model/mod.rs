@@ -141,9 +141,7 @@ pub fn setup_bot_model(
     }
 
     // Sensors
-    for i in [
-        -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
-    ] {
+    for i in (0..16).into_iter().map(|i| i as f32 - 7.5) {
         let sensor_world = Vec3::new(
             i * front_sensors_spacing,
             length_front,
