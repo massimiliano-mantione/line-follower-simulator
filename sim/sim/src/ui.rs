@@ -1,14 +1,11 @@
-use std::{path::PathBuf, sync::Mutex};
+use std::{f32::consts::PI, path::PathBuf, sync::Mutex};
 
 use bevy::{prelude::*, render::view::RenderLayers};
-use bevy_editor_cam::{
-    DefaultEditorCamPlugins,
-    prelude::{EditorCam, OrbitConstraint, motion::CurrentMotion},
-};
 use bevy_egui::{
     EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
     egui::{self, Color32, Id, Modal, Response, Stroke, Ui},
 };
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use egui_file_dialog::FileDialog;
 use egui_material_icons::icons::{
@@ -177,11 +174,11 @@ fn runner_gui_update(
     mut gui_state: ResMut<RunnerGuiState>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut exit: EventWriter<AppExit>,
-    mut camera: Query<(&Camera3d, &mut EditorCam, &mut Transform)>,
+    mut camera: Query<(&mut PanOrbitCamera, &mut Transform)>,
     time: Res<Time>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
-    let (_, mut e_cam, mut ec_transform) = camera.single_mut()?;
+    let (mut po_camera, mut po_transform) = camera.single_mut()?;
 
     if keyboard_input.just_released(KeyCode::KeyQ) || keyboard_input.just_released(KeyCode::Escape)
     {
@@ -269,8 +266,8 @@ fn runner_gui_update(
             camera_buttons(
                 ui,
                 gui_state.base_text_size,
-                e_cam.as_mut(),
-                ec_transform.as_mut(),
+                po_camera.as_mut(),
+                po_transform.as_mut(),
             );
         });
 
@@ -306,10 +303,6 @@ fn runner_gui_update(
             }
         });
 
-    if ctx.is_using_pointer() {
-        e_cam.current_motion = CurrentMotion::Stationary;
-    }
-
     Ok(())
 }
 
@@ -337,10 +330,10 @@ fn test_gui_update(
     mut exit: EventWriter<AppExit>,
     mut pwm: ResMut<MotorDriversDutyCycles>,
     sensors: Res<SensorsData>,
-    mut camera: Query<(&Camera3d, &mut EditorCam, &mut Transform)>,
+    mut camera: Query<(&mut PanOrbitCamera, &mut Transform)>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
-    let (_, mut e_cam, mut ec_transform) = camera.single_mut()?;
+    let (mut po_camera, mut po_transform) = camera.single_mut()?;
 
     if keyboard_input.just_released(KeyCode::KeyQ) || keyboard_input.just_released(KeyCode::Escape)
     {
@@ -386,8 +379,8 @@ fn test_gui_update(
             camera_buttons(
                 ui,
                 gui_state.base_text_size,
-                e_cam.as_mut(),
-                ec_transform.as_mut(),
+                po_camera.as_mut(),
+                po_transform.as_mut(),
             );
         });
 
@@ -437,10 +430,6 @@ fn test_gui_update(
     pwm.right =
         (forward * gui_state.pwm_fwd_cmd - side * gui_state.pwm_side_cmd).clamp(-PWM_MAX, PWM_MAX);
 
-    if ctx.is_using_pointer() {
-        e_cam.current_motion = CurrentMotion::Stationary;
-    }
-
     Ok(())
 }
 
@@ -452,95 +441,98 @@ fn icon_button(ui: &mut Ui, icon: &str, size: f32) -> Response {
     ui.label(egui::RichText::new(icon).size(size))
 }
 
-const CAMERA_Z: f32 = 5.5;
-const CAMERA_OFFSET: f32 = 5.5;
+const CAMERA_Z: f32 = 5.0;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum CameraSide {
-    Left,
-    Center,
-    Right,
+enum CameraQuadrant {
+    NW,
+    N,
+    NE,
+    W,
+    C,
+    E,
+    SE,
+    S,
+    SW,
 }
 
-impl CameraSide {
-    pub fn offset(&self) -> Vec3 {
-        Vec3::X
-            * match self {
-                CameraSide::Left => -CAMERA_OFFSET,
-                CameraSide::Center => 0.0,
-                CameraSide::Right => CAMERA_OFFSET,
-            }
+impl CameraQuadrant {
+    fn icon(&self) -> &'static str {
+        match self {
+            CameraQuadrant::NW => ICON_NORTH_WEST,
+            CameraQuadrant::N => ICON_NORTH,
+            CameraQuadrant::NE => ICON_NORTH_EAST,
+            CameraQuadrant::W => ICON_WEST,
+            CameraQuadrant::C => ICON_CENTER_FOCUS_WEAK,
+            CameraQuadrant::E => ICON_EAST,
+            CameraQuadrant::SE => ICON_SOUTH_EAST,
+            CameraQuadrant::S => ICON_SOUTH,
+            CameraQuadrant::SW => ICON_SOUTH_WEST,
+        }
     }
-}
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum CameraFront {
-    Front,
-    Center,
-    Back,
-}
-
-impl CameraFront {
-    pub fn offset(&self) -> Vec3 {
-        Vec3::Y
-            * match self {
-                CameraFront::Front => CAMERA_OFFSET,
-                CameraFront::Center => -0.0001,
-                CameraFront::Back => -CAMERA_OFFSET,
-            }
+    fn pitch(&self) -> f32 {
+        match self {
+            CameraQuadrant::C => -0.01,
+            _ => -PI * 0.25,
+        }
     }
-}
 
-fn camera_icon(side: CameraSide, front: CameraFront) -> &'static str {
-    match side {
-        CameraSide::Left => match front {
-            CameraFront::Front => ICON_NORTH_WEST,
-            CameraFront::Center => ICON_WEST,
-            CameraFront::Back => ICON_SOUTH_WEST,
-        },
-        CameraSide::Center => match front {
-            CameraFront::Front => ICON_NORTH,
-            CameraFront::Center => ICON_CENTER_FOCUS_WEAK,
-            CameraFront::Back => ICON_SOUTH,
-        },
-        CameraSide::Right => match front {
-            CameraFront::Front => ICON_NORTH_EAST,
-            CameraFront::Center => ICON_EAST,
-            CameraFront::Back => ICON_SOUTH_EAST,
-        },
+    fn yaw(&self) -> f32 {
+        match self {
+            CameraQuadrant::NW => PI * 0.75,
+            CameraQuadrant::N => PI,
+            CameraQuadrant::NE => PI * 1.25,
+            CameraQuadrant::W => PI * 0.5,
+            CameraQuadrant::C => 0.0,
+            CameraQuadrant::E => PI * 1.5,
+            CameraQuadrant::SE => PI * 1.75,
+            CameraQuadrant::S => 0.0,
+            CameraQuadrant::SW => PI * 0.25,
+        }
     }
 }
 
 fn reset_camera(
-    editor_cam: &mut EditorCam,
-    transform: &mut Transform,
-    side: CameraSide,
-    front: CameraFront,
+    po_camera: &mut PanOrbitCamera,
+    po_transform: &mut Transform,
+    quadrant: CameraQuadrant,
 ) {
-    let origin = (Vec3::Z * CAMERA_Z) + side.offset() + front.offset();
-    *transform = Transform::from_translation(origin).looking_at(Vec3::ZERO, Vec3::Z);
-    editor_cam.current_motion = CurrentMotion::Stationary;
+    po_camera.target_focus = Vec3::ZERO;
+    po_camera.target_yaw = quadrant.yaw();
+    po_camera.target_pitch = quadrant.pitch();
+    po_camera.target_radius = CAMERA_Z;
+    po_camera.force_update;
 }
 
 fn camera_buttons(
     ui: &mut Ui,
     base_text_size: f32,
-    e_cam: &mut EditorCam,
-    ec_transform: &mut Transform,
+    po_camera: &mut PanOrbitCamera,
+    po_transform: &mut Transform,
 ) {
     let cb_size = base_text_size * 3.0;
     ui.vertical_centered(|ui| {
         rl(ui, "Camera views", base_text_size);
         ui.separator();
         egui::Grid::new("camera_controls").show(ui, |ui| {
-            for front in [CameraFront::Front, CameraFront::Center, CameraFront::Back] {
-                for side in [CameraSide::Left, CameraSide::Center, CameraSide::Right] {
-                    if icon_button(ui, camera_icon(side, front), cb_size).clicked() {
-                        reset_camera(e_cam, ec_transform, side, front);
-                    }
+            for q in [CameraQuadrant::NW, CameraQuadrant::N, CameraQuadrant::NE] {
+                if icon_button(ui, q.icon(), cb_size).clicked() {
+                    reset_camera(po_camera, po_transform, q);
                 }
-                ui.end_row();
             }
+            ui.end_row();
+            for q in [CameraQuadrant::W, CameraQuadrant::C, CameraQuadrant::E] {
+                if icon_button(ui, q.icon(), cb_size).clicked() {
+                    reset_camera(po_camera, po_transform, q);
+                }
+            }
+            ui.end_row();
+            for q in [CameraQuadrant::SW, CameraQuadrant::S, CameraQuadrant::SE] {
+                if icon_button(ui, q.icon(), cb_size).clicked() {
+                    reset_camera(po_camera, po_transform, q);
+                }
+            }
+            ui.end_row();
         });
     });
 }
@@ -688,22 +680,20 @@ struct BotName {
 }
 
 fn setup_camera(mut commands: Commands) {
-    let side = CameraSide::Center;
-    let front = CameraFront::Center;
-    let origin = (Vec3::Z * CAMERA_Z) + side.offset() + front.offset();
-
     // Camera
-    commands.spawn((
-        Camera3d::default(),
-        EditorCam {
-            orbit_constraint: OrbitConstraint::Fixed {
-                up: Vec3::Z,
-                can_pass_tdc: false,
-            },
-            ..Default::default()
-        },
-        Transform::from_translation(origin).looking_at(Vec3::ZERO, Vec3::Z),
-    ));
+    commands.spawn((PanOrbitCamera {
+        focus: Vec3::ZERO,
+        target_focus: Vec3::ZERO,
+        yaw: Some(CameraQuadrant::C.yaw()),
+        target_yaw: CameraQuadrant::C.yaw(),
+        pitch: Some(CameraQuadrant::C.pitch()),
+        target_pitch: CameraQuadrant::C.pitch(),
+        radius: Some(CAMERA_Z),
+        target_radius: CAMERA_Z,
+        force_update: true,
+        axis: [Vec3::X, -Vec3::Z, -Vec3::Y],
+        ..Default::default()
+    },));
 }
 
 struct CameraSetupPlugin;
@@ -711,7 +701,7 @@ struct CameraSetupPlugin;
 impl Plugin for CameraSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            DefaultEditorCamPlugins,
+            PanOrbitCameraPlugin,
             // #FIXME: debug only
             RapierDebugRenderPlugin::default(),
         ))

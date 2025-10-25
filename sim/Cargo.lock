@@ -672,33 +672,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_editor_cam"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9af8d3356e79e205e9e907cffaaedddaddb61d5c97a56036d5ee0e6839eac8ce"
-dependencies = [
- "bevy_app",
- "bevy_asset",
- "bevy_color",
- "bevy_core_pipeline",
- "bevy_derive",
- "bevy_ecs",
- "bevy_gizmos",
- "bevy_image",
- "bevy_input",
- "bevy_log",
- "bevy_math",
- "bevy_picking",
- "bevy_platform",
- "bevy_reflect",
- "bevy_render",
- "bevy_time",
- "bevy_transform",
- "bevy_utils",
- "bevy_window",
-]
-
-[[package]]
 name = "bevy_egui"
 version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1025,6 +998,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bb60c753b968a2de0fd279b76a3d19517695e771edb4c23575c7f92156315de"
 dependencies = [
  "glam",
+]
+
+[[package]]
+name = "bevy_panorbit_camera"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad26f43e37bec9849277dcb37e1404aeed2714f4834199e140150397bffb094c"
+dependencies = [
+ "bevy",
+ "bevy_egui",
 ]
 
 [[package]]
@@ -5251,8 +5234,8 @@ name = "sim"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_editor_cam",
  "bevy_egui",
+ "bevy_panorbit_camera",
  "bevy_rapier3d",
  "clap",
  "egui-file-dialog",
