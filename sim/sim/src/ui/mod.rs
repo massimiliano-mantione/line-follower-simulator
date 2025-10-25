@@ -175,14 +175,18 @@ impl RunnerGuiState {
 fn runner_gui_update(
     mut contexts: EguiContexts,
     mut gui_state: ResMut<RunnerGuiState>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut exit: EventWriter<AppExit>,
     mut camera: Query<(&Camera3d, &mut EditorCam, &mut Transform)>,
     time: Res<Time>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (_, mut e_cam, mut ec_transform) = camera.single_mut()?;
 
-    // ctx.style_mut(|style| style.visuals.panel_fill = Color32::from_rgba_unmultiplied(0, 0, 0, 0));
-    // egui_material_icons::initialize(ctx);
+    if keyboard_input.just_released(KeyCode::KeyQ) || keyboard_input.just_released(KeyCode::Escape)
+    {
+        exit.write(AppExit::Success);
+    }
 
     if gui_state.play_active {
         gui_state.play_time_sec += time.delta_secs();
@@ -330,6 +334,7 @@ fn test_gui_update(
     mut contexts: EguiContexts,
     mut gui_state: ResMut<TestGuiState>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut exit: EventWriter<AppExit>,
     mut pwm: ResMut<MotorDriversDutyCycles>,
     sensors: Res<SensorsData>,
     mut camera: Query<(&Camera3d, &mut EditorCam, &mut Transform)>,
@@ -337,8 +342,10 @@ fn test_gui_update(
     let ctx = contexts.ctx_mut()?;
     let (_, mut e_cam, mut ec_transform) = camera.single_mut()?;
 
-    // ctx.style_mut(|style| style.visuals.panel_fill = Color32::from_rgba_unmultiplied(0, 0, 0, 0));
-    // egui_material_icons::initialize(ctx);
+    if keyboard_input.just_released(KeyCode::KeyQ) || keyboard_input.just_released(KeyCode::Escape)
+    {
+        exit.write(AppExit::Success);
+    }
 
     egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(false)
