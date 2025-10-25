@@ -89,7 +89,7 @@ impl Plugin for GuiSetupPlugin {
 }
 
 #[derive(Resource)]
-struct RunnerGuiState {
+pub struct RunnerGuiState {
     file_dialog: FileDialog,
     new_bot_sender: Mutex<std::sync::mpsc::Sender<std::io::Result<Vec<u8>>>>,
     new_bot_receiver: Mutex<std::sync::mpsc::Receiver<std::io::Result<Vec<u8>>>>,
