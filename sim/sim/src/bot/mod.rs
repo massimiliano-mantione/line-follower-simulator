@@ -23,32 +23,12 @@ pub struct BotPlugin {
 
 #[derive(Resource)]
 pub struct BotConfigurationResource {
-    pub configuration: Option<Configuration>,
+    pub configuration: Configuration,
 }
 
 impl BotConfigurationResource {
     pub fn cfg(&self) -> Configuration {
-        self.configuration
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| Configuration {
-                name: "NONAME".into(),
-                color_main: Color { r: 0, g: 255, b: 0 },
-                color_secondary: Color {
-                    r: 255,
-                    g: 0,
-                    b: 255,
-                },
-                width_axle: 100.0,
-                length_front: 100.0,
-                length_back: 20.0,
-                clearing_back: 10.0,
-                wheel_diameter: 20.0,
-                gear_ratio_num: 1,
-                gear_ratio_den: 1,
-                front_sensors_spacing: 10.0,
-                front_sensors_height: 4.0,
-            })
+        self.configuration.clone()
     }
 }
 
@@ -63,9 +43,6 @@ impl BotPlugin {
 
 impl Plugin for BotPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(BotConfigurationResource {
-            configuration: self.configuration.clone(),
-        });
         if self.features.has_visualization() {
             app.add_systems(Startup, setup_bot_assets);
         }
@@ -78,6 +55,11 @@ impl Plugin for BotPlugin {
             app.add_systems(Startup, setup_bot_model.after(setup_bot_entities));
             app.add_plugins((MotorsModelPlugin, SensorsModelPlugin, StoreExecDataPlugin));
             if self.features.has_visualization() {
+                let configuration = self
+                    .configuration
+                    .clone()
+                    .expect("Test app must have a bot configuration");
+                app.insert_resource(BotConfigurationResource { configuration });
                 app.add_systems(Startup, setup_test_bot_visualizer.after(setup_bot_entities));
             }
         }
