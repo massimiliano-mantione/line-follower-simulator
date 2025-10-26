@@ -91,6 +91,14 @@ impl AppType {
         self.entity_features().has_visualization()
     }
 
+    pub fn configuration(&self) -> Option<Configuration> {
+        match self {
+            AppType::Simulator(config) => Some(config.clone()),
+            AppType::Test(config) => Some(config.clone()),
+            AppType::Visualizer(_) => None,
+        }
+    }
+
     pub fn into_app_data(&self) -> (Option<Configuration>, Option<VisualizerData>) {
         match self {
             AppType::Simulator(config) => (Some(config.clone()), None),
@@ -160,7 +168,7 @@ pub fn create_app(app_type: AppType, step_period_us: u32) -> App {
     }
 
     app.add_plugins((
-        BotPlugin::new(app_type.entity_features()),
+        BotPlugin::new(app_type.entity_features(), app_type.configuration()),
         TrackPlugin::new(app_type.entity_features()),
     ));
 
