@@ -1,37 +1,55 @@
-use bevy::{ecs::resource::Resource, math::Vec3, transform::components::Transform};
+use bevy::{
+    ecs::{component::Component, resource::Resource},
+    math::Vec3,
+    transform::components::Transform,
+};
 
-#[derive(Clone, Copy)]
-pub struct ExecutionStep {
-    pub time_us: u32,
-    pub body_transform: Transform,
-    pub left_wheel_transform: Transform,
-    pub right_wheel_transform: Transform,
+#[derive(Clone, Component, Default)]
+pub struct BodyExecutionData {
+    pub period: u32,
+    pub steps: Vec<Transform>,
 }
 
-impl ExecutionStep {
-    pub fn new(
-        time_us: u32,
-        body_transform: Transform,
-        left_wheel_transform: Transform,
-        right_wheel_transform: Transform,
-    ) -> Self {
+impl BodyExecutionData {
+    pub fn empty(period: u32) -> Self {
         Self {
-            time_us,
-            body_transform,
-            left_wheel_transform,
-            right_wheel_transform,
+            period,
+            steps: Vec::new(),
+        }
+    }
+}
+
+#[derive(Clone, Component, Default)]
+pub struct WheelExecutionData {
+    pub period: u32,
+    pub axis: Vec3,
+    pub steps: Vec<f32>,
+}
+
+impl WheelExecutionData {
+    pub fn empty(period: u32, axis: Vec3) -> Self {
+        Self {
+            period,
+            axis,
+            steps: Vec::new(),
         }
     }
 }
 
 #[derive(Clone, Resource, Default)]
 pub struct ExecutionData {
-    pub steps: Vec<ExecutionStep>,
+    pub body_data: BodyExecutionData,
+    pub left_wheel_data: WheelExecutionData,
+    pub right_wheel_data: WheelExecutionData,
 }
 
 impl ExecutionData {
-    pub fn empty() -> Self {
-        Self { steps: Vec::new() }
+    pub fn empty(period: u32) -> Self {
+        Self {
+            body_data: BodyExecutionData::empty(period),
+            left_wheel_data: WheelExecutionData::empty(period, Vec3::NEG_X),
+            right_wheel_data: WheelExecutionData::empty(period, Vec3::X),
+        }
     }
 }
 
@@ -46,7 +64,7 @@ pub struct MotorDriversDutyCycles {
 }
 
 /// Motor angles in radians.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Resource, Default)]
 pub struct MotorAngles {
     pub left: f32,
     pub right: f32,

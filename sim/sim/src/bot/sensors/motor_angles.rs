@@ -20,6 +20,7 @@ impl SetBySide<f32> for MotorAngles {
 pub fn compute_motor_angles_position(
     wheels_query: Query<(&Wheel, &Transform)>,
     mut sensors_data: ResMut<SensorsData>,
+    mut motor_angles: ResMut<MotorAngles>,
 ) {
     for (wheel, transform) in &wheels_query {
         // Rotation in radians [0, 2pi]
@@ -27,6 +28,7 @@ pub fn compute_motor_angles_position(
             - Vec3::from(transform.rotation.to_euler(EulerRot::XYZ))
                 .dot(transform.rotation * wheel.axle.abs());
 
-        sensors_data.motor_angles.set_by_side(wheel.side, rot);
+        motor_angles.set_by_side(wheel.side, rot);
     }
+    sensors_data.motor_angles = *motor_angles;
 }

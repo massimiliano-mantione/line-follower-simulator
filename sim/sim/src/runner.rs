@@ -1,5 +1,7 @@
 use bevy::app::{App, AppExit};
-use execution_data::{ExecutionData, MotorDriversDutyCycles, SensorsData};
+use execution_data::{
+    BodyExecutionData, ExecutionData, MotorDriversDutyCycles, SensorsData, WheelExecutionData,
+};
 use executor::{wasm_bindings::exports::robot::Configuration, wasm_executor, wasmtime};
 
 use crate::app_builder::{self, create_app};
@@ -43,7 +45,20 @@ impl AppWrapper {
             .unwrap();
 
         ExecutionData {
-            steps: res.steps.drain(..).collect(),
+            body_data: BodyExecutionData {
+                period: res.body_data.period,
+                steps: res.body_data.steps.drain(..).collect(),
+            },
+            left_wheel_data: WheelExecutionData {
+                period: res.left_wheel_data.period,
+                axis: res.left_wheel_data.axis,
+                steps: res.left_wheel_data.steps.drain(..).collect(),
+            },
+            right_wheel_data: WheelExecutionData {
+                period: res.right_wheel_data.period,
+                axis: res.right_wheel_data.axis,
+                steps: res.right_wheel_data.steps.drain(..).collect(),
+            },
         }
     }
 }

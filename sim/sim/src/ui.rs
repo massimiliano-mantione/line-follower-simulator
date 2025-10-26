@@ -162,7 +162,7 @@ impl RunnerGuiState {
     pub fn handle_new_bots(&self) {
         while let Ok(bot) = self.new_bot_receiver.lock().unwrap().try_recv() {
             match bot {
-                Ok(bot) => println!("new bot steps: len {}", bot.data.steps.len()),
+                Ok(bot) => println!("new bot steps: len {}", bot.data.body_data.steps.len()),
                 Err(err) => error!("Error receiving new bot: {}", err),
             }
         }

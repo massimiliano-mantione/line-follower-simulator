@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::bot::BotBodyMarker;
 use crate::track::{TRACK_HALF_WIDTH, TrackSegment};
 use crate::utils::{NormalRandom, point_to_new_origin};
 use execution_data::SensorsData;

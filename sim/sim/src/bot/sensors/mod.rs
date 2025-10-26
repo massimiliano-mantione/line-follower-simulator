@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use execution_data::SensorsData;
+use execution_data::{MotorAngles, SensorsData};
 
 pub mod bot_position;
 pub mod imu;
@@ -36,17 +36,19 @@ pub struct SensorsModelPlugin;
 
 impl Plugin for SensorsModelPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SensorsData::default()).add_systems(
-            RunFixedMainLoop,
-            (
-                compute_sensor_readings,
-                compute_bot_position,
-                compute_motor_angles_position,
-                compute_imu_data,
-                // print_sensors_data,
-            )
-                .chain()
-                .in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
-        );
+        app.insert_resource(SensorsData::default())
+            .insert_resource(MotorAngles::default())
+            .add_systems(
+                RunFixedMainLoop,
+                (
+                    compute_sensor_readings,
+                    compute_bot_position,
+                    compute_motor_angles_position,
+                    compute_imu_data,
+                    // print_sensors_data,
+                )
+                    .chain()
+                    .in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
+            );
     }
 }

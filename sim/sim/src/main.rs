@@ -90,7 +90,10 @@ fn main() -> executor::wasmtime::Result<()> {
             );
 
             let bot_execution_data = run_bot_from_file(input, Some(output.clone()), logs, period)?;
-            println!("data has {} frames", bot_execution_data.data.steps.len());
+            println!(
+                "data has {} frames",
+                bot_execution_data.data.body_data.steps.len()
+            );
 
             if !cli {
                 create_app(

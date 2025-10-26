@@ -77,7 +77,7 @@ impl execution_data::SimulationStepper for MockStepper {
     }
 
     fn get_data(&mut self) -> execution_data::ExecutionData {
-        execution_data::ExecutionData { steps: Vec::new() }
+        execution_data::ExecutionData::empty(self.step_period_us)
     }
 
     fn is_active(&self) -> bool {
