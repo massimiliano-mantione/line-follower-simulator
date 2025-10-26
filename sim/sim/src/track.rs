@@ -262,6 +262,18 @@ pub struct SegmentTransform {
     direction: Angle,
 }
 
+impl std::fmt::Display for SegmentTransform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SEG x {} y {} ang {}",
+            self.position.x,
+            self.position.y,
+            self.direction.to_degrees()
+        )
+    }
+}
+
 impl SegmentTransform {
     pub fn new(position: Vec2, direction: Angle) -> Self {
         Self {
@@ -456,13 +468,16 @@ impl TrackSegment {
 
     pub fn spawn(
         &self,
+        parent: Entity,
         origin: SegmentTransform,
         features: EntityFeatures,
         commands: &mut Commands,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
-        let entity = commands.spawn((*self, self.transform(origin))).id();
+        let entity = commands
+            .spawn((*self, ChildOf(parent), self.transform(origin)))
+            .id();
         if features.has_physics() {
             commands.entity(entity).insert((
                 self.collider(),
@@ -498,6 +513,7 @@ impl Track {
 
     pub fn spawn_bundles(
         &self,
+        parent: Entity,
         features: EntityFeatures,
         mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
@@ -507,6 +523,7 @@ impl Track {
 
         for segment in &self.segments {
             segment.spawn(
+                parent,
                 segment_origin,
                 features,
                 &mut commands,
@@ -520,20 +537,23 @@ impl Track {
 
 fn setup_track(
     mut commands: Commands,
+    track_parent: Entity,
     features: EntityFeatures,
     track: Res<Track>,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Static floor
-    commands.spawn((
-        Collider::cuboid(FLOOR_SIZE / 2.0, FLOOR_SIZE / 2.0, FLOOR_HEIGHT / 2.0),
-        RigidBody::Fixed,
-        Friction::new(0.5),
-        Transform::from_xyz(0.0, 0.0, -FLOOR_HEIGHT / 2.0),
-    ));
+    if features.has_physics() {
+        // Static floor
+        commands.spawn((
+            Collider::cuboid(FLOOR_SIZE / 2.0, FLOOR_SIZE / 2.0, FLOOR_HEIGHT / 2.0),
+            RigidBody::Fixed,
+            Friction::new(0.5),
+            Transform::from_xyz(0.0, 0.0, -FLOOR_HEIGHT / 2.0),
+        ));
+    }
 
-    track.spawn_bundles(features, commands, meshes, materials);
+    track.spawn_bundles(track_parent, features, commands, meshes, materials);
 }
 
 pub struct TrackPlugin {
@@ -560,11 +580,12 @@ impl Plugin for TrackPlugin {
         ]))
         .add_systems(
             Startup,
-            move |commands: Commands,
+            move |mut commands: Commands,
                   track: Res<Track>,
                   meshes: ResMut<Assets<Mesh>>,
                   materials: ResMut<Assets<StandardMaterial>>| {
-                setup_track(commands, features, track, meshes, materials)
+                let track_parent = commands.spawn(Transform::default()).id();
+                setup_track(commands, track_parent, features, track, meshes, materials)
             },
         );
     }
