@@ -56,6 +56,13 @@ impl VisualizerData {
             VisualizerData::Runner { period, .. } => *period,
         }
     }
+
+    pub fn first_bot(&self) -> Option<BotExecutionData> {
+        match self {
+            VisualizerData::Server { .. } => None,
+            VisualizerData::Runner { bot, .. } => Some(bot.clone()),
+        }
+    }
 }
 
 pub enum AppType {

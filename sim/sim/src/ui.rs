@@ -58,6 +58,7 @@ pub fn runner_gui_setup(app: &mut App, visualizer_data: VisualizerData) {
         visualizer_data.output(),
         visualizer_data.logs(),
         visualizer_data.period(),
+        visualizer_data.first_bot(),
     );
 
     match visualizer_data {
@@ -122,7 +123,7 @@ impl Plugin for GuiSetupPlugin {
                 app.add_plugins(test_gui_setup);
             } else {
                 let visualizer_data =
-                    visualizer_data.expect("cannot build visualized without initial data");
+                    visualizer_data.expect("cannot build visualizer without initial data");
                 runner_gui_setup(app, visualizer_data);
             }
         }
@@ -146,8 +147,17 @@ pub struct RunnerGuiState {
 }
 
 impl RunnerGuiState {
-    pub fn new(output: Option<String>, logs: bool, period: u32) -> Self {
+    pub fn new(
+        output: Option<String>,
+        logs: bool,
+        period: u32,
+        first_bot: Option<BotExecutionData>,
+    ) -> Self {
         let (sender, receiver) = std::sync::mpsc::channel();
+        if let Some(bot) = first_bot {
+            sender.send(Ok(bot)).unwrap();
+        }
+
         Self {
             file_dialog: FileDialog::new(),
             new_bot_sender: Mutex::new(sender),
@@ -260,6 +270,7 @@ fn runner_gui_update(
                 if icon_button(ui, ICON_SKIP_NEXT, size).clicked() {
                     gui_state.play_time_sec = gui_state.play_max_sec;
                 }
+                rl(ui, format!("{:.3}", gui_state.play_time_sec), size);
 
                 ui.add_space(size / 2.0);
 
@@ -283,7 +294,6 @@ fn runner_gui_update(
                             .show_value(false),
                     );
                     ui.add_space(size / 2.0);
-                    rl(ui, format!("{:.3}", gui_state.play_time_sec), size);
                 });
 
                 gui_state.file_dialog.update(ctx);
@@ -353,7 +363,7 @@ fn runner_gui_update(
                                 bot.config.color_secondary.g,
                                 bot.config.color_secondary.b,
                             ),
-                            time.elapsed_secs(),
+                            gui_state.play_time_sec,
                             BotStatus::Running,
                             gui_state.base_text_size,
                         ) {
