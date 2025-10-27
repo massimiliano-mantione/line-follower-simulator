@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, path::PathBuf, sync::Mutex};
+use std::{f32::consts::PI, ops::Mul, path::PathBuf, sync::Mutex};
 
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::{
@@ -483,6 +483,7 @@ fn test_gui_update(
     mut exit: EventWriter<AppExit>,
     mut pwm: ResMut<MotorDriversDutyCycles>,
     sensors: Res<SensorsData>,
+    time: Res<Time>,
     mut camera: Query<(&mut PanOrbitCamera, &mut Transform)>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
@@ -569,26 +570,76 @@ fn test_gui_update(
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
     let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
     let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
+    let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+    let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
 
-    let forward = if up {
-        1
-    } else if down {
-        -1
+    let t_delta = time.delta_secs();
+    const ROT_SPEED: f32 = PI / 2.0; // rad/s
+    const PAN_SPEED: f32 = 1.0; // m/s
+    if shift && ctrl {
+        if up {
+            po_camera.target_focus.z += PAN_SPEED * t_delta;
+        } else if down {
+            po_camera.target_focus.z -= PAN_SPEED * t_delta;
+        }
+    } else if shift {
+        let yaw = if right {
+            ROT_SPEED * t_delta
+        } else if left {
+            -ROT_SPEED * t_delta
+        } else {
+            0.0
+        };
+        let pitch = if up {
+            ROT_SPEED * t_delta
+        } else if down {
+            -ROT_SPEED * t_delta
+        } else {
+            0.0
+        };
+        po_camera.target_yaw += yaw;
+        po_camera.target_pitch += pitch;
+    } else if ctrl {
+        let yaw = Quat::from_rotation_z(po_camera.target_yaw);
+        let fwd_dir = yaw.mul_vec3(Vec3::Y);
+        let side_dir = yaw.mul_vec3(Vec3::X);
+        let fwd_speed = if up {
+            PAN_SPEED
+        } else if down {
+            -PAN_SPEED
+        } else {
+            0.0
+        };
+        let side_speed = if left {
+            PAN_SPEED
+        } else if right {
+            -PAN_SPEED
+        } else {
+            0.0
+        };
+        po_camera.target_focus +=
+            (fwd_speed * t_delta * fwd_dir) + (side_speed * t_delta * side_dir);
     } else {
-        0
-    };
-    let side = if left {
-        -1
-    } else if right {
-        1
-    } else {
-        0
-    };
+        let forward = if up {
+            1
+        } else if down {
+            -1
+        } else {
+            0
+        };
+        let side = if left {
+            -1
+        } else if right {
+            1
+        } else {
+            0
+        };
 
-    pwm.left =
-        (forward * gui_state.pwm_fwd_cmd + side * gui_state.pwm_side_cmd).clamp(-PWM_MAX, PWM_MAX);
-    pwm.right =
-        (forward * gui_state.pwm_fwd_cmd - side * gui_state.pwm_side_cmd).clamp(-PWM_MAX, PWM_MAX);
+        pwm.left = (forward * gui_state.pwm_fwd_cmd + side * gui_state.pwm_side_cmd)
+            .clamp(-PWM_MAX, PWM_MAX);
+        pwm.right = (forward * gui_state.pwm_fwd_cmd - side * gui_state.pwm_side_cmd)
+            .clamp(-PWM_MAX, PWM_MAX);
+    }
 
     Ok(())
 }
