@@ -255,21 +255,78 @@ fn runner_gui_update(
                 }
                 ui.separator();
 
-                if icon_button(ui, ICON_SKIP_PREVIOUS, size).clicked() {
+                if icon_button(ui, ICON_SKIP_PREVIOUS, size).clicked()
+                    || keyboard_input.just_pressed(KeyCode::Home)
+                {
                     gui_state.play_time_sec = 0.0;
                 }
+
+                let rew_button = icon_button(ui, ICON_FAST_REWIND, size).clicked();
+
                 if gui_state.play_active {
-                    if icon_button(ui, ICON_PAUSE, size).clicked() {
+                    if icon_button(ui, ICON_PAUSE, size).clicked()
+                        || keyboard_input.just_pressed(KeyCode::Space)
+                    {
                         gui_state.play_active = false;
                     }
                 } else {
-                    if icon_button(ui, ICON_PLAY_ARROW, size).clicked() {
+                    if icon_button(ui, ICON_PLAY_ARROW, size).clicked()
+                        || keyboard_input.just_pressed(KeyCode::Space)
+                    {
                         gui_state.play_active = true;
                     }
                 }
-                if icon_button(ui, ICON_SKIP_NEXT, size).clicked() {
+
+                let fwd_button = icon_button(ui, ICON_FAST_FORWARD, size).clicked();
+
+                if icon_button(ui, ICON_SKIP_NEXT, size).clicked()
+                    || keyboard_input.just_pressed(KeyCode::End)
+                {
                     gui_state.play_time_sec = gui_state.play_max_sec;
                 }
+
+                let shift = keyboard_input.pressed(KeyCode::ShiftLeft)
+                    || keyboard_input.pressed(KeyCode::ShiftRight);
+                let ctrl = keyboard_input.pressed(KeyCode::ControlLeft)
+                    || keyboard_input.pressed(KeyCode::ControlRight);
+                let rew_pressed = keyboard_input.pressed(KeyCode::Comma)
+                    || keyboard_input.pressed(KeyCode::PageDown);
+                let fwd_pressed = keyboard_input.pressed(KeyCode::Period)
+                    || keyboard_input.pressed(KeyCode::PageUp);
+                let rew_clicked = keyboard_input.just_pressed(KeyCode::Comma)
+                    || keyboard_input.just_pressed(KeyCode::PageDown);
+                let fwd_clicked = keyboard_input.just_pressed(KeyCode::Period)
+                    || keyboard_input.just_pressed(KeyCode::PageUp);
+
+                if shift && ctrl {
+                    if rew_clicked {
+                        gui_state.play_time_sec -= 0.001;
+                    }
+                    if fwd_clicked {
+                        gui_state.play_time_sec += 0.001;
+                    }
+                } else if shift || ctrl {
+                    if rew_pressed || rew_button {
+                        gui_state.play_time_sec -= 0.001;
+                    }
+                    if fwd_pressed || fwd_button {
+                        gui_state.play_time_sec += 0.001;
+                    }
+                } else {
+                    if rew_clicked || rew_button {
+                        gui_state.play_time_sec -= 1.0;
+                        gui_state.play_time_sec = gui_state.play_time_sec.round();
+                    }
+                    if fwd_clicked || fwd_button {
+                        gui_state.play_time_sec += 1.0;
+                        gui_state.play_time_sec = gui_state.play_time_sec.round();
+                    }
+                }
+
+                // Clamp time again (it could have been changed by user commands)
+                gui_state.play_time_sec =
+                    gui_state.play_time_sec.min(gui_state.play_max_sec).max(0.0);
+
                 rl(ui, format!("{:.3}", gui_state.play_time_sec), size);
 
                 ui.add_space(size / 2.0);
