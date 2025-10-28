@@ -259,17 +259,29 @@ pub fn ninety_deg_mesh(width: f32, half_lenght: f32, side: Side) -> Mesh {
     let half_w = width * 0.5;
 
     // top face positions
-    let mut positions: Vec<[f32; 3]> = vec![
-        [-half_w, -half_lenght, 0.0], // bottom-left
-        [half_w, -half_lenght, 0.0],  // bottom-right
-        [half_w, half_w, 0.0],        // top-right
-        [-half_w, half_w, 0.0],       // top-left
-    ];
+    let mut positions: Vec<[f32; 3]> = match side {
+        Side::Left => vec![
+            [-half_w, -half_lenght, 0.0], // bottom-left
+            [half_w, -half_lenght, 0.0],  // bottom-right
+            [half_w, half_w, 0.0],        // top-right
+            [-half_lenght, half_w, 0.0],  // top-left
+            [-half_lenght, -half_w, 0.0], // mid-left
+            [-half_w, -half_w, 0.0],      // mid-right
+        ],
+        Side::Right => vec![
+            [-half_w, -half_lenght, 0.0], // bottom-left
+            [half_w, -half_lenght, 0.0],  // bottom-right
+            [half_w, -half_w, 0.0],       // mid-left
+            [half_lenght, -half_w, 0.0],  // mid-right
+            [half_lenght, half_w, 0.0],   // top-right
+            [-half_w, half_w, 0.0],       // top-left
+        ],
+    };
 
-    let mut normals: Vec<[f32; 3]> = vec![[0.0, 0.0, 1.0]; 4];
+    let mut normals: Vec<[f32; 3]> = vec![[0.0, 0.0, 1.0]; 6];
     // let mut uvs: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
     // top face (CCW): two triangles covering the quad
-    let mut indices: Vec<u32> = vec![0, 1, 2, 0, 2, 3];
+    let mut indices: Vec<u32> = vec![0, 1, 2, 0, 2, 5, 2, 3, 4, 2, 4, 5];
 
     // Duplicate vertices for bottom face with flipped normals
     let top_count = positions.len() as u32;
@@ -291,9 +303,15 @@ pub fn ninety_deg_mesh(width: f32, half_lenght: f32, side: Side) -> Mesh {
         top_count + 2,
         top_count + 1,
         top_count + 0,
-        top_count + 3,
+        top_count + 5,
         top_count + 2,
         top_count + 0,
+        top_count + 4,
+        top_count + 3,
+        top_count + 2,
+        top_count + 5,
+        top_count + 4,
+        top_count + 2,
     ]);
 
     Mesh::new(
