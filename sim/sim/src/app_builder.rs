@@ -3,6 +3,7 @@ use crate::runner::BotExecutionData;
 use crate::track::{Track, TrackPlugin};
 use crate::ui::GuiSetupPlugin;
 use crate::utils::{EntityFeatures, NormalRandom};
+use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::scene::ScenePlugin;
 use bevy_rapier3d::prelude::*;
@@ -143,8 +144,11 @@ pub struct WindowSetupPlugin;
 
 impl Plugin for WindowSetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins)
-            .insert_resource(Time::from_hz(120.0));
+        app.add_plugins(DefaultPlugins.set(LogPlugin {
+            level: Level::ERROR,
+            ..Default::default()
+        }))
+        .insert_resource(Time::from_hz(120.0));
     }
 }
 
