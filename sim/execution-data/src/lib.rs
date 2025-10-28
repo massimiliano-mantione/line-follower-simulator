@@ -196,7 +196,7 @@ impl ActivityData {
     }
 
     pub fn is_active_now(&self) -> bool {
-        self.start_time_us.is_none() && self.out_time_us.is_none() && self.end_time_us.is_none()
+        self.start_time_us.is_some() && self.out_time_us.is_none() && self.end_time_us.is_none()
     }
 
     pub fn status_at_time(&self, time_secs: f32) -> BotStatus {
