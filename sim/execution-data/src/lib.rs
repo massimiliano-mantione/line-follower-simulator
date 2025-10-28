@@ -99,7 +99,7 @@ impl WheelExecutionData {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct ActivityData {
     pub start_time_us: Option<u32>,
     pub out_time_us: Option<u32>,

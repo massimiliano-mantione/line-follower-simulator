@@ -35,7 +35,7 @@ impl AppWrapper {
         *res = dc;
     }
 
-    pub fn step(&mut self, next_time_us: u32, start_time_us: u32) {
+    pub fn step(&mut self, period_us: u32, next_time_us: u32, start_time_us: u32) {
         self.app.update();
         self.sensors_data = *self.app.world().get_resource::<SensorsData>().unwrap();
 
@@ -51,14 +51,17 @@ impl AppWrapper {
         if next_time_us >= start_time_us {
             activity_data.start_time_us = Some(start_time_us);
         }
-        if activity_data.end_time_us.is_none() {
-            if self.sensors_data.is_over_track_end {
-                activity_data.end_time_us = Some(next_time_us);
+
+        if next_time_us > period_us {
+            if activity_data.end_time_us.is_none() {
+                if self.sensors_data.is_over_track_end {
+                    activity_data.end_time_us = Some(next_time_us);
+                }
             }
-        }
-        if activity_data.out_time_us.is_none() {
-            if self.sensors_data.is_out_of_track {
-                activity_data.out_time_us = Some(next_time_us);
+            if activity_data.out_time_us.is_none() {
+                if self.sensors_data.is_out_of_track {
+                    activity_data.out_time_us = Some(next_time_us);
+                }
             }
         }
     }
@@ -122,6 +125,7 @@ impl execution_data::SimulationStepper for RunnerStepper {
 
     fn step(&mut self) {
         self.app_wrapper.step(
+            self.step_period_us,
             self.current_time_us + self.step_period_us,
             self.start_time_us,
         );
