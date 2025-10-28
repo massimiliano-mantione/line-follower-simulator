@@ -187,6 +187,12 @@ pub struct BotExecutionData {
     pub data: ExecutionData,
 }
 
+pub fn get_bot_config_from_file(input: String) -> wasmtime::Result<Configuration> {
+    // Load the component from disk
+    let wasm_bytes = std::fs::read(&input)?;
+    wasm_executor::get_robot_configuration(&wasm_bytes)
+}
+
 pub fn run_bot_from_file(
     input: String,
     output: Option<String>,
