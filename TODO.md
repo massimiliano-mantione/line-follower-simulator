@@ -18,6 +18,7 @@
 [❌] implement help dialog
 [✔] implement bot end and out conditions
 [✔] implement bot ranking
+[❌] implement autorun for server
 
 [❌] discuss and implement test bots
 [❌] discuss and write documentation
