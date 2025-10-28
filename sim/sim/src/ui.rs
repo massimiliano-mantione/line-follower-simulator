@@ -1,4 +1,8 @@
-use std::{f32::consts::PI, path::PathBuf, sync::Mutex};
+use std::{
+    f32::consts::{FRAC_PI_4, PI},
+    path::PathBuf,
+    sync::Mutex,
+};
 
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::{
@@ -1006,6 +1010,19 @@ fn setup_camera(mut commands: Commands) {
         axis: [Vec3::X, -Vec3::Z, -Vec3::Y],
         ..Default::default()
     },));
+
+    commands.spawn((
+        DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform {
+            translation: Vec3::new(0.0, 0.0, 10.0),
+            rotation: Quat::from_euler(EulerRot::XYZ, FRAC_PI_4, 0.0, 0.0),
+            ..default()
+        },
+    ));
 }
 
 struct CameraSetupPlugin;
