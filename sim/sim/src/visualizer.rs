@@ -29,7 +29,7 @@ pub struct BotVisualization {
     pub bot_final_status: BotFinalStatus,
 }
 
-const VIS_LAYER_Z_STEP: f32 = 1.0;
+const VIS_LAYER_Z_STEP: f32 = 0.7;
 
 impl BotVisualization {
     pub fn build_transform(&self) -> Transform {
@@ -61,6 +61,7 @@ pub fn spawn_bot_visualization(
         track_root,
         EntityFeatures::Visualization,
         track,
+        false,
         meshes,
         materials,
     );

@@ -1,7 +1,7 @@
 use std::f32::consts::{FRAC_PI_2, PI};
 
-use bevy::prelude::*;
 use bevy::text::cosmic_text::Angle;
+use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_rapier3d::prelude::*;
 
 use crate::utils::{EntityFeatures, Side, rotate_vec2};
@@ -612,6 +612,7 @@ pub fn setup_track(
     track_root: Entity,
     features: EntityFeatures,
     track: &Track,
+    is_bottom: bool,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
 ) {
@@ -631,6 +632,7 @@ pub fn setup_track(
             ChildOf(track_root),
         ))
         .id();
+
     let track_line_root = commands
         .spawn((
             Transform::from_xyz(bottom_x, bottom_y, 0.001).with_rotation(bottom_rot),
@@ -648,23 +650,33 @@ pub fn setup_track(
 
     if features.has_visualization() {
         let mesh = meshes.add(quad_mesh(track.size.x, track.size.y));
-        let material = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.1));
+
+        let material = materials.add(Color::srgba(
+            1.0,
+            1.0,
+            1.0,
+            if is_bottom { 1.0 } else { 0.1 },
+        ));
+
         commands.spawn((
             Transform::from_xyz(bottom_x, bottom_y, 0.0).with_rotation(bottom_rot),
             ChildOf(track_root),
             Mesh3d(mesh),
             MeshMaterial3d(material),
+            NotShadowCaster,
         ));
     }
 
-    track.spawn_bundles(
-        track_path_root,
-        track_line_root,
-        features,
-        commands,
-        meshes,
-        materials,
-    );
+    if !is_bottom || features.has_physics() {
+        track.spawn_bundles(
+            track_path_root,
+            track_line_root,
+            features,
+            commands,
+            meshes,
+            materials,
+        );
+    }
 }
 
 pub struct TrackPlugin {
@@ -692,6 +704,7 @@ impl Plugin for TrackPlugin {
                     track_root,
                     features,
                     &track,
+                    true,
                     &mut meshes,
                     &mut materials,
                 )
