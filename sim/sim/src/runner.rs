@@ -5,7 +5,7 @@ use execution_data::{
 use executor::{wasm_bindings::exports::robot::Configuration, wasm_executor, wasmtime};
 
 use crate::{
-    app_builder::{self, create_app},
+    app_builder::{self, FixedCounter, create_app},
     track::Track,
 };
 
@@ -35,8 +35,25 @@ impl AppWrapper {
         *res = dc;
     }
 
-    pub fn step(&mut self, period_us: u32, next_time_us: u32, start_time_us: u32) {
-        self.app.update();
+    pub fn current_app_steps(&self) -> usize {
+        self.app
+            .world()
+            .get_resource::<FixedCounter>()
+            .unwrap()
+            .count()
+    }
+
+    pub fn step(
+        &mut self,
+        next_step_count: usize,
+        period_us: u32,
+        next_time_us: u32,
+        start_time_us: u32,
+    ) {
+        while self.current_app_steps() < next_step_count {
+            self.app.update();
+        }
+
         self.sensors_data = *self.app.world().get_resource::<SensorsData>().unwrap();
 
         // Get mutable ref to execution data
@@ -125,6 +142,7 @@ impl execution_data::SimulationStepper for RunnerStepper {
 
     fn step(&mut self) {
         self.app_wrapper.step(
+            self.current_step + 1,
             self.step_period_us,
             self.current_time_us + self.step_period_us,
             self.start_time_us,

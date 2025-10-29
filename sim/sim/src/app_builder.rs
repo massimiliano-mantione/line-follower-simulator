@@ -171,6 +171,26 @@ impl Plugin for RapierPhysicsSetupPlugin {
     }
 }
 
+#[derive(Resource)]
+pub struct FixedCounter {
+    count: usize,
+}
+
+impl FixedCounter {
+    fn new() -> Self {
+        FixedCounter { count: 0 }
+    }
+
+    #[inline]
+    pub fn count(&self) -> usize {
+        self.count
+    }
+}
+
+fn increment_fixed_step_counter(mut counter: ResMut<FixedCounter>) {
+    counter.count += 1;
+}
+
 pub fn create_app(app_type: AppType, track: Track, step_period_us: u32) -> wasmtime::Result<App> {
     if step_period_us < 100 || step_period_us > 1000 {
         return Err(wasmtime::Error::msg(format!(
@@ -193,6 +213,16 @@ pub fn create_app(app_type: AppType, track: Track, step_period_us: u32) -> wasmt
 
     if app_type.has_physics() {
         app.add_plugins(RapierPhysicsSetupPlugin);
+
+        if !app_type.has_visualization() {
+            let mut tsm = app.world_mut().get_resource_mut::<TimestepMode>().unwrap();
+            *tsm = TimestepMode::Fixed {
+                dt: step_period_us as f32 / 1_000_000.0,
+                substeps: 1,
+            };
+            app.insert_resource(FixedCounter::new());
+            app.add_systems(FixedUpdate, increment_fixed_step_counter);
+        }
     }
 
     app.add_plugins((
