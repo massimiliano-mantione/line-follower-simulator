@@ -320,11 +320,7 @@ pub fn spawn_bot_wheel(
 
     let transform = data
         .as_ref()
-        .map(|data| {
-            let t = Transform::from_translation(wheel_world);
-            println!("wheel transform {} {:?}", data.side, t);
-            t
-        })
+        .map(|data| Transform::from_translation(wheel_world))
         .unwrap_or_default();
 
     let id = commands.spawn((ChildOf(parent), transform)).id();
