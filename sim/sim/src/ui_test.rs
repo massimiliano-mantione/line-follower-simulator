@@ -37,8 +37,8 @@ impl Default for TestGuiState {
     fn default() -> Self {
         Self {
             base_text_size: 8.0,
-            pwm_fwd_cmd: PWM_MAX / 4,
-            pwm_side_cmd: PWM_MAX / 5,
+            pwm_fwd_cmd: PWM_MAX / 9,
+            pwm_side_cmd: PWM_MAX / 10,
             error_message: None,
             help_open: false,
         }
