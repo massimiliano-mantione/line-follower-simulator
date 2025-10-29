@@ -354,7 +354,7 @@ fn runner_gui_update(
                 ui.separator();
 
                 let mut bots = bot_vis.iter_mut().collect::<Vec<_>>();
-                bots.sort_by_key(|(bot_id, bot)| bot.bot_final_status);
+                bots.sort_by_key(|(_bot_id, bot)| bot.bot_final_status);
                 for (index, (_, bot)) in bots.iter_mut().enumerate() {
                     bot.bot_number = index;
                 }
