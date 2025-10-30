@@ -29,8 +29,9 @@ impl Guest for Component {
     }
 
     fn run() -> () {
-        //examples::toy::toy_run();
-        async_framework::run(examples::nb::toy::toy_run());
+        // async_framework::run(examples::nb::toy::toy_run());
+        // examples::toy::toy_run();
+        examples::basic_pid::basic_pid_run(4.0);
     }
 }
 
