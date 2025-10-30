@@ -98,3 +98,33 @@ pub fn write_csv_file(name: &str, data: &[u8], spec: &[CsvColumn]) {
 pub fn set_motors_pwm(left: i16, right: i16) {
     set_motors_power(left, right);
 }
+
+pub mod csv {
+    use crate::wasm_bindings::diagnostics::{CsvColumn, NamedValue, ValueKind};
+    pub const C_I8: ValueKind = ValueKind::Int8;
+    pub const C_I16: ValueKind = ValueKind::Int16;
+    pub const C_I32: ValueKind = ValueKind::Int32;
+    pub const C_U8: ValueKind = ValueKind::Uint8;
+    pub const C_U16: ValueKind = ValueKind::Uint16;
+    pub const C_U32: ValueKind = ValueKind::Uint32;
+    pub const PAD_8: ValueKind = ValueKind::Pad8;
+    pub const PAD_16: ValueKind = ValueKind::Pad16;
+
+    pub fn nv(name: &str, value: i32) -> NamedValue {
+        NamedValue {
+            name: name.to_string(),
+            value,
+        }
+    }
+
+    pub fn named<const S: usize>(values: [NamedValue; S]) -> ValueKind {
+        ValueKind::Named(values.into_iter().collect())
+    }
+
+    pub fn col(name: &str, kind: ValueKind) -> CsvColumn {
+        CsvColumn {
+            name: name.to_string(),
+            kind,
+        }
+    }
+}

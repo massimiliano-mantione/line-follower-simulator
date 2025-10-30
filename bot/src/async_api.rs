@@ -7,7 +7,7 @@ use crate::{
 
 pub use crate::async_framework::*;
 pub use crate::blocking_api::{
-    console_log, get_time_us, set_motors_pwm, write_csv_file, write_plain_file,
+    console_log, csv, get_time_us, set_motors_pwm, write_csv_file, write_plain_file,
 };
 
 /// Get the current values of all line sensors.
