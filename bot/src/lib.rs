@@ -6,14 +6,7 @@ pub mod examples;
 pub mod wasm_bindings;
 pub mod wasm_bindings_ext;
 
-use async_framework::FutureHandleExt;
-use examples::toy::toy_run;
-use wasm_bindings::devices::{
-    DeviceOperation, device_operation_async, device_operation_blocking, poll_loop, set_motors_power,
-};
-use wasm_bindings::diagnostics::write_line;
 use wasm_bindings::exports::robot::{Color, Configuration, Guest};
-use wasm_bindings_ext::DeviceValueExt;
 
 struct Component;
 
@@ -36,58 +29,8 @@ impl Guest for Component {
     }
 
     fn run() -> () {
-        toy_run();
-        //simple_blocking_run();
-        //async_event_loop::run(pin_boxed(simple_async_run()));
-    }
-}
-
-pub async fn simple_async_run() {
-    for i in 1..5 {
-        let time = device_operation_blocking(DeviceOperation::GetTime);
-
-        let (gyro, motors) = futures_lite::future::zip(
-            device_operation_async(DeviceOperation::ReadGyro).into_future(),
-            device_operation_async(DeviceOperation::ReadMotorAngles).into_future(),
-        )
-        .await;
-        write_line(&format!(
-            "log: {} time {} gyro {} {} {} {} wheels {} {}",
-            i,
-            time.get_u32(0),
-            gyro.get_i16(0),
-            gyro.get_i16(1),
-            gyro.get_i16(2),
-            gyro.get_i16(3),
-            motors.get_u16(0),
-            motors.get_u16(1),
-        ));
-
-        let (left, right) = if i % 2 == 0 { (0, 0) } else { (500, 500) };
-        set_motors_power(left, right);
-
-        device_operation_async(DeviceOperation::SleepFor(1_000_000))
-            .into_future()
-            .await;
-    }
-}
-
-pub fn simple_blocking_run() {
-    for i in 1..5 {
-        poll_loop(true);
-        let time = device_operation_blocking(DeviceOperation::GetTime);
-        let gyro = device_operation_blocking(DeviceOperation::ReadGyro);
-        write_line(&format!(
-            "log: {} time {} gyro {} {} {} {}",
-            i,
-            time.get_u32(0),
-            gyro.get_i16(0),
-            gyro.get_i16(1),
-            gyro.get_i16(2),
-            gyro.get_i16(3)
-        ));
-        device_operation_blocking(DeviceOperation::SleepFor(1_000_000));
-        poll_loop(false);
+        //examples::toy::toy_run();
+        async_framework::run(examples::nb::toy::toy_run());
     }
 }
 

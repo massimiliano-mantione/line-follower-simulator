@@ -1,11 +1,11 @@
 use futures_lite::future::zip;
 
 use crate::{
-    async_framework::FutureHandleExt,
     wasm_bindings::devices::{DeviceOperation, device_operation_async, device_operation_immediate},
     wasm_bindings_ext::DeviceValueExt,
 };
 
+pub use crate::async_framework::*;
 pub use crate::blocking_api::{
     console_log, get_time_us, set_motors_pwm, write_csv_file, write_plain_file,
 };
@@ -77,11 +77,15 @@ pub fn remote_enabled() -> bool {
 }
 
 /// Wait for the remote to be enabled.
-pub fn wait_remote_enabled() {
-    device_operation_async(DeviceOperation::WaitEnabled);
+pub async fn wait_remote_enabled() {
+    device_operation_async(DeviceOperation::WaitEnabled)
+        .into_future()
+        .await;
 }
 
 /// Wait for the remote to be disabled.
-pub fn wait_remote_disabled() {
-    device_operation_async(DeviceOperation::WaitDisabled);
+pub async fn wait_remote_disabled() {
+    device_operation_async(DeviceOperation::WaitDisabled)
+        .into_future()
+        .await;
 }

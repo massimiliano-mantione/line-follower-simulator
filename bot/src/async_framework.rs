@@ -10,6 +10,7 @@ use crate::wasm_bindings::devices::{
     DeviceValue, FutureHandle, PollOperationStatus, device_poll, forget_handle, poll_loop,
 };
 
+/// A pinned and boxed value
 pub type PinBoxed<T> = core::pin::Pin<Box<T>>;
 pub fn pin_boxed<T>(t: T) -> PinBoxed<T> {
     Box::pin(t)
@@ -32,7 +33,8 @@ fn noop_waker() -> core::task::Waker {
     unsafe { core::task::Waker::from_raw(noop_raw_waker()) }
 }
 
-pub fn run(mut root_task: PinBoxed<impl Future<Output = ()>>) {
+/// Run a pinned and boxed future, polling until completion
+pub fn run_boxed(mut root_task: PinBoxed<impl Future<Output = ()>>) {
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 
@@ -45,6 +47,12 @@ pub fn run(mut root_task: PinBoxed<impl Future<Output = ()>>) {
     }
 }
 
+/// Run a pinned and boxed future, polling until completion
+pub fn run(root_task: impl Future<Output = ()>) {
+    run_boxed(pin_boxed(root_task))
+}
+
+/// A future value (wraps a `FutureHandle` from WASM bindings)
 pub struct FutureValue {
     handle: FutureHandle,
 }
@@ -55,7 +63,9 @@ impl From<FutureHandle> for FutureValue {
     }
 }
 
+/// Convenience extension trait for `FutureHandle`
 pub trait FutureHandleExt {
+    /// Convert a `FutureHandle` into a `FutureValue`
     fn into_future(self) -> FutureValue;
 }
 
