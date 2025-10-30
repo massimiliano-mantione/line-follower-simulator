@@ -87,7 +87,7 @@ pub struct RunnerGuiState {
     logs: bool,
     period: u32,
     start_time: u32,
-    bot_with_pending_remove: Option<(Entity, BotName)>,
+    bot_with_pending_remove: Option<BotName>,
     error_message: Option<String>,
     help_open: bool,
 }
@@ -378,22 +378,20 @@ fn runner_gui_update(
                             bot.bot_activity.status_at_time(gui_state.play_time_sec),
                             gui_state.base_text_size,
                         ) {
-                            gui_state.as_mut().bot_with_pending_remove = Some((
-                                *bot_id,
-                                BotName {
-                                    name: bot.config.name.clone(),
-                                    c1: Color32::from_rgb(
-                                        bot.config.color_main.r,
-                                        bot.config.color_main.g,
-                                        bot.config.color_main.b,
-                                    ),
-                                    c2: Color32::from_rgb(
-                                        bot.config.color_secondary.r,
-                                        bot.config.color_secondary.g,
-                                        bot.config.color_secondary.b,
-                                    ),
-                                },
-                            ))
+                            gui_state.as_mut().bot_with_pending_remove = Some(BotName {
+                                id: *bot_id,
+                                name: bot.config.name.clone(),
+                                c1: Color32::from_rgb(
+                                    bot.config.color_main.r,
+                                    bot.config.color_main.g,
+                                    bot.config.color_main.b,
+                                ),
+                                c2: Color32::from_rgb(
+                                    bot.config.color_secondary.r,
+                                    bot.config.color_secondary.g,
+                                    bot.config.color_secondary.b,
+                                ),
+                            });
                         }
                     });
                 }
@@ -417,7 +415,7 @@ fn runner_gui_update(
 
 fn ask_bot_remove(ui: &mut Ui, gui_state: &mut RunnerGuiState) -> Option<Entity> {
     let mut response = None;
-    if let Some((bot_id, bot_with_pending_remove)) = &gui_state.bot_with_pending_remove {
+    if let Some(bot_with_pending_remove) = &gui_state.bot_with_pending_remove {
         let modal = Modal::new(Id::new("Modal Remove")).show(ui.ctx(), |ui| {
             ui.vertical_centered(|ui| {
                 rl(ui, "Remove robot?", gui_state.base_text_size * 2.0);
@@ -452,7 +450,7 @@ fn ask_bot_remove(ui: &mut Ui, gui_state: &mut RunnerGuiState) -> Option<Entity>
                     },
                 );
                 if yes {
-                    response = Some(*bot_id);
+                    response = Some(bot_with_pending_remove.id);
                 }
                 if no {
                     response = None;
@@ -539,6 +537,7 @@ fn bot_status(
 }
 
 struct BotName {
+    id: Entity,
     name: String,
     c1: Color32,
     c2: Color32,
