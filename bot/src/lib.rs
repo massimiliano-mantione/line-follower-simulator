@@ -33,6 +33,7 @@ impl Guest for Component {
         // examples::toy::toy_run();
         // examples::basic_pid::basic_pid_run(4.0);
         examples::pid_with_memory::pid_with_memory_run(4.0);
+        // examples::telemetry_test::telemetry_test_run();
     }
 }
 
