@@ -1,10 +1,9 @@
 use crate::blocking_api::{
-    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, sleep_for,
-    wait_remote_enabled,
+    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, wait_remote_enabled,
 };
 
-const PWM_MAX: i16 = 300;
-const MAX_TIME: u32 = 10_000_000;
+const PWM_MAX: i16 = 500;
+const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
 const KP: f32 = 0.5;
@@ -105,7 +104,6 @@ pub fn basic_pid_run(sensor_spacing_mm: f32) {
         pid.log_vars();
 
         set_motors_pwm(pwm_l, pwm_r);
-        sleep_for(100);
 
         if get_time_us() > MAX_TIME {
             console_log("timeout");
