@@ -33,7 +33,7 @@ use crate::{
     server::start_server,
     track::Track,
     ui::{
-        camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
+        HelpState, camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
         process_new_bot, rl,
     },
     visualizer::{
@@ -100,7 +100,7 @@ pub struct RunnerGuiState {
     start_time: u32,
     bot_with_pending_remove: Option<BotName>,
     error_message: Option<String>,
-    help_open: bool,
+    help_state: HelpState,
     auto_run: bool,
 }
 
@@ -134,7 +134,7 @@ impl RunnerGuiState {
             start_time,
             bot_with_pending_remove: None,
             error_message: None,
-            help_open: false,
+            help_state: HelpState::new(),
             auto_run,
         }
     }
@@ -249,7 +249,7 @@ fn runner_gui_update(
                     || keyboard_input.just_pressed(KeyCode::Slash)
                     || keyboard_input.just_pressed(KeyCode::F1)
                 {
-                    gui_state.help_open = true;
+                    gui_state.help_state.is_open = true;
                 }
                 ui.separator();
 
@@ -382,7 +382,7 @@ fn runner_gui_update(
 
             let base_text_size = gui_state.base_text_size;
             error_dialog(ui, &mut gui_state.error_message, base_text_size);
-            help_dialog(ui, &mut gui_state.help_open, base_text_size);
+            help_dialog(ui, &mut gui_state.help_state, base_text_size);
         });
 
     let cb_size = gui_state.base_text_size * 3.0;
