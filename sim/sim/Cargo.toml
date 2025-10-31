@@ -17,6 +17,8 @@ bevy_panorbit_camera = {path = "../bevy_panorbit_camera", features = ["bevy_egui
 bevy_egui = { workspace = true }
 egui-file-dialog = { workspace = true }
 egui_material_icons = { workspace = true }
+egui_commonmark = { workspace = true }
+image = { workspace = true }
 tiny_http = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }

@@ -1,3 +1,4 @@
+use egui_commonmark::*;
 use std::{
     f32::consts::{FRAC_PI_4, PI},
     path::PathBuf,
@@ -328,13 +329,22 @@ pub fn help_dialog(ui: &mut Ui, help_open: &mut bool, base_text_size: f32) {
     let close = if *help_open {
         let modal = Modal::new(Id::new("Modal Error")).show(ui.ctx(), |ui| {
             ui.vertical_centered(|ui| {
-                rl(ui, "Help", base_text_size * 3.0);
+                let markdown = r"# Hello world
 
-                ui.add_space(8.0);
+* A list
+* [ ] Checkbox
+";
 
-                rl(ui, "HELP!", base_text_size * 1.5);
+                let mut cache = CommonMarkCache::default();
+                CommonMarkViewer::new().show(ui, &mut cache, markdown);
 
-                ui.add_space(8.0);
+                // rl(ui, "Help", base_text_size * 3.0);
+
+                // ui.add_space(8.0);
+
+                // rl(ui, "HELP!", base_text_size * 1.5);
+
+                // ui.add_space(8.0);
 
                 if icon_button(ui, ICON_CHECK, base_text_size * 4.0).clicked() {
                     ui.close();
