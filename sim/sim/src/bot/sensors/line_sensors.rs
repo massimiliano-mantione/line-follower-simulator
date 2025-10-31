@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::track::{TRACK_HALF_WIDTH, TrackSegment};
+use crate::track::TrackSegment;
 use crate::utils::{NormalRandom, point_to_new_origin};
 use execution_data::SensorsData;
 
@@ -91,11 +91,10 @@ impl TrackSimulateLine for TrackSegment {
             TrackSegment::Start | TrackSegment::End => line_reflection(local_point.x, z),
             TrackSegment::Straight(_) => line_reflection(local_point.x, z),
             TrackSegment::NinetyDegTurn(data) => {
-                let turn_y = (data.line_half_length - TRACK_HALF_WIDTH) / 2.0;
-                let dist_to_line = if local_point.y < data.side.sign() * local_point.x + turn_y {
+                let dist_to_line = if local_point.y < data.side.sign() * local_point.x {
                     local_point.x
                 } else {
-                    data.side.sign() * (local_point.y - turn_y)
+                    data.side.sign() * local_point.y
                 };
                 line_reflection(dist_to_line, z)
             }
