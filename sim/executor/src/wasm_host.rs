@@ -943,7 +943,7 @@ impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
         current_fuel: u64,
         text: wasmtime::component::__internal::String,
     ) -> wasmtime::Result<()> {
-        let cp = self.stepper.get_absolute_bot_position();
+        //let cp = self.stepper.get_absolute_bot_position();
 
         let current_time = self.setup_current_time(current_fuel)?;
         let char_count = text.as_bytes().len();
@@ -953,8 +953,8 @@ impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
             let sec = current_time / 1_000_000;
             let ms = (current_time / 1_000) % 1000;
             let us = current_time % 1000;
-            //let line = format!("{:02}.{:03}_{:03}: {}", sec, ms, us, text);
-            let line = format!("{:02}.{:03}_{:03} {}: {}", sec, ms, us, cp, text);
+            let line = format!("{:02}.{:03}_{:03}: {}", sec, ms, us, text);
+            //let line = format!("{:02}.{:03}_{:03} {}: {}", sec, ms, us, cp, text);
 
             if self.output_log {
                 println!("{}", &line);
@@ -977,7 +977,7 @@ impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
         csv: Option<wasmtime::component::__internal::Vec<CsvColumn>>,
     ) -> wasmtime::Result<()> {
         self.setup_current_time(current_fuel)?;
-        self.skip_time((data.len() * 10) as u32)?;
+        //self.skip_time((data.len() * 10) as u32)?;
 
         if let Some(path) = self.workdir_path.as_ref() {
             let bin_name = format!("{}.bin", name);
