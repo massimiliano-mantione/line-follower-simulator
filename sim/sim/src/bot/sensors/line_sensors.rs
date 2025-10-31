@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::track::TrackSegment;
+use crate::track::{TRACK_HALF_WIDTH, TrackSegment};
 use crate::utils::{NormalRandom, point_to_new_origin};
 use execution_data::SensorsData;
 
@@ -90,12 +90,18 @@ impl TrackSimulateLine for TrackSegment {
         match *self {
             TrackSegment::Start | TrackSegment::End => line_reflection(local_point.x, z),
             TrackSegment::Straight(_) => line_reflection(local_point.x, z),
-            TrackSegment::NinetyDegTurn(data) => {
-                let dist_to_line = if local_point.y < data.side.sign() * local_point.x {
+            TrackSegment::NinetyDegTurn(_data) => {
+                let dist_line_x = if local_point.y < TRACK_HALF_WIDTH {
                     local_point.x
                 } else {
-                    data.side.sign() * local_point.y
+                    local_point.y - TRACK_HALF_WIDTH
                 };
+                let dist_line_y = if local_point.x > -TRACK_HALF_WIDTH {
+                    local_point.y
+                } else {
+                    local_point.x + TRACK_HALF_WIDTH
+                };
+                let dist_to_line = dist_line_x.min(dist_line_y);
                 line_reflection(dist_to_line, z)
             }
             TrackSegment::CyrcleTurn(data) => {
@@ -119,6 +125,7 @@ pub fn compute_sensor_readings(
 ) {
     let rapier_context = read_rapier_context.single().unwrap();
 
+    println!("SENSORS-BLOCK");
     for (i, sensor_tf) in sensors_query.iter().enumerate() {
         const NOISE: f32 = 1.0;
         let origin = sensor_tf.translation();
