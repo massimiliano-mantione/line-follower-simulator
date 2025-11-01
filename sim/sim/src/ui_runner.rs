@@ -325,7 +325,7 @@ fn runner_gui_update(
                 gui_state.play_time_sec =
                     gui_state.play_time_sec.min(gui_state.play_max_sec).max(0.0);
 
-                rl(ui, format!("{:.3}", gui_state.play_time_sec), size);
+                rl(ui, format!("{:06.3}", gui_state.play_time_sec), size);
 
                 ui.add_space(size / 2.0);
 
