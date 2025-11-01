@@ -366,7 +366,7 @@ More about our simulator
 ---
 
 #### the *simulation* runs with a **fixed period**
-#### *between 1000µs (1㎑) and 100µs (10㎑)*
+#### chosen *between 1000µs (1㎑) and 100µs (10㎑)*
 ##### the *default* period is **500µs**
 
 #### time is measured by *WASM* **fuel** consumption
@@ -524,7 +524,7 @@ The Need for `async`
 
 ##### each task is an `async` function
 
-#### **compose** taskss with *usual combinators*
+#### **compose** tasks with *usual combinators*
 ##### *(`zip` or `join`, `race`...)*
 
 #### tasks can communicate with
