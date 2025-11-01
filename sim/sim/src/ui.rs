@@ -8,7 +8,7 @@ use std::{
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::{
     EguiContexts, EguiGlobalSettings, EguiPlugin, PrimaryEguiContext,
-    egui::{self, Color32, Id, Modal, Response, Ui},
+    egui::{self, Area, Color32, Context, Id, Modal, Response, Ui},
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use egui_material_icons::icons::{
@@ -419,14 +419,19 @@ impl HelpState {
     }
 }
 
-pub fn help_dialog(ui: &mut Ui, help_state: &mut HelpState, base_text_size: f32) {
+pub fn help_dialog(ctx: &Context, help_state: &mut HelpState, base_text_size: f32) {
+    let size = ctx.available_rect().size();
+
     let close = if help_state.is_open {
-        let modal = Modal::new(Id::new("Modal Error")).show(ui.ctx(), |ui| {
-            ui.vertical_centered(|ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let cmw = CommonMarkViewer::new();
-                    cmw.show(ui, &mut help_state.cache, HELP_TEXT);
-                });
+        let modal = Modal::new(Id::new("Modal Error")).show(ctx, |ui| {
+            ui.vertical_centered(|ui: &mut Ui| {
+                egui::ScrollArea::both()
+                    .max_width(size.x * 0.75)
+                    .max_height(size.y * 0.75)
+                    .show(ui, |ui| {
+                        let cmw = CommonMarkViewer::new();
+                        cmw.show(ui, &mut help_state.cache, HELP_TEXT);
+                    });
 
                 if icon_button(ui, ICON_CHECK, base_text_size * 4.0).clicked() {
                     ui.close();

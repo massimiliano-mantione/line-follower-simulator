@@ -238,6 +238,9 @@ fn runner_gui_update(
         );
     }
 
+    let base_text_size = gui_state.base_text_size;
+    help_dialog(ctx, &mut gui_state.help_state, base_text_size);
+
     egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(false)
         .default_height(gui_state.base_text_size * 1.8)
@@ -382,7 +385,6 @@ fn runner_gui_update(
 
             let base_text_size = gui_state.base_text_size;
             error_dialog(ui, &mut gui_state.error_message, base_text_size);
-            help_dialog(ui, &mut gui_state.help_state, base_text_size);
         });
 
     let cb_size = gui_state.base_text_size * 3.0;
