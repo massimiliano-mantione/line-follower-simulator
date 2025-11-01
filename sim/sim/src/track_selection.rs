@@ -61,13 +61,73 @@ fn build_simple_track() -> Track {
     )
 }
 
+fn build_race_track() -> Track {
+    Track::new(
+        v2(6.25, 7.0),
+        origin(-2.525, -2.75, 0.0),
+        vec![
+            start(),
+            straight(2.0),
+            t90(RIGHT, 0.25),
+            t90(RIGHT, 0.25),
+            turn(90.0, LEFT, 2.5),
+            turn(90.0, LEFT, 2.25),
+            turn(90.0, LEFT, 2.0),
+            turn(90.0, LEFT, 1.75),
+            turn(90.0, LEFT, 1.5),
+            turn(180.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 1.0),
+            turn(90.0, RIGHT, 1.25),
+            turn(90.0, RIGHT, 1.5),
+            turn(90.0, RIGHT, 1.75),
+            turn(90.0, RIGHT, 2.0),
+            straight(0.25),
+            turn(90.0, LEFT, 0.5),
+            straight(0.25),
+            turn(180.0, RIGHT, 0.25),
+            straight(0.75),
+            t90(LEFT, 0.25),
+            t90(RIGHT, 0.25),
+            t90(LEFT, 0.25),
+            t90(RIGHT, 0.25),
+            t90(LEFT, 0.25),
+            t90(RIGHT, 0.25),
+            t90(RIGHT, 0.25),
+            t90(LEFT, 0.25),
+            straight(1.75),
+            turn(180.0, LEFT, 0.55),
+            turn(45.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(90.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(90.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(90.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(90.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(90.0, LEFT, 0.25),
+            turn(90.0, RIGHT, 0.25),
+            turn(225.0, LEFT, 0.25),
+            straight(0.75),
+            turn(135.0, RIGHT, 0.25),
+            straight(0.75),
+            turn(45.0, RIGHT, 0.25),
+            straight(0.5),
+            turn(90.0, RIGHT, 0.25),
+            straight(0.75),
+            end(),
+        ],
+    )
+}
+
 pub fn build_track(id: TrackId) -> Track {
     match id {
         TrackId::Line => build_line_track(),
         TrackId::Angle => build_angle_track(),
         TrackId::Turn => build_turn_track(),
         TrackId::Simple => build_simple_track(),
-        TrackId::Race => unimplemented!(),
+        TrackId::Race => build_race_track(),
     }
 }
 
