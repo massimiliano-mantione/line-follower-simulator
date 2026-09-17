@@ -9,6 +9,11 @@ use execution_data::{
     ExecutionData, GyroData, ImuFusedData, MotorAngles, MotorDriversDutyCycles, SimulationStepper,
 };
 
+use wasmtime::{
+    AsContextMut,
+    component::{Access, HasSelf},
+};
+
 use crate::wasm_bindings::{
     self,
     devices::{
@@ -767,8 +772,9 @@ pub struct BotHost<S: SimulationStepper> {
     futures_by_activity: BTreeSet<u32>,
 }
 
-impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
-    #[doc = " Perform a device operation (returns immediately the current value if possible, not for sleep or wait operations)"]
+/// Device operations, taking the fuel consumed so far as their simulated clock.
+impl<S: SimulationStepper> BotHost<S> {
+    /// Perform a device operation (returns immediately the current value if possible, not for sleep or wait operations)
     fn device_operation_immediate(
         &mut self,
         current_fuel: u64,
@@ -797,7 +803,7 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
             }
         }
     }
-    #[doc = " Perform a blocking operation (returns the provided value, blocking for the needed time)"]
+    /// Perform a blocking operation (returns the provided value, blocking for the needed time)
     fn device_operation_blocking(
         &mut self,
         current_fuel: u64,
@@ -828,7 +834,7 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
             .into())
     }
 
-    #[doc = " Initiate an async operation (immediately returns a handle to the future value)"]
+    /// Initiate an async operation (immediately returns a handle to the future value)
     fn device_operation_async(
         &mut self,
         current_fuel: u64,
@@ -861,7 +867,7 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
         Ok(FutureHandle { id, ready_at })
     }
 
-    #[doc = " Poll the status of an async operation (returns immediately)"]
+    /// Poll the status of an async operation (returns immediately)
     fn device_poll(
         &mut self,
         current_fuel: u64,
@@ -891,7 +897,7 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
         }
     }
 
-    #[doc = " Signal future values poll loop start and end to the simulation host"]
+    /// Signal future values poll loop start and end to the simulation host
     fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
         let current_time = self.setup_current_time(current_fuel)?;
         if start {
@@ -909,8 +915,8 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
         Ok(())
     }
 
-    #[doc = " Instructs the simulation to forget the handle to an async operation"]
-    #[doc = " (is equivalent to dropping the future in Rust)"]
+    /// Instructs the simulation to forget the handle to an async operation
+    /// (is equivalent to dropping the future in Rust)
     fn forget_handle(&mut self, handle: FutureHandle) -> () {
         self.futures_by_activity.remove(&handle.id);
         self.futures_by_ready_time.remove(&FutureValueReadyTime {
@@ -920,7 +926,7 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
         self.futures_by_id.remove(&handle.id);
     }
 
-    #[doc = " Set the power of both motors"]
+    /// Set the power of both motors
     fn set_motors_power(
         &mut self,
         current_fuel: u64,
@@ -935,14 +941,11 @@ impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {
     }
 }
 
-impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
-    #[doc = " Write a line of text as a log, like writing to a serial line"]
-    #[doc = " (each character takes 100 microseconds)"]
-    fn write_line(
-        &mut self,
-        current_fuel: u64,
-        text: wasmtime::component::__internal::String,
-    ) -> wasmtime::Result<()> {
+/// Diagnostics operations, taking the fuel consumed so far as their simulated clock.
+impl<S: SimulationStepper> BotHost<S> {
+    /// Write a line of text as a log, like writing to a serial line
+    /// (each character takes 100 microseconds)
+    fn write_line(&mut self, current_fuel: u64, text: String) -> wasmtime::Result<()> {
         //let cp = self.stepper.get_absolute_bot_position();
 
         let current_time = self.setup_current_time(current_fuel)?;
@@ -967,14 +970,14 @@ impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
         Ok(())
     }
 
-    #[doc = " Write a buffer into a file, eventually converting it to CSV"]
-    #[doc = " (each byte takes 10 microseconds)"]
+    /// Write a buffer into a file, eventually converting it to CSV
+    /// (each byte takes 10 microseconds)
     fn write_file(
         &mut self,
         current_fuel: u64,
-        name: wasmtime::component::__internal::String,
-        data: wasmtime::component::__internal::Vec<u8>,
-        csv: Option<wasmtime::component::__internal::Vec<CsvColumn>>,
+        name: String,
+        data: Vec<u8>,
+        csv: Option<Vec<CsvColumn>>,
     ) -> wasmtime::Result<()> {
         self.setup_current_time(current_fuel)?;
         self.skip_time((data.len() * 10) as u32)?;
@@ -999,6 +1002,92 @@ impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {
         Ok(())
     }
 }
+
+/// The generated bindings hand every host function an
+/// [`Access`](wasmtime::component::Access) to the store (thanks to the `store`
+/// flag on the imports in [`crate::wasm_bindings`]), which is what lets the
+/// simulation read the fuel consumed so far and derive the current simulated
+/// time from it. Each trait method below just reads the fuel and forwards to
+/// the matching inherent method on [`BotHost`].
+impl<T, S: SimulationStepper + 'static> wasm_bindings::devices::HostWithStore<T>
+    for HasSelf<BotHost<S>>
+{
+    fn device_operation_immediate(
+        mut host: Access<T, Self>,
+        operation: DeviceOperation,
+    ) -> wasmtime::Result<DeviceValue> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get()
+            .device_operation_immediate(current_fuel, operation)
+    }
+
+    fn device_operation_blocking(
+        mut host: Access<T, Self>,
+        operation: DeviceOperation,
+    ) -> wasmtime::Result<DeviceValue> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get()
+            .device_operation_blocking(current_fuel, operation)
+    }
+
+    fn device_operation_async(
+        mut host: Access<T, Self>,
+        operation: DeviceOperation,
+    ) -> wasmtime::Result<FutureHandle> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().device_operation_async(current_fuel, operation)
+    }
+
+    fn device_poll(
+        mut host: Access<T, Self>,
+        handle: FutureHandle,
+    ) -> wasmtime::Result<PollOperationStatus> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().device_poll(current_fuel, handle)
+    }
+
+    fn poll_loop(mut host: Access<T, Self>, start: bool) -> wasmtime::Result<()> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().poll_loop(current_fuel, start)
+    }
+
+    fn forget_handle(mut host: Access<T, Self>, handle: FutureHandle) -> wasmtime::Result<()> {
+        host.get().forget_handle(handle);
+        Ok(())
+    }
+
+    fn set_motors_power(
+        mut host: Access<T, Self>,
+        left: MotorPower,
+        right: MotorPower,
+    ) -> wasmtime::Result<()> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().set_motors_power(current_fuel, left, right)
+    }
+}
+
+impl<T, S: SimulationStepper + 'static> wasm_bindings::diagnostics::HostWithStore<T>
+    for HasSelf<BotHost<S>>
+{
+    fn write_line(mut host: Access<T, Self>, text: String) -> wasmtime::Result<()> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().write_line(current_fuel, text)
+    }
+
+    fn write_file(
+        mut host: Access<T, Self>,
+        name: String,
+        data: Vec<u8>,
+        csv: Option<Vec<CsvColumn>>,
+    ) -> wasmtime::Result<()> {
+        let current_fuel = host.as_context_mut().get_fuel()?;
+        host.get().write_file(current_fuel, name, data, csv)
+    }
+}
+
+// Marker traits: all of the actual work happens in the `HostWithStore` impls.
+impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {}
+impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {}
 
 enum CsvColumnKind {
     Int8,
@@ -1079,7 +1168,7 @@ struct CvsLineHandler {
 }
 
 impl CvsLineHandler {
-    pub fn new(spec: &wasmtime::component::__internal::Vec<CsvColumn>) -> Self {
+    pub fn new(spec: &Vec<CsvColumn>) -> Self {
         let mut columns = Vec::new();
         let mut size = 0;
 

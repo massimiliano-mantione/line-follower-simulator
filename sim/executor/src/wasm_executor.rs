@@ -35,6 +35,10 @@ pub fn get_robot_configuration(wasm_bytes: &[u8]) -> wasmtime::Result<Configurat
     linker.define_unknown_imports_as_traps(&component)?;
 
     // Instantiate component host
+    // Instantiating already consumes fuel, and a store that has none left traps,
+    // so the budget has to be in place before instantiation. It is reset right
+    // afterwards so that instantiation does not eat into the simulated time.
+    store.set_fuel(fuel_for_time_us(total_simulation_time))?;
     let robot_component = LineFollowerRobot::instantiate(&mut store, &component, &linker)?;
 
     store.set_fuel(fuel_for_time_us(total_simulation_time))?;
@@ -74,6 +78,10 @@ pub fn run_robot_simulation(
     LineFollowerRobot::add_to_linker::<_, HasSelf<_>>(&mut linker, |host| host)?;
 
     // Instantiate component host
+    // Instantiating already consumes fuel, and a store that has none left traps,
+    // so the budget has to be in place before instantiation. It is reset right
+    // afterwards so that instantiation does not eat into the simulated time.
+    store.set_fuel(fuel_for_time_us(total_simulation_time))?;
     let robot_component = LineFollowerRobot::instantiate(&mut store, &component, &linker)?;
 
     store.set_fuel(fuel_for_time_us(total_simulation_time))?;
