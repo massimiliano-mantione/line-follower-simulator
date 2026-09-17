@@ -35,7 +35,7 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
@@ -48,9 +48,17 @@ fn setup(
 }
 
 fn ui_example_system(mut contexts: EguiContexts) -> Result {
-    egui::SidePanel::left("left_panel")
+    let ctx = contexts.ctx_mut()?;
+    let mut root_ui = egui::Ui::new(
+        ctx.clone(),
+        egui::Id::new("viewport"),
+        egui::UiBuilder::new()
+            .layer_id(egui::LayerId::background())
+            .max_rect(ctx.viewport_rect()),
+    );
+    egui::Panel::left("left_panel")
         .resizable(true)
-        .show(contexts.ctx_mut()?, |ui| {
+        .show(&mut root_ui, |ui| {
             ui.label("Left resizeable panel");
         });
 

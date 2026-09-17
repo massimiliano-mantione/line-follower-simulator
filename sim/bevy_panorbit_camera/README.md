@@ -2,11 +2,6 @@
 [![docs.rs](https://docs.rs/bevy_panorbit_camera/badge.svg)](https://docs.rs/bevy_panorbit_camera)
 [![Bevy tracking](https://img.shields.io/badge/Bevy%20tracking-released%20version-lightblue)](https://github.com/bevyengine/bevy/blob/main/docs/plugins_guidelines.md#main-branch-tracking)
 
-# Important notice: this has been copied here in full, from the original repository (version 0.28.0).
-
-I needed to fix panning with nonstandard axis definitions, and this is a quick way to do it.
-Eventually I'll do a proper pull request.
-
 <div style="text-align: center">
   <h1>Bevy Pan/Orbit Camera</h1>
 </div>
@@ -73,6 +68,9 @@ all the possible configuration options.
 
 | bevy | bevy_panorbit_camera |
 |------|----------------------|
+| 0.19 | 0.35                 |
+| 0.18 | 0.34                 |
+| 0.17 | 0.29-0.33            |
 | 0.16 | 0.26-0.28            |
 | 0.15 | 0.21-0.25            |
 | 0.14 | 0.19-0.20            |

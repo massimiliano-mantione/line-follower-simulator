@@ -1,7 +1,7 @@
 use bevy::{
     app::{App, AppExit},
     ecs::{
-        event::EventWriter,
+        message::MessageWriter,
         resource::Resource,
         system::{Query, ResMut},
     },
@@ -19,7 +19,7 @@ use crate::{
     track::Track,
     ui::{
         HelpState, camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
-        rl, rlc,
+        rl, rlc, viewport_ui,
     },
 };
 
@@ -53,7 +53,7 @@ fn test_gui_update(
     mut contexts: EguiContexts,
     mut gui_state: ResMut<TestGuiState>,
     keyboard_input: ResMut<ButtonInput<KeyCode>>,
-    mut exit: EventWriter<AppExit>,
+    mut exit: MessageWriter<AppExit>,
     mut pwm: ResMut<MotorDriversDutyCycles>,
     sensors: Res<SensorsData>,
     track: Res<Track>,
@@ -61,16 +61,17 @@ fn test_gui_update(
     mut camera: Query<(&mut PanOrbitCamera, &Transform)>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
+    let mut root_ui = viewport_ui(ctx);
     let (mut po_camera, po_transform) = camera.single_mut()?;
 
     let base_text_size = gui_state.base_text_size;
     help_dialog(ctx, &mut gui_state.help_state, base_text_size);
 
-    egui::TopBottomPanel::bottom("bottom_panel")
+    egui::Panel::bottom("bottom_panel")
         .resizable(false)
-        .default_height(gui_state.base_text_size * 1.8)
+        .default_size(gui_state.base_text_size * 1.8)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             ui.horizontal(|ui| {
                 let size = gui_state.base_text_size * 4.0;
                 if icon_button(ui, ICON_HELP, size).clicked()
@@ -115,11 +116,11 @@ fn test_gui_update(
         });
 
     let cb_size = gui_state.base_text_size * 3.0;
-    egui::SidePanel::left("left_panel")
+    egui::Panel::left("left_panel")
         .resizable(false)
-        .default_width(cb_size * 3.0)
+        .default_size(cb_size * 3.0)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             camera_buttons(
                 ui,
                 gui_state.base_text_size,
@@ -129,11 +130,11 @@ fn test_gui_update(
             );
         });
 
-    egui::SidePanel::right("right_panel")
+    egui::Panel::right("right_panel")
         .resizable(false)
-        .default_width(gui_state.base_text_size * 30.0)
+        .default_size(gui_state.base_text_size * 30.0)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             ui.vertical_centered(|ui| {
                 rl(ui, "PWM limits", gui_state.base_text_size);
                 ui.separator();

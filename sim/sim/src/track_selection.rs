@@ -1,9 +1,9 @@
-use bevy::{math::Vec2, text::cosmic_text::Angle};
+use bevy::math::Vec2;
 
 use crate::{
     TrackId,
     track::{SegmentTransform, Track, TrackSegment},
-    utils::Side,
+    utils::{Angle, Side},
 };
 
 fn build_line_track() -> Track {

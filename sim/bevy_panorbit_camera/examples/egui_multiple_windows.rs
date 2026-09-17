@@ -2,12 +2,11 @@
 //! This is a combination of the egui and multiple_windows examples, and doesn't show anything new,
 //! it's primarily here for easy e2e testing.
 
-use bevy::render::camera::RenderTarget;
+use bevy::camera::RenderTarget;
 use bevy::window::WindowRef;
 use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
 use bevy_egui::{
-    egui, EguiContext, EguiMultipassSchedule, EguiPlugin, EguiPrimaryContextPass,
-    PrimaryEguiContext,
+    egui, EguiContext, EguiPlugin, EguiPrimaryContextPass, EguiSchedule, PrimaryEguiContext,
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
@@ -45,7 +44,7 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
@@ -67,13 +66,11 @@ fn setup(
 
     // second window camera
     commands.spawn((
-        Camera {
-            target: RenderTarget::Window(WindowRef::Entity(second_window)),
-            ..default()
-        },
+        Camera { ..default() },
+        RenderTarget::Window(WindowRef::Entity(second_window)),
         Transform::from_translation(Vec3::new(5.0, 1.5, 7.0)),
         PanOrbitCamera::default(),
-        EguiMultipassSchedule::new(SecondWindowContextPass),
+        EguiSchedule::new(SecondWindowContextPass),
     ));
 }
 

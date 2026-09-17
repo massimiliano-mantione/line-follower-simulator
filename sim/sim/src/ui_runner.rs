@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Mutex};
 use bevy::{
     app::{App, AppExit},
     ecs::{
-        event::EventWriter,
+        message::MessageWriter,
         resource::Resource,
         system::{Query, ResMut},
     },
@@ -34,7 +34,7 @@ use crate::{
     track::Track,
     ui::{
         HelpState, camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
-        process_new_bot, rl,
+        process_new_bot, rl, viewport_ui,
     },
     visualizer::{
         BotVisualization, spawn_bot_visualization, sync_bot_body, sync_bot_layers, sync_bot_wheel,
@@ -198,7 +198,7 @@ fn runner_gui_update(
     mut contexts: EguiContexts,
     mut gui_state: ResMut<RunnerGuiState>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut exit: EventWriter<AppExit>,
+    mut exit: MessageWriter<AppExit>,
     mut camera: Query<(&mut PanOrbitCamera, &Transform)>,
     mut bot_vis: Query<(Entity, &mut BotVisualization)>,
     track: Res<Track>,
@@ -208,6 +208,7 @@ fn runner_gui_update(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
+    let mut root_ui = viewport_ui(ctx);
     let (mut po_camera, po_transform) = camera.single_mut()?;
 
     if gui_state.play_active {
@@ -241,11 +242,11 @@ fn runner_gui_update(
     let base_text_size = gui_state.base_text_size;
     help_dialog(ctx, &mut gui_state.help_state, base_text_size);
 
-    egui::TopBottomPanel::bottom("bottom_panel")
+    egui::Panel::bottom("bottom_panel")
         .resizable(false)
-        .default_height(gui_state.base_text_size * 1.8)
+        .default_size(gui_state.base_text_size * 1.8)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             ui.horizontal(|ui| {
                 let size = gui_state.base_text_size * 4.0;
                 if icon_button(ui, ICON_HELP, size).clicked()
@@ -388,11 +389,11 @@ fn runner_gui_update(
         });
 
     let cb_size = gui_state.base_text_size * 3.0;
-    egui::SidePanel::left("left_panel")
+    egui::Panel::left("left_panel")
         .resizable(false)
-        .default_width(cb_size * 3.0)
+        .default_size(cb_size * 3.0)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             camera_buttons(
                 ui,
                 gui_state.base_text_size,
@@ -402,11 +403,11 @@ fn runner_gui_update(
             );
         });
 
-    egui::SidePanel::right("right_panel")
+    egui::Panel::right("right_panel")
         .resizable(false)
-        .default_width(gui_state.base_text_size * 30.0)
+        .default_size(gui_state.base_text_size * 30.0)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&mut root_ui, |ui| {
             ui.vertical_centered(|ui| {
                 rl(ui, "Robots", gui_state.base_text_size);
                 ui.separator();

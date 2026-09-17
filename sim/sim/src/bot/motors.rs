@@ -108,7 +108,7 @@ fn apply_motors_pwm(
     let (motors, mut motors_ext_force) = motors_query.single_mut().unwrap();
 
     for (wheel, transform, velocity, mut ext_impulse) in &mut wheels_query {
-        let ang_vel = -velocity.angvel.dot(transform.rotation * wheel.axle.abs()); // rad/s
+        let ang_vel = -velocity.angular.dot(transform.rotation * wheel.axle.abs()); // rad/s
         let pwm_value = pwm.get_by_side(wheel.side);
         let torque = pwm_to_torque(
             pwm_value,
@@ -135,7 +135,7 @@ impl Plugin for MotorsModelPlugin {
                 RunFixedMainLoop,
                 (apply_motors_pwm)
                     .chain()
-                    .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+                    .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
             );
     }
 }

@@ -1,10 +1,9 @@
 use std::f32::consts::{FRAC_PI_2, PI};
 
-use bevy::text::cosmic_text::Angle;
-use bevy::{pbr::NotShadowCaster, prelude::*};
+use bevy::{light::NotShadowCaster, prelude::*};
 use bevy_rapier3d::prelude::*;
 
-use crate::utils::{EntityFeatures, Side, rotate_vec2};
+use crate::utils::{Angle, EntityFeatures, Side, rotate_vec2};
 
 const FLOOR_HEIGHT: f32 = 0.05;
 pub const TRACK_HALF_WIDTH: f32 = 0.1;
@@ -194,7 +193,7 @@ pub fn arc_mesh(radius: f32, width: f32, angle: f32, side: Side) -> Mesh {
         indices.push(base);
     }
 
-    use bevy::render::render_asset::RenderAssetUsages;
+    use bevy::asset::RenderAssetUsages;
 
     Mesh::new(
         PrimitiveTopology::TriangleList,
@@ -249,7 +248,7 @@ pub fn quad_mesh(width: f32, height: f32) -> Mesh {
 
     Mesh::new(
         bevy::render::mesh::PrimitiveTopology::TriangleList,
-        bevy::render::render_asset::RenderAssetUsages::default(),
+        bevy::asset::RenderAssetUsages::default(),
     )
     .with_inserted_indices(bevy::render::mesh::Indices::U32(indices))
     .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
@@ -318,7 +317,7 @@ pub fn ninety_deg_mesh(width: f32, half_lenght: f32, side: Side) -> Mesh {
 
     Mesh::new(
         bevy::render::mesh::PrimitiveTopology::TriangleList,
-        bevy::render::render_asset::RenderAssetUsages::default(),
+        bevy::asset::RenderAssetUsages::default(),
     )
     .with_inserted_indices(bevy::render::mesh::Indices::U32(indices))
     .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)

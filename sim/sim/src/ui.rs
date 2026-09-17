@@ -5,15 +5,18 @@ use std::{
     path::PathBuf,
 };
 
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::{camera::visibility::RenderLayers, prelude::*};
 use bevy_egui::{
     EguiContexts, EguiGlobalSettings, EguiPlugin, PrimaryEguiContext,
     egui::{self, Color32, Context, Id, Modal, Response, Ui},
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-use egui_material_icons::icons::{
-    ICON_CENTER_FOCUS_WEAK, ICON_CHECK, ICON_EAST, ICON_NORTH, ICON_NORTH_EAST, ICON_NORTH_WEST,
-    ICON_SOUTH, ICON_SOUTH_EAST, ICON_SOUTH_WEST, ICON_WEST,
+use egui_material_icons::{
+    MaterialIcon,
+    icons::{
+        ICON_CENTER_FOCUS_WEAK, ICON_CHECK, ICON_EAST, ICON_NORTH, ICON_NORTH_EAST,
+        ICON_NORTH_WEST, ICON_SOUTH, ICON_SOUTH_EAST, ICON_SOUTH_WEST, ICON_WEST,
+    },
 };
 use executor::wasmtime;
 
@@ -62,7 +65,9 @@ impl GuiSetupPlugin {
 
 fn egui_style_setup(mut contexts: EguiContexts) -> Result {
     let ctx = contexts.ctx_mut()?;
-    ctx.style_mut(|style| style.visuals.panel_fill = Color32::from_rgba_unmultiplied(0, 0, 0, 0));
+    ctx.all_styles_mut(|style| {
+        style.visuals.panel_fill = Color32::from_rgba_unmultiplied(0, 0, 0, 0)
+    });
     egui_material_icons::initialize(ctx);
     Ok(())
 }
@@ -180,6 +185,20 @@ pub fn keyboard_camera_control(
     shift || ctrl || alt
 }
 
+/// Root `Ui` covering the whole viewport.
+///
+/// Since egui 0.36 panels are shown inside a `Ui` rather than directly on the
+/// `Context`, every gui pass starts from one of these.
+pub fn viewport_ui(ctx: &Context) -> Ui {
+    Ui::new(
+        ctx.clone(),
+        Id::new("viewport"),
+        egui::UiBuilder::new()
+            .layer_id(egui::LayerId::background())
+            .max_rect(ctx.viewport_rect()),
+    )
+}
+
 pub fn rl(ui: &mut Ui, text: impl Into<String>, size: f32) -> Response {
     ui.label(egui::RichText::new(text).size(size))
 }
@@ -188,8 +207,8 @@ pub fn rlc(ui: &mut Ui, text: impl Into<String>, size: f32, color: Color32) -> R
     ui.label(egui::RichText::new(text).size(size).color(color))
 }
 
-pub fn icon_button(ui: &mut Ui, icon: &str, size: f32) -> Response {
-    ui.label(egui::RichText::new(icon).size(size))
+pub fn icon_button(ui: &mut Ui, icon: impl Into<egui::RichText>, size: f32) -> Response {
+    ui.label(icon.into().size(size))
 }
 
 enum CameraQuadrant {
@@ -205,7 +224,7 @@ enum CameraQuadrant {
 }
 
 impl CameraQuadrant {
-    fn icon(&self) -> &'static str {
+    fn icon(&self) -> MaterialIcon {
         match self {
             CameraQuadrant::NW => ICON_NORTH_WEST,
             CameraQuadrant::N => ICON_NORTH,
@@ -420,7 +439,7 @@ impl HelpState {
 }
 
 pub fn help_dialog(ctx: &Context, help_state: &mut HelpState, base_text_size: f32) {
-    let size = ctx.available_rect().size();
+    let size = ctx.viewport_rect().size();
 
     let close = if help_state.is_open {
         let modal = Modal::new(Id::new("Modal Error")).show(ctx, |ui| {
@@ -468,7 +487,7 @@ fn setup_camera(mut commands: Commands, track: Res<Track>) {
     commands.spawn((
         DirectionalLight {
             illuminance: light_consts::lux::OVERCAST_DAY,
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform {

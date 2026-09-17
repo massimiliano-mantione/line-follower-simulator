@@ -7,6 +7,10 @@ use execution_data::SensorsData;
 
 use super::bot_position::BotPositionDetector;
 
+#[cfg(test)]
+#[path = "line_sensors_tests.rs"]
+mod tests;
+
 #[inline]
 fn line_reflection_attenuation(value: f32, z: f32) -> f32 {
     // Attenuation model: increased z makes to that the sensor perceives

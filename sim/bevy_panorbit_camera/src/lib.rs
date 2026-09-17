@@ -3,18 +3,18 @@
 
 use std::f32::consts::PI;
 
+use bevy::camera::{CameraUpdateSystems, RenderTarget};
 use bevy::input::gestures::PinchGesture;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
-use bevy::render::camera::{CameraUpdateSystem, RenderTarget};
-use bevy::transform::TransformSystem;
+use bevy::transform::TransformSystems;
 use bevy::window::{PrimaryWindow, WindowRef};
 #[cfg(feature = "bevy_egui")]
 use bevy_egui::EguiPreUpdateSet;
 
 #[cfg(feature = "bevy_egui")]
 pub use crate::egui::{EguiFocusIncludesHover, EguiWantsFocus};
-use crate::input::{mouse_key_tracker, MouseKeyTracker};
+use crate::input::{button_zoom_just_pressed, mouse_key_tracker, MouseKeyTracker};
 pub use crate::touch::TouchControls;
 use crate::touch::{touch_tracker, TouchGestures, TouchTracker};
 use crate::traits::OptionalClamp;
@@ -58,8 +58,8 @@ impl Plugin for PanOrbitCameraPlugin {
                 )
                     .chain()
                     .in_set(PanOrbitCameraSystemSet)
-                    .before(TransformSystem::TransformPropagate)
-                    .before(CameraUpdateSystem),
+                    .before(TransformSystems::Propagate)
+                    .before(CameraUpdateSystems),
             );
 
         #[cfg(feature = "bevy_egui")]
@@ -102,6 +102,7 @@ pub struct PanOrbitCameraSystemSet;
 ///  }
 /// ```
 #[derive(Component, Reflect, Copy, Clone, Debug, PartialEq)]
+#[reflect(Component)]
 #[require(Camera3d)]
 pub struct PanOrbitCamera {
     /// The point to orbit around, and what the camera looks at. Updated automatically.
@@ -217,6 +218,12 @@ pub struct PanOrbitCamera {
     /// Button used to pan the camera.
     /// Defaults to `Button::Right`.
     pub button_pan: MouseButton,
+    /// Button used to zoom the camera, by holding it down and moving the mouse forward and back.
+    /// Defaults to `None`.
+    pub button_zoom: Option<MouseButton>,
+    /// Which axis should zoom the camera when using `button_zoom`.
+    /// Defaults to `ButtonZoomAxis::Y`.
+    pub button_zoom_axis: ButtonZoomAxis,
     /// Key that must be pressed for `button_orbit` to work.
     /// Defaults to `None` (no modifier).
     pub modifier_orbit: Option<KeyCode>,
@@ -243,9 +250,13 @@ pub struct PanOrbitCamera {
     /// operations when using a trackpad with the `BlenderLike` behavior mode.
     /// Defaults to `1.0`.
     pub trackpad_sensitivity: f32,
-    /// Whether to reverse the zoom direction.
+    /// Whether to reverse the zoom direction. This applies to the button-based zoom `button_zoom`
+    /// as well. If you want button zoom to remain the same, set `button_zoom_reverse` to `true`.
     /// Defaults to `false`.
     pub reversed_zoom: bool,
+    /// Whether the zoom direction when using `button_zoom` is reversed.
+    /// Defaults to `false`.
+    pub reversed_button_zoom: bool,
     /// Whether the camera is currently upside down. Updated automatically.
     /// This is used to determine which way to orbit, because it's more intuitive to reverse the
     /// orbit direction when upside down.
@@ -268,8 +279,13 @@ pub struct PanOrbitCamera {
     pub force_update: bool,
     /// Axis order definition. This can be used to e.g. define a different default
     /// up direction. The default up is Y, but if you want the camera rotated.
-    /// The axis can be switched. Default is [Vec3::X, Vec3::Y, Vec3::Z]
+    /// The axis can be switched.
+    /// Defaults to `[Vec3::X, Vec3::Y, Vec3::Z]`.
     pub axis: [Vec3; 3],
+    /// Use real time instead of virtual time. Set this to `true` if you want to pause virtual
+    /// time without affecting the camera, for example in a game.
+    /// Defaults to `false`.
+    pub use_real_time: bool,
 }
 
 impl Default for PanOrbitCamera {
@@ -288,6 +304,9 @@ impl Default for PanOrbitCamera {
             zoom_smoothness: 0.1,
             button_orbit: MouseButton::Left,
             button_pan: MouseButton::Right,
+            button_zoom: None,
+            button_zoom_axis: ButtonZoomAxis::Y,
+            reversed_button_zoom: false,
             modifier_orbit: None,
             modifier_pan: None,
             touch_enabled: true,
@@ -313,6 +332,7 @@ impl Default for PanOrbitCamera {
             zoom_lower_limit: 0.05,
             force_update: false,
             axis: [Vec3::X, Vec3::Y, Vec3::Z],
+            use_real_time: false,
         }
     }
 }
@@ -349,6 +369,17 @@ pub enum FocusBoundsShape {
     Sphere(Sphere),
     /// Limit the camera's focus to a cuboid centered on `focus_bounds_origin`.
     Cuboid(Cuboid),
+}
+
+/// The shape to restrict the camera's focus inside.
+#[derive(Clone, PartialEq, Debug, Reflect, Copy)]
+pub enum ButtonZoomAxis {
+    /// Zoom by moving the mouse along the x-axis.
+    X,
+    /// Zoom by moving the mouse along the y-axis.
+    Y,
+    /// Zoom by moving the mouse along either the x-axis or the y-axis.
+    XY,
 }
 
 impl From<Sphere> for FocusBoundsShape {
@@ -397,23 +428,24 @@ fn active_viewport_data(
     mut active_cam: ResMut<ActiveCameraData>,
     mouse_input: Res<ButtonInput<MouseButton>>,
     key_input: Res<ButtonInput<KeyCode>>,
-    pinch_events: EventReader<PinchGesture>,
-    scroll_events: EventReader<MouseWheel>,
+    pinch_events: MessageReader<PinchGesture>,
+    scroll_events: MessageReader<MouseWheel>,
     touches: Res<Touches>,
     primary_windows: Query<&Window, With<PrimaryWindow>>,
     other_windows: Query<&Window, Without<PrimaryWindow>>,
-    orbit_cameras: Query<(Entity, &Camera, &PanOrbitCamera)>,
+    orbit_cameras: Query<(Entity, &Camera, &RenderTarget, &PanOrbitCamera)>,
     #[cfg(feature = "bevy_egui")] egui_wants_focus: Res<EguiWantsFocus>,
 ) {
     let mut new_resource = ActiveCameraData::default();
     let mut max_cam_order = 0;
 
     let mut has_input = false;
-    for (entity, camera, pan_orbit) in orbit_cameras.iter() {
+    for (entity, camera, target, pan_orbit) in orbit_cameras.iter() {
         let input_just_activated = input::orbit_just_pressed(pan_orbit, &mouse_input, &key_input)
             || input::pan_just_pressed(pan_orbit, &mouse_input, &key_input)
             || !pinch_events.is_empty()
             || !scroll_events.is_empty()
+            || button_zoom_just_pressed(pan_orbit, &mouse_input)
             || (touches.iter_just_pressed().count() > 0
                 && touches.iter_just_pressed().count() == touches.iter().count());
 
@@ -427,10 +459,10 @@ fn active_viewport_data(
             }
             if should_get_input {
                 // First check if cursor is in the same window as this camera
-                if let RenderTarget::Window(win_ref) = camera.target {
+                if let RenderTarget::Window(win_ref) = target {
                     let Some(window) = (match win_ref {
                         WindowRef::Primary => primary_windows.single().ok(),
-                        WindowRef::Entity(entity) => other_windows.get(entity).ok(),
+                        WindowRef::Entity(entity) => other_windows.get(*entity).ok(),
                     }) else {
                         // Window does not exist - maybe it was closed and the camera not cleaned up
                         continue;
@@ -484,7 +516,8 @@ fn pan_orbit_camera(
     mouse_key_tracker: Res<MouseKeyTracker>,
     touch_tracker: Res<TouchTracker>,
     mut orbit_cameras: Query<(Entity, &mut PanOrbitCamera, &mut Transform, &mut Projection)>,
-    time: Res<Time>,
+    time_real: Res<Time<Real>>,
+    time_virt: Res<Time<Virtual>>,
 ) {
     for (entity, mut pan_orbit, mut transform, mut projection) in orbit_cameras.iter_mut() {
         // Closures that apply limits to the yaw, pitch, and zoom values
@@ -668,8 +701,8 @@ fn pan_orbit_camera(
                     Projection::Custom(_) => todo!(),
                 }
                 // Translate by local axes
-                let right = transform.rotation * pan_orbit.axis[0] * -pan.x;
-                let up = transform.rotation * pan_orbit.axis[2] * -pan.y;
+                let right = transform.rotation * Vec3::X * -pan.x;
+                let up = transform.rotation * Vec3::Y * pan.y;
                 let translation = (right + up) * multiplier;
                 pan_orbit.target_focus += translation;
                 has_moved = true;
@@ -704,6 +737,12 @@ fn pan_orbit_camera(
 
         // 4 - Update the camera's transform based on current values
 
+        let delta = if pan_orbit.use_real_time {
+            time_real.delta_secs()
+        } else {
+            time_virt.delta_secs()
+        };
+
         if let (Some(yaw), Some(pitch), Some(radius)) =
             (pan_orbit.yaw, pan_orbit.pitch, pan_orbit.radius)
         {
@@ -723,25 +762,25 @@ fn pan_orbit_camera(
                     yaw,
                     pan_orbit.target_yaw,
                     pan_orbit.orbit_smoothness,
-                    time.delta_secs(),
+                    delta,
                 );
                 let new_pitch = util::lerp_and_snap_f32(
                     pitch,
                     pan_orbit.target_pitch,
                     pan_orbit.orbit_smoothness,
-                    time.delta_secs(),
+                    delta,
                 );
                 let new_radius = util::lerp_and_snap_f32(
                     radius,
                     pan_orbit.target_radius,
                     pan_orbit.zoom_smoothness,
-                    time.delta_secs(),
+                    delta,
                 );
                 let new_focus = util::lerp_and_snap_vec3(
                     pan_orbit.focus,
                     pan_orbit.target_focus,
                     pan_orbit.pan_smoothness,
-                    time.delta_secs(),
+                    delta,
                 );
 
                 util::update_orbit_transform(

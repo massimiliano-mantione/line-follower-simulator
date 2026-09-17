@@ -32,6 +32,10 @@ use devices::{
 };
 use diagnostics::CsvColumn;
 
+#[cfg(test)]
+#[path = "wasm_host_tests.rs"]
+mod tests;
+
 pub trait DeviceValueExt {
     fn get_u8(&self, index: usize) -> u8;
     fn get_u16(&self, index: usize) -> u16;

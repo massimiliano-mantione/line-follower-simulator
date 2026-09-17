@@ -8,15 +8,13 @@
 
 use std::f32::consts::PI;
 
+use bevy::camera::visibility::RenderLayers;
 use bevy::window::PrimaryWindow;
 use bevy::{
+    camera::{ImageRenderTarget, RenderTarget},
     prelude::*,
-    render::{
-        camera::{ImageRenderTarget, RenderTarget},
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-        view::RenderLayers,
+    render::render_resource::{
+        Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
     },
 };
 use bevy_panorbit_camera::{ActiveCameraData, PanOrbitCamera, PanOrbitCameraPlugin};
@@ -109,9 +107,9 @@ fn setup(
                 // render before the "main pass" camera
                 clear_color: ClearColorConfig::Custom(Color::WHITE),
                 order: -1,
-                target: RenderTarget::Image(ImageRenderTarget::from(image_handle.clone())),
                 ..default()
             },
+            RenderTarget::Image(ImageRenderTarget::from(image_handle.clone())),
             Transform::from_translation(Vec3::new(0.0, 0.0, 15.0)).looking_at(Vec3::ZERO, Vec3::Y),
             PanOrbitCamera::default(),
             first_pass_layer,

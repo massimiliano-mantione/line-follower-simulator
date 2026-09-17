@@ -28,3 +28,7 @@ target
 *.bin
 *.csv
 log.txt
+
+# ...except the prebuilt workshop robot, which is committed on purpose so the
+# simulator-side lessons never need the wasm32-wasip2 toolchain.
+!/bots/*.wasm
