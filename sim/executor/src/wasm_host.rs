@@ -1,3 +1,16 @@
+//! Host bindings for the `line-follower-robot` world.
+//!
+//! The `store` flag on the imports makes `bindgen!` hand every host function an
+//! [`Access`](wasmtime::component::Access) to the store instead of just the
+//! host data, which is what lets the implementation in
+//! [`crate::wasm_host`] read the consumed fuel (and therefore the simulated
+//! time) on every call.
+wasmtime::component::bindgen!({
+    path: "../../wit",
+    world: "line-follower-robot",
+    imports: { default: store | trappable },
+});
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     f32::consts::PI,
@@ -14,13 +27,10 @@ use wasmtime::{
     component::{Access, HasSelf},
 };
 
-use crate::wasm_bindings::{
-    self,
-    devices::{
-        DeviceOperation, DeviceValue, FutureHandle, MotorPower, PollOperationStatus, TimeUs,
-    },
-    diagnostics::CsvColumn,
+use devices::{
+    DeviceOperation, DeviceValue, FutureHandle, MotorPower, PollOperationStatus, TimeUs,
 };
+use diagnostics::CsvColumn;
 
 pub trait DeviceValueExt {
     fn get_u8(&self, index: usize) -> u8;
@@ -1005,13 +1015,11 @@ impl<S: SimulationStepper> BotHost<S> {
 
 /// The generated bindings hand every host function an
 /// [`Access`](wasmtime::component::Access) to the store (thanks to the `store`
-/// flag on the imports in [`crate::wasm_bindings`]), which is what lets the
+/// flag on the imports in [`crate::wasm_host`]), which is what lets the
 /// simulation read the fuel consumed so far and derive the current simulated
 /// time from it. Each trait method below just reads the fuel and forwards to
 /// the matching inherent method on [`BotHost`].
-impl<T, S: SimulationStepper + 'static> wasm_bindings::devices::HostWithStore<T>
-    for HasSelf<BotHost<S>>
-{
+impl<T, S: SimulationStepper + 'static> devices::HostWithStore<T> for HasSelf<BotHost<S>> {
     fn device_operation_immediate(
         mut host: Access<T, Self>,
         operation: DeviceOperation,
@@ -1066,9 +1074,7 @@ impl<T, S: SimulationStepper + 'static> wasm_bindings::devices::HostWithStore<T>
     }
 }
 
-impl<T, S: SimulationStepper + 'static> wasm_bindings::diagnostics::HostWithStore<T>
-    for HasSelf<BotHost<S>>
-{
+impl<T, S: SimulationStepper + 'static> diagnostics::HostWithStore<T> for HasSelf<BotHost<S>> {
     fn write_line(mut host: Access<T, Self>, text: String) -> wasmtime::Result<()> {
         let current_fuel = host.as_context_mut().get_fuel()?;
         host.get().write_line(current_fuel, text)
@@ -1086,8 +1092,8 @@ impl<T, S: SimulationStepper + 'static> wasm_bindings::diagnostics::HostWithStor
 }
 
 // Marker traits: all of the actual work happens in the `HostWithStore` impls.
-impl<S: SimulationStepper> wasm_bindings::devices::Host for BotHost<S> {}
-impl<S: SimulationStepper> wasm_bindings::diagnostics::Host for BotHost<S> {}
+impl<S: SimulationStepper> devices::Host for BotHost<S> {}
+impl<S: SimulationStepper> diagnostics::Host for BotHost<S> {}
 
 enum CsvColumnKind {
     Int8,
@@ -1176,23 +1182,22 @@ impl CvsLineHandler {
             let handler = CsvColumnHandler {
                 start: size,
                 kind: match &column.kind {
-                    wasm_bindings::diagnostics::ValueKind::Int8 => CsvColumnKind::Int8,
-                    wasm_bindings::diagnostics::ValueKind::Int16 => CsvColumnKind::Int16,
-                    wasm_bindings::diagnostics::ValueKind::Int32 => CsvColumnKind::Int32,
-                    wasm_bindings::diagnostics::ValueKind::Uint8 => CsvColumnKind::Uint8,
-                    wasm_bindings::diagnostics::ValueKind::Uint16 => CsvColumnKind::Uint16,
-                    wasm_bindings::diagnostics::ValueKind::Uint32 => CsvColumnKind::Uint32,
-                    wasm_bindings::diagnostics::ValueKind::Named(named_values) => {
-                        CsvColumnKind::NamedUint8(named_values.iter().fold(
-                            BTreeMap::new(),
-                            |mut names, named_value| {
+                    diagnostics::ValueKind::Int8 => CsvColumnKind::Int8,
+                    diagnostics::ValueKind::Int16 => CsvColumnKind::Int16,
+                    diagnostics::ValueKind::Int32 => CsvColumnKind::Int32,
+                    diagnostics::ValueKind::Uint8 => CsvColumnKind::Uint8,
+                    diagnostics::ValueKind::Uint16 => CsvColumnKind::Uint16,
+                    diagnostics::ValueKind::Uint32 => CsvColumnKind::Uint32,
+                    diagnostics::ValueKind::Named(named_values) => CsvColumnKind::NamedUint8(
+                        named_values
+                            .iter()
+                            .fold(BTreeMap::new(), |mut names, named_value| {
                                 names.insert(named_value.value as u8, named_value.name.clone());
                                 names
-                            },
-                        ))
-                    }
-                    wasm_bindings::diagnostics::ValueKind::Pad8 => CsvColumnKind::IgnoreU8,
-                    wasm_bindings::diagnostics::ValueKind::Pad16 => CsvColumnKind::IgnoreU16,
+                            }),
+                    ),
+                    diagnostics::ValueKind::Pad8 => CsvColumnKind::IgnoreU8,
+                    diagnostics::ValueKind::Pad16 => CsvColumnKind::IgnoreU16,
                 },
                 name: column.name.clone(),
             };

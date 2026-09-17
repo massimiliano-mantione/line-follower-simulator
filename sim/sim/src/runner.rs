@@ -3,7 +3,7 @@ use execution_data::{
     BodyExecutionData, BotPhysicalPosition, ExecutionData, MotorDriversDutyCycles, SensorsData,
     WheelExecutionData,
 };
-use executor::{wasm_bindings::exports::robot::Configuration, wasm_executor, wasmtime};
+use executor::{wasm_executor, wasm_host::exports::robot::Configuration, wasmtime};
 
 use crate::{
     app_builder::{self, create_app},

@@ -5,8 +5,10 @@ use wasmtime::component::HasSelf;
 
 use crate::{
     mock_stepper::MockStepper,
-    wasm_bindings::{LineFollowerRobot, devices::TimeUs, exports::robot::Configuration},
-    wasm_host::{BotHost, fuel_for_time_us},
+    wasm_host::{
+        BotHost, LineFollowerRobot, devices::TimeUs, exports::robot::Configuration,
+        fuel_for_time_us,
+    },
 };
 
 pub fn get_robot_configuration(wasm_bytes: &[u8]) -> wasmtime::Result<Configuration> {

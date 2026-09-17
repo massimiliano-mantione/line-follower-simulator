@@ -3,7 +3,7 @@ use std::f32::consts::{FRAC_PI_2, FRAC_PI_3};
 use bevy::ecs::system::Commands;
 use bevy::prelude::*;
 use execution_data::{BodyExecutionData, WheelExecutionData};
-use executor::wasm_bindings::exports::robot::Configuration;
+use executor::wasm_host::exports::robot::Configuration;
 
 use crate::utils::Side;
 

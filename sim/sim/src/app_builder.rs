@@ -13,7 +13,7 @@ use bevy::transform::systems::{
 };
 use bevy_rapier3d::prelude::*;
 use bevy_rapier3d::rapier::prelude::IntegrationParameters;
-use executor::wasm_bindings::exports::robot::Configuration;
+use executor::wasm_host::exports::robot::Configuration;
 use executor::wasmtime;
 
 #[derive(Resource)]

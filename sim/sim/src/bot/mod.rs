@@ -5,7 +5,7 @@ pub mod motors;
 pub mod sensors;
 pub mod vis;
 
-use executor::wasm_bindings::exports::robot::Configuration;
+use executor::wasm_host::exports::robot::Configuration;
 use model::setup_bot_model;
 use motors::Wheel;
 use vis::{setup_bot_assets, setup_test_bot_visualizer};

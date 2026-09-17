@@ -1,7 +1,7 @@
 use app_builder::VisualizerData;
 use clap::{self, ArgEnum, Parser, Subcommand, ValueEnum};
 use executor::{
-    wasm_bindings::exports::robot::{Color, Configuration},
+    wasm_host::exports::robot::{Color, Configuration},
     wasmtime,
 };
 use runner::{get_bot_config_from_file, run_bot_from_file};

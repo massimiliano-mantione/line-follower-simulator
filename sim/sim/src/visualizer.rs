@@ -12,7 +12,7 @@ use bevy::{
 use execution_data::{
     ActivityData, BodyExecutionData, BotFinalStatus, ExecutionData, WheelExecutionData,
 };
-use executor::wasm_bindings::exports::robot::Configuration;
+use executor::wasm_host::exports::robot::Configuration;
 
 use crate::{
     bot::vis::{BotAssets, spawn_bot_body, spawn_bot_wheel},
