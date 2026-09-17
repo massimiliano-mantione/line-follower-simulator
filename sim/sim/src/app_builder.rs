@@ -9,7 +9,8 @@ use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::scene::ScenePlugin;
 use bevy::transform::systems::{
-    mark_dirty_trees, propagate_parent_transforms, sync_simple_transforms,
+    StaticTransformOptimizations, mark_dirty_trees, propagate_parent_transforms,
+    sync_simple_transforms,
 };
 use bevy_rapier3d::prelude::*;
 use bevy_rapier3d::rapier::prelude::IntegrationParameters;
@@ -245,6 +246,9 @@ pub fn create_app(app_type: AppType, track: Track, step_period_us: u32) -> wasmt
             };
             app.world_mut().resource_mut::<Time<Virtual>>().pause();
 
+            // `MinimalPlugins` does not bring in `TransformPlugin`, so the resource
+            // `propagate_parent_transforms` reads has to be initialized here.
+            app.init_resource::<StaticTransformOptimizations>();
             app.add_systems(
                 CustomTransformPropagation,
                 (

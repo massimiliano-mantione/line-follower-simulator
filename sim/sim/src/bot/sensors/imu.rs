@@ -11,7 +11,7 @@ pub fn compute_imu_data(
     let (transform, velocity) = bot_query.single().unwrap();
 
     let body_rot = Vec3::from(transform.rotation.to_euler(EulerRot::XYZ));
-    sensors_data.gyro = GyroData::from(velocity.angvel * body_rot);
+    sensors_data.gyro = GyroData::from(velocity.angular * body_rot);
 
     sensors_data.imu_fused = ImuFusedData::from(body_rot);
 }

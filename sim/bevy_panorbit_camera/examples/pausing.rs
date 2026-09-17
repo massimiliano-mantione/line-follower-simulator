@@ -1,17 +1,19 @@
-//! Demonstrates how you can animate the movement of the camera
+//! Demonstrates how to pause time without affecting the camera
 
 use bevy::prelude::*;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-use std::f32::consts::TAU;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, animate)
+        .add_systems(Update, (pause_game_system, cube_rotator_system))
         .run();
 }
+
+#[derive(Component)]
+struct Cube;
 
 fn setup(
     mut commands: Commands,
@@ -28,6 +30,7 @@ fn setup(
         Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
         MeshMaterial3d(materials.add(Color::srgb(0.8, 0.7, 0.6))),
         Transform::from_xyz(0.0, 0.5, 0.0),
+        Cube,
     ));
     // Light
     commands.spawn((
@@ -39,27 +42,34 @@ fn setup(
     ));
     // Camera
     commands.spawn((
-        Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
+        Transform::from_xyz(0.0, 1.5, 5.0),
         PanOrbitCamera {
-            // Disable smoothing, since the animation takes care of that
-            orbit_smoothness: 0.0,
-            // Probably want to disable the controls
-            enabled: false,
+            use_real_time: true,
             ..default()
         },
     ));
+    // Help text
+    commands.spawn(Text::new(
+        "\
+Press Space to pause the 'game'",
+    ));
 }
 
-// Animate the camera's position
-fn animate(time: Res<Time>, mut pan_orbit_query: Query<&mut PanOrbitCamera>) {
-    for mut pan_orbit in pan_orbit_query.iter_mut() {
-        // Must set target values, not yaw/pitch directly
-        pan_orbit.target_yaw += 15f32.to_radians() * time.delta_secs();
-        pan_orbit.target_pitch = time.elapsed_secs_wrapped().sin() * TAU * 0.1;
-        pan_orbit.radius =
-            Some((((time.elapsed_secs_wrapped() * 2.0).cos() + 1.0) * 0.5) * 2.0 + 4.0);
+// Pauses the game (i.e. virtual time)
+fn pause_game_system(key_input: Res<ButtonInput<KeyCode>>, mut time: ResMut<Time<Virtual>>) {
+    if key_input.just_pressed(KeyCode::Space) {
+        if time.is_paused() {
+            time.unpause()
+        } else {
+            time.pause()
+        }
+    }
+}
 
-        // Force camera to update its transform
-        pan_orbit.force_update = true;
+// Rotates the cube so you can see the effect of pausing time
+// Note the default time for the Update schedule is `Time<Virtual>`
+fn cube_rotator_system(time: Res<Time>, mut query: Query<&mut Transform, With<Cube>>) {
+    for mut transform in &mut query {
+        transform.rotate_y(1.0 * time.delta_secs());
     }
 }

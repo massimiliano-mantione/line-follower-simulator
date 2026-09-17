@@ -4,7 +4,7 @@
 //! Controls:
 //!   Orbit: Middle click
 //!   Pan: Shift + Middle click
-//!   Zoom: Mousewheel
+//!   Zoom: Mousewheel OR Right click + move mouse up/down
 
 use bevy::prelude::*;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin, TouchControls};
@@ -38,7 +38,7 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
@@ -71,6 +71,12 @@ fn setup(
             button_orbit: MouseButton::Middle,
             button_pan: MouseButton::Middle,
             modifier_pan: Some(KeyCode::ShiftLeft),
+            // Also enable zooming by holding right click and moving the mouse
+            button_zoom: Some(MouseButton::Right),
+            // Optionally configure button zoom to use left-right mouse movement
+            // button_zoom_axis: ButtonZoomAxis::X,
+            // Optionally reverse the button-based zoom independently to `reversed_zoom`
+            // button_zoom_reverse: true,
             // Reverse the zoom direction
             reversed_zoom: true,
             // Use alternate touch controls

@@ -1,3 +1,40 @@
+## 0.35.1
+
+- Fix pan using the wrong axis when camera is using different base axis
+
+## 0.35.0
+
+- Update to Bevy 0.19
+- Fix `focus_bounds` example.
+
+## 0.34.0
+
+- Update to Bevy 0.18
+
+## 0.33.1
+
+- Add `#[reflect(Component)]` on `PanOrbitCamera`
+
+## 0.33.0
+
+- Add `reversed_button_zoom` option (#130)
+
+## 0.32.0
+
+- Zoom with mouse button + motion (#129)
+
+## 0.31.0
+
+- Update `bevy_egui` to 0.38 (#126)
+
+## 0.30.0
+
+- Add option to use real time instead of virtual time (#125)
+
+## 0.29.0
+
+- Update to Bevy 0.17
+
 ## 0.28.0
 
 - Update `bevy_egui` to 0.36 (#120)

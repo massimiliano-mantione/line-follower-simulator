@@ -12,7 +12,7 @@
 [package]
 edition = "2021"
 name = "bevy_panorbit_camera"
-version = "0.28.0"
+version = "0.35.1"
 authors = ["Plonq"]
 build = false
 autolib = false
@@ -85,6 +85,12 @@ path = "examples/multiple_windows.rs"
 [[example]]
 name = "orthographic"
 path = "examples/orthographic.rs"
+required-features = ["bevy/ui"]
+
+[[example]]
+name = "pausing"
+path = "examples/pausing.rs"
+required-features = ["bevy/ui"]
 
 [[example]]
 name = "render_to_texture"
@@ -99,24 +105,26 @@ name = "trackpad"
 path = "examples/trackpad.rs"
 
 [dependencies.bevy]
-version = "0.16.1"
+version = "0.19"
 features = [
     "bevy_core_pipeline",
-    "bevy_render",
+    "bevy_camera",
     "bevy_window",
 ]
 default-features = false
 
 [dependencies.bevy_egui]
-version = "0.36"
+version = "0.42"
 optional = true
 default-features = false
 
 [dev-dependencies.bevy]
-version = "0.16.1"
+version = "0.19"
+features = ["3d"]
+default-features = false
 
 [dev-dependencies.bevy_egui]
-version = "0.36"
+version = "0.42"
 features = [
     "render",
     "default_fonts",

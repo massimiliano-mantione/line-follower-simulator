@@ -37,7 +37,7 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
@@ -50,6 +50,8 @@ fn setup(
 }
 
 fn keyboard_controls(
+    // If you set `PanOrbitCamera::use_real_time` to `true`, you may want to use `Res<Time<Real>>`
+    // here too, so you can control the camera while virtual time is paused.
     time: Res<Time>,
     key_input: Res<ButtonInput<KeyCode>>,
     mut pan_orbit_query: Query<(&mut PanOrbitCamera, &mut Transform)>,

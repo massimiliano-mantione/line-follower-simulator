@@ -45,6 +45,31 @@ impl GetBySide<i16> for MotorDriversDutyCycles {
     }
 }
 
+/// An angle, stored internally in radians.
+///
+/// Replaces the `Angle` type that used to be re-exported by `bevy::text::cosmic_text`,
+/// which Bevy no longer re-exports.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct Angle(f32);
+
+impl Angle {
+    pub fn from_degrees(degrees: f32) -> Self {
+        Self(degrees.to_radians())
+    }
+
+    pub fn from_radians(radians: f32) -> Self {
+        Self(radians)
+    }
+
+    pub fn to_degrees(self) -> f32 {
+        self.0.to_degrees()
+    }
+
+    pub fn to_radians(self) -> f32 {
+        self.0
+    }
+}
+
 /// Helper to rotate a Vec2 by angle in radians
 /// # Arguments
 /// * `v`     - The vector to rotate
