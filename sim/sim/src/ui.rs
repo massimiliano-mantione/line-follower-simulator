@@ -1,3 +1,6 @@
+// Some imports are used only by the EXERCISE 11.x bodies once implemented.
+#![allow(unused_imports, unused_mut)]
+
 use egui_commonmark::*;
 
 use std::{
@@ -35,19 +38,8 @@ fn common_gui_setup(app: &mut App) {
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)));
 }
 
+#[allow(unused_variables)]
 fn setup_egui(mut commands: Commands, mut egui_global_settings: ResMut<EguiGlobalSettings>) {
-    // Disable the automatic creation of a primary context to set it up manually for the camera we need.
-    egui_global_settings.auto_create_primary_context = false;
-
-    // Egui camera.
-    commands.spawn_scene(bsn! {
-        // The `PrimaryEguiContext` component requires everything needed to render a primary context.
-        PrimaryEguiContext
-        Camera2d
-        // Setting RenderLayers to none makes sure we won't render anything apart from the UI.
-        template_value(RenderLayers::none())
-        Camera { order: 1 }
-    });
 }
 
 pub struct GuiSetupPlugin {
