@@ -140,9 +140,8 @@ impl Pid {
     }
 }
 
+#[allow(unused_variables)]
 pub async fn run(sensor_spacing_mm: f32) {
-    let mut tel_buf = Vec::with_capacity(20000);
-    let csv_spec = TelBlock::csv_spec();
 
     wait_remote_enabled().await;
 
@@ -161,14 +160,6 @@ pub async fn run(sensor_spacing_mm: f32) {
         let (wl, wr) = get_motor_angles_immediate();
         let err = (pid.err() * 100.0) as i16;
 
-        tel_buf.push(TelBlock::new(
-            time,
-            steps,
-            vals,
-            [wl, wr],
-            [pwm_l, pwm_r],
-            err,
-        ));
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
@@ -181,59 +172,17 @@ pub async fn run(sensor_spacing_mm: f32) {
         }
     }
 
-    write_csv_file("telemetry", csv::transmute_buf(&tel_buf), &csv_spec);
 }
 
 #[repr(C)]
+#[allow(dead_code)]
 struct TelBlock {
     time: u32,
-    steps: u32,
-    vals: [u8; 16],
-    w: [u16; 2],
-    pwm: [i16; 2],
-    e: i16,
-    pad: u16,
 }
 
+#[allow(dead_code)]
 impl TelBlock {
-    fn new(time: u32, steps: u32, vals: [u8; 16], w: [u16; 2], pwm: [i16; 2], e: i16) -> Self {
-        Self {
-            time,
-            steps,
-            vals,
-            w,
-            pwm,
-            e,
-            pad: 0,
-        }
-    }
-
-    fn csv_spec() -> [csv::CsvColumn; 24] {
-        [
-            csv::col("time", csv::C_U32),
-            csv::col("steps", csv::C_U32),
-            csv::col("s1", csv::C_U8),
-            csv::col("s2", csv::C_U8),
-            csv::col("s3", csv::C_U8),
-            csv::col("s4", csv::C_U8),
-            csv::col("s5", csv::C_U8),
-            csv::col("s6", csv::C_U8),
-            csv::col("s7", csv::C_U8),
-            csv::col("s8", csv::C_U8),
-            csv::col("s9", csv::C_U8),
-            csv::col("s10", csv::C_U8),
-            csv::col("s11", csv::C_U8),
-            csv::col("s12", csv::C_U8),
-            csv::col("s13", csv::C_U8),
-            csv::col("s14", csv::C_U8),
-            csv::col("s15", csv::C_U8),
-            csv::col("s16", csv::C_U8),
-            csv::col("wl", csv::C_U16),
-            csv::col("wr", csv::C_U16),
-            csv::col("pwm_l", csv::C_I16),
-            csv::col("pwm_r", csv::C_I16),
-            csv::col("err", csv::C_I16),
-            csv::col(".", csv::PAD_16),
-        ]
+    fn csv_spec() -> Vec<csv::CsvColumn> {
+        todo!("describe the byte layout of TelBlock")
     }
 }
