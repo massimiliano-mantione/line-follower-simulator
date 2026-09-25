@@ -711,14 +711,18 @@ impl DeviceOperationExt for DeviceOperation {
 
 // A CPU clock of 20 MHz means one instruction takes 50ns,
 // and one fuel unit symbolizes one instruction.
+// Used by EXERCISE 2.1 and 2.2 once they are implemented.
+#[allow(dead_code)]
 const FUEL_UNIT_NS: u64 = 50;
 
+#[allow(unused_variables)]
 pub fn fuel_for_time_us(time_us: TimeUs) -> u64 {
-    time_us as u64 * 1000 / FUEL_UNIT_NS
+    todo!("convert microseconds to fuel units")
 }
 
+#[allow(unused_variables)]
 pub fn time_us_for_fuel(fuel: u64) -> TimeUs {
-    ((fuel * FUEL_UNIT_NS) / 1000) as TimeUs
+    todo!("convert fuel units to microseconds")
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -766,6 +770,8 @@ pub struct SteppedData {
     pub imu_fused_data: ImuFusedData,
 }
 
+// The clock fields are read by the EXERCISE 2.x bodies.
+#[allow(dead_code)]
 pub struct BotHost<S: SimulationStepper> {
     stepper: S,
     total_simulation_time: TimeUs,
@@ -1256,6 +1262,9 @@ impl CvsLineHandler {
     }
 }
 
+// The clock helpers below call each other, so they all look unused until the
+// EXERCISE 2.x bodies are written.
+#[allow(dead_code)]
 impl<S: SimulationStepper> BotHost<S> {
     pub fn new(
         stepper: S,
@@ -1281,50 +1290,31 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     fn check_fuel(&self) -> wasmtime::Result<()> {
-        if self.current_fuel <= self.skipped_fuel {
-            return Err(wasmtime::Error::msg("Insufficient fuel"));
-        }
-        Ok(())
+        todo!("error when the budget is spent")
     }
 
+    #[allow(unused_variables)]
     fn setup_current_time(&mut self, current_fuel: u64) -> wasmtime::Result<TimeUs> {
-        self.current_fuel = current_fuel;
-        self.current_time()
+        todo!("record the new balance and report the time")
     }
 
     fn current_time(&self) -> wasmtime::Result<TimeUs> {
-        self.check_fuel()?;
-        let remaining_fuel = self.current_fuel - self.skipped_fuel;
-        Ok(self.total_simulation_time - time_us_for_fuel(remaining_fuel))
+        todo!("derive the simulated time from the remaining budget")
     }
 
+    #[allow(unused_variables)]
     fn skip_fuel(&mut self, fuel: u64) -> wasmtime::Result<()> {
-        self.skipped_fuel += fuel;
-        self.check_fuel()?;
-        Ok(())
+        todo!("record the debit, then check the robot can still afford it")
     }
 
+    #[allow(unused_variables)]
     fn skip_time(&mut self, time: TimeUs) -> wasmtime::Result<()> {
-        self.skip_fuel(fuel_for_time_us(time))
+        todo!("convert and delegate")
     }
 
+    #[allow(unused_variables)]
     fn set_current_time(&mut self, time: TimeUs) -> wasmtime::Result<()> {
-        if time >= self.total_simulation_time {
-            return Err(wasmtime::Error::msg(
-                "Cannot advance time beyond total simulation time",
-            ));
-        }
-        let remaining_time = self.total_simulation_time - time;
-        let remaining_fuel = fuel_for_time_us(remaining_time);
-
-        // remaining_fuel == self.current_fuel - self.skipped_fuel
-        // self.skipped_fuel = remaining_fuel - self.current_fuel
-        if remaining_fuel >= self.current_fuel {
-            return Err(wasmtime::Error::msg("Not enough fuel to advance time"));
-        }
-        self.skipped_fuel = self.current_fuel - remaining_fuel;
-        self.check_fuel()?;
-        Ok(())
+        todo!("solve for skipped_fuel")
     }
 
     fn update_futures(&mut self, current_time: TimeUs) {
