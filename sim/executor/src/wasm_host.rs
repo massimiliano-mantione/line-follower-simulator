@@ -18,9 +18,7 @@ use std::{
     u16,
 };
 
-use execution_data::{
-    ExecutionData, GyroData, ImuFusedData, MotorAngles, MotorDriversDutyCycles, SimulationStepper,
-};
+use execution_data::{ExecutionData, MotorAngles, MotorDriversDutyCycles, SimulationStepper};
 
 use wasmtime::{
     AsContextMut,
@@ -303,8 +301,6 @@ pub enum FutureOperation {
     ReadLineLeft,
     ReadLineRight,
     ReadMotorAngles,
-    ReadGyro,
-    ReadImuFusedData,
     GetTime,
     GetPeriod,
     Sleep,
@@ -319,8 +315,6 @@ impl From<DeviceOperation> for FutureOperation {
             DeviceOperation::ReadLineLeft => FutureOperation::ReadLineLeft,
             DeviceOperation::ReadLineRight => FutureOperation::ReadLineRight,
             DeviceOperation::ReadMotorAngles => FutureOperation::ReadMotorAngles,
-            DeviceOperation::ReadGyro => FutureOperation::ReadGyro,
-            DeviceOperation::ReadImuFusedData => FutureOperation::ReadImuFusedData,
             DeviceOperation::GetTime => FutureOperation::GetTime,
             DeviceOperation::GetPeriod => FutureOperation::GetPeriod,
             DeviceOperation::SleepFor(_) => FutureOperation::Sleep,
@@ -338,8 +332,6 @@ impl FutureOperation {
             FutureOperation::ReadLineLeft => "ReadLineLeft",
             FutureOperation::ReadLineRight => "ReadLineRight",
             FutureOperation::ReadMotorAngles => "ReadMotorAngles",
-            FutureOperation::ReadGyro => "ReadGyro",
-            FutureOperation::ReadImuFusedData => "ReadImuFusedData",
             FutureOperation::GetTime => "GetTime",
             FutureOperation::GetPeriod => "GetPeriod",
             FutureOperation::Sleep => "Sleep",
@@ -349,6 +341,7 @@ impl FutureOperation {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn compute_value(
         &self,
         stepper: &impl SimulationStepper,
@@ -364,10 +357,6 @@ impl FutureOperation {
             }
             FutureOperation::ReadMotorAngles => {
                 DeviceValueRaw::from_motor_angles(stepper.get_motor_angles())
-            }
-            FutureOperation::ReadGyro => DeviceValueRaw::from_gyro_data(stepped_data.gyro_data),
-            FutureOperation::ReadImuFusedData => {
-                DeviceValueRaw::from_imu_fused_data(stepped_data.imu_fused_data)
             }
             FutureOperation::GetTime => DeviceValueRaw::zero().with_u32(0, current_time),
             FutureOperation::GetPeriod => DeviceValueRaw::zero()
@@ -505,19 +494,6 @@ impl DeviceValueRaw {
             .with_u16(1, (angles.right * (u16::MAX as f32) / (PI * 2.0)) as u16)
     }
 
-    pub fn from_gyro_data(gyro_data: GyroData) -> Self {
-        Self::zero()
-            .with_i16(0, gyro_data.roll_angular_speed as i16)
-            .with_i16(1, gyro_data.pitch_angular_speed as i16)
-            .with_i16(2, gyro_data.yaw_angular_speed as i16)
-    }
-
-    pub fn from_imu_fused_data(imu_data: ImuFusedData) -> Self {
-        Self::zero()
-            .with_i16(0, imu_data.roll.to_radians() as i16)
-            .with_i16(1, imu_data.pitch.to_radians() as i16)
-            .with_i16(2, imu_data.yaw.to_radians() as i16)
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -620,8 +596,6 @@ impl Ord for FutureValueReadyTime {
     }
 }
 
-const READY_STEPS_GYRO: u32 = 2;
-const READY_STEPS_IMU_FUSED: u32 = 10;
 
 pub trait DeviceOperationExt {
     fn ready_condition(
@@ -642,9 +616,7 @@ impl DeviceOperationExt for DeviceOperation {
         match *self {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
-            | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadGyro
-            | DeviceOperation::ReadImuFusedData => {
+            | DeviceOperation::ReadMotorAngles => {
                 let step_time = stepper.step_us();
                 let stray_time = current_time % step_time;
                 let trigger_time = if stray_time == 0 {
@@ -680,8 +652,6 @@ impl DeviceOperationExt for DeviceOperation {
             | DeviceOperation::WaitDisabled
             | DeviceOperation::SleepFor(_)
             | DeviceOperation::SleepUntil(_) => 1,
-            DeviceOperation::ReadGyro => READY_STEPS_GYRO,
-            DeviceOperation::ReadImuFusedData => READY_STEPS_IMU_FUSED,
         }
     }
 
@@ -690,8 +660,6 @@ impl DeviceOperationExt for DeviceOperation {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadGyro
-            | DeviceOperation::ReadImuFusedData
             | DeviceOperation::GetTime
             | DeviceOperation::GetPeriod
             | DeviceOperation::GetEnabled
@@ -760,10 +728,9 @@ impl WakeupPoint {
     }
 }
 
+/// Latched samples for devices that are not available on every tick.
 #[derive(Clone, Copy, Default)]
 pub struct SteppedData {
-    pub gyro_data: GyroData,
-    pub imu_fused_data: ImuFusedData,
 }
 
 pub struct BotHost<S: SimulationStepper> {
@@ -798,8 +765,6 @@ impl<S: SimulationStepper> BotHost<S> {
             DeviceOperation::ReadLineLeft
             | DeviceOperation::ReadLineRight
             | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadGyro
-            | DeviceOperation::ReadImuFusedData
             | DeviceOperation::GetTime
             | DeviceOperation::GetPeriod
             | DeviceOperation::GetEnabled => {
@@ -1400,13 +1365,6 @@ impl<S: SimulationStepper> BotHost<S> {
     pub fn step(&mut self) {
         self.stepper.step();
 
-        let steps = self.stepper.get_step_count() as u32;
-        if steps % READY_STEPS_GYRO == 0 {
-            self.stepped_data.gyro_data = self.stepper.get_gyro();
-        }
-        if steps % READY_STEPS_IMU_FUSED == 0 {
-            self.stepped_data.imu_fused_data = self.stepper.get_imu_fused_data();
-        }
 
         self.update_futures(self.stepper.get_time_us());
     }

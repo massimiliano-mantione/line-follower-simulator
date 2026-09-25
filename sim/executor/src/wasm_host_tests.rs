@@ -150,12 +150,6 @@ fn ready_condition_rounds_up_to_a_step_boundary() {
         DeviceOperation::ReadLineLeft.ready_condition(1_300, &stepper),
         FutureReadyCondition::ReadyAt(1_500)
     ));
-    // Slow devices wait proportionally longer.
-    assert_eq!(DeviceOperation::ReadGyro.ready_steps(), READY_STEPS_GYRO);
-    assert_eq!(
-        DeviceOperation::ReadImuFusedData.ready_steps(),
-        READY_STEPS_IMU_FUSED
-    );
 }
 
 #[test]
