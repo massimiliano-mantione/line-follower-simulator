@@ -505,8 +505,9 @@ impl Plugin for CameraSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             PanOrbitCameraPlugin,
-            // debug only:
-            // bevy_rapier3d::render::RapierDebugRenderPlugin::default(),
+            // Enabled for this lesson: it draws every collider, so you can see what
+            // you have actually built rather than inferring it from behaviour.
+            bevy_rapier3d::render::RapierDebugRenderPlugin::default(),
         ))
         .add_systems(Startup, setup_camera)
         // Background color

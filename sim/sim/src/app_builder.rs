@@ -188,9 +188,7 @@ impl Plugin for RapierPhysicsSetupPlugin {
             RapierPhysicsPlugin::<NoUserData>::default().with_custom_initialization(
                 RapierContextInitialization::InitializeDefaultRapierContext {
                     rapier_configuration: {
-                        let mut config = RapierConfiguration::new(0.001);
-                        config.gravity = Vec3::NEG_Z * 9.81;
-                        config
+                        RapierConfiguration::new(1.0)
                     },
                     integration_parameters: IntegrationParameters::default(),
                 },
