@@ -36,6 +36,8 @@ impl BotVisualization {
     }
 }
 
+// Called by EXERCISE 11.4 once implemented.
+#[allow(dead_code)]
 pub fn spawn_bot_visualization(
     commands: &mut Commands,
     track: &Track,
