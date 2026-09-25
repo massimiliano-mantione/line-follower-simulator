@@ -10,6 +10,8 @@ const MAX_TIME: u32 = 50_000_000;
 // A ring buffer of 20,000 samples of 40 bytes: the last 10 s of the race at 2 kHz.
 // The flush costs 10 us per byte, so 800 KB take 8 s of simulated time, which still
 // fits in the 60 s budget after a race that runs until MAX_TIME (50 s).
+// Used by EXERCISE 9.2 and 9.3 once they are implemented.
+#[allow(dead_code)]
 const TEL_CAPACITY: usize = 20_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
@@ -159,10 +161,8 @@ impl Pid {
     }
 }
 
+#[allow(unused_variables)]
 pub async fn run(sensor_spacing_mm: f32) {
-    let mut tel_buf = Vec::with_capacity(TEL_CAPACITY);
-    let mut tel_oldest = 0;
-    let csv_spec = TelBlock::csv_spec();
 
     wait_remote_enabled().await;
 
@@ -184,24 +184,6 @@ pub async fn run(sensor_spacing_mm: f32) {
         let dir = pid.dir();
         let out = pid.out();
 
-        let sample = TelBlock::new(
-            time,
-            steps,
-            vals,
-            [wl, wr],
-            [pwm_l, pwm_r],
-            err,
-            der,
-            dir,
-            out,
-        );
-        // Never grow the buffer mid-race: once it is full, overwrite the oldest sample.
-        if tel_buf.len() < TEL_CAPACITY {
-            tel_buf.push(sample);
-        } else {
-            tel_buf[tel_oldest] = sample;
-            tel_oldest = (tel_oldest + 1) % TEL_CAPACITY;
-        }
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
@@ -215,80 +197,17 @@ pub async fn run(sensor_spacing_mm: f32) {
         }
     }
 
-    // Oldest sample first.
-    tel_buf.rotate_left(tel_oldest);
-    write_csv_file("telemetry", csv::transmute_buf(&tel_buf), &csv_spec);
 }
 
 #[repr(C)]
+#[allow(dead_code)]
 struct TelBlock {
     time: u32,
-    steps: u32,
-    vals: [u8; 16],
-    w: [u16; 2],
-    pwm: [i16; 2],
-    e: i16,
-    d: i16,
-    dir: u8,
-    out: u8,
-    pad: u16,
 }
 
+#[allow(dead_code)]
 impl TelBlock {
-    fn new(
-        time: u32,
-        steps: u32,
-        vals: [u8; 16],
-        w: [u16; 2],
-        pwm: [i16; 2],
-        e: i16,
-        d: i16,
-        dir: u8,
-        out: u8,
-    ) -> Self {
-        Self {
-            time,
-            steps,
-            vals,
-            w,
-            pwm,
-            e,
-            d,
-            dir,
-            out,
-            pad: 0,
-        }
-    }
-
-    fn csv_spec() -> [csv::CsvColumn; 27] {
-        [
-            csv::col("time", csv::C_U32),
-            csv::col("steps", csv::C_U32),
-            csv::col("s1", csv::C_U8),
-            csv::col("s2", csv::C_U8),
-            csv::col("s3", csv::C_U8),
-            csv::col("s4", csv::C_U8),
-            csv::col("s5", csv::C_U8),
-            csv::col("s6", csv::C_U8),
-            csv::col("s7", csv::C_U8),
-            csv::col("s8", csv::C_U8),
-            csv::col("s9", csv::C_U8),
-            csv::col("s10", csv::C_U8),
-            csv::col("s11", csv::C_U8),
-            csv::col("s12", csv::C_U8),
-            csv::col("s13", csv::C_U8),
-            csv::col("s14", csv::C_U8),
-            csv::col("s15", csv::C_U8),
-            csv::col("s16", csv::C_U8),
-            csv::col("wl", csv::C_U16),
-            csv::col("wr", csv::C_U16),
-            csv::col("pwm_l", csv::C_I16),
-            csv::col("pwm_r", csv::C_I16),
-            csv::col("err", csv::C_I16),
-            csv::col("der", csv::C_I16),
-            csv::col("dir", csv::named([csv::nv("left", 0), csv::nv("right", 1)])),
-            csv::col("out", csv::named([csv::nv("in", 0), csv::nv("out", 1)])),
-            csv::col(".", csv::PAD_16),
-        ]
+    fn csv_spec() -> Vec<csv::CsvColumn> {
+        todo!("describe the byte layout of TelBlock")
     }
 }
