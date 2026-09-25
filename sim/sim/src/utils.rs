@@ -32,6 +32,8 @@ pub trait SetBySide<T: Copy> {
     fn set_by_side(&mut self, side: Side, value: T);
 }
 
+// Used by EXERCISE 4.3 once implemented.
+#[allow(dead_code)]
 pub trait GetBySide<T: Copy> {
     fn get_by_side(&self, side: Side) -> T;
 }
