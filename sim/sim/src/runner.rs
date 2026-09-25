@@ -160,13 +160,6 @@ impl execution_data::SimulationStepper for RunnerStepper {
         self.app_wrapper.sensors_data().motor_angles
     }
 
-    fn get_gyro(&self) -> execution_data::GyroData {
-        self.app_wrapper.sensors_data().gyro
-    }
-
-    fn get_imu_fused_data(&self) -> execution_data::ImuFusedData {
-        self.app_wrapper.sensors_data().imu_fused
-    }
 
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition {
         self.app_wrapper.sensors_data().bot_physical_position

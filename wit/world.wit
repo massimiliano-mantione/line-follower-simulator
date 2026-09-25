@@ -44,12 +44,6 @@ world line-follower-robot {
             /// Read angle position of motors (2 u16 values),
             /// ready every period
             read-motor-angles,
-            /// Read gyroscope (3 i16 values: roll, pitch and yaw angular velocity),
-            /// ready every 2 periods
-            read-gyro,
-            /// Read IMU fused data (3 i16 values: : roll, pitch and yaw angles),
-            /// ready every 10 period
-            read-imu-fused-data,
             /// Get time elapsed since initialization in microseconds (1 u32 value), always available
             get-time,
             /// Get the simulation period microseconds (1 u32 value) and the number of periods computed so far (another u32 value), always available

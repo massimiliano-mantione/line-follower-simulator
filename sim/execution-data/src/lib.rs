@@ -307,41 +307,6 @@ pub struct MotorAngles {
     pub right: f32,
 }
 
-/// Gyroscope data in rad/s.
-#[derive(Clone, Copy, Default)]
-pub struct GyroData {
-    pub roll_angular_speed: f32,
-    pub pitch_angular_speed: f32,
-    pub yaw_angular_speed: f32,
-}
-
-impl From<Vec3> for GyroData {
-    fn from(value: Vec3) -> Self {
-        Self {
-            roll_angular_speed: value.y,
-            pitch_angular_speed: value.x,
-            yaw_angular_speed: value.z,
-        }
-    }
-}
-
-/// Fused IMU data in radians.
-#[derive(Clone, Copy, Default)]
-pub struct ImuFusedData {
-    pub roll: f32,
-    pub pitch: f32,
-    pub yaw: f32,
-}
-
-impl From<Vec3> for ImuFusedData {
-    fn from(value: Vec3) -> Self {
-        Self {
-            roll: value.y,
-            pitch: value.x,
-            yaw: value.z,
-        }
-    }
-}
 
 /// Bot logical positions
 #[derive(Debug, Clone, Copy, Default)]
@@ -378,8 +343,6 @@ impl std::fmt::Display for BotPhysicalPosition {
 #[derive(Clone, Copy, Resource, Default)]
 pub struct SensorsData {
     pub motor_angles: MotorAngles,
-    pub gyro: GyroData,
-    pub imu_fused: ImuFusedData,
     pub line_sensors: [f32; 16],
     pub bot_position: BotPosition,
     pub bot_physical_position: BotPhysicalPosition,
@@ -432,10 +395,6 @@ pub trait SimulationStepper {
     fn get_line_sensors_right(&self) -> [f32; 8];
     /// Get the current motor angles.
     fn get_motor_angles(&self) -> MotorAngles;
-    /// Get the current gyroscope data.
-    fn get_gyro(&self) -> GyroData;
-    /// Get the current IMU fused data.
-    fn get_imu_fused_data(&self) -> ImuFusedData;
 
     /// Get absolute bot position
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition;
