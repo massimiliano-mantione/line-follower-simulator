@@ -6,15 +6,12 @@ use crate::{
 };
 use execution_data::{ExecutionData, MotorAngles};
 
+#[allow(unused_variables, unused_mut)]
 fn store_data(
     bot_query: Query<&Transform, With<BotPositionDetector>>,
     motor_angles: Res<MotorAngles>,
     mut exec_data: ResMut<ExecutionData>,
 ) {
-    let body_transform = *bot_query.single().unwrap();
-    exec_data.body_data.steps.push(body_transform);
-    exec_data.left_wheel_data.steps.push(motor_angles.left);
-    exec_data.right_wheel_data.steps.push(motor_angles.right);
 }
 
 pub struct StoreExecDataPlugin {

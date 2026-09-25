@@ -18,16 +18,9 @@ impl BodyExecutionData {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn at_time_secs(&self, time_secs: f32) -> Transform {
-        if self.steps.is_empty() {
-            Transform::default()
-        } else {
-            let index = ((time_secs * 1_000_000.0 / (self.period as f32))
-                .floor()
-                .max(0.0) as usize)
-                .min(self.steps.len() - 1);
-            self.steps[index]
-        }
+        todo!("index the recording by time")
     }
 }
 
@@ -86,16 +79,9 @@ impl WheelExecutionData {
         self.side.axis_direction()
     }
 
+    #[allow(unused_variables)]
     pub fn at_time_secs(&self, time_secs: f32) -> f32 {
-        if self.steps.is_empty() {
-            0.0
-        } else {
-            let index = ((time_secs * 1_000_000.0 / self.period as f32)
-                .floor()
-                .max(0.0) as usize)
-                .min(self.steps.len() - 1);
-            self.steps[index]
-        }
+        todo!("index the recording by time")
     }
 }
 
@@ -133,6 +119,8 @@ pub enum BotFinalStatus {
     OutAt { time_secs: f32 },
 }
 
+// `kind_rank` and `kind_value` are the building blocks for EXERCISE 6.5.
+#[allow(dead_code)]
 impl BotFinalStatus {
     pub fn end_time(&self) -> Option<f32> {
         match self {
@@ -171,15 +159,9 @@ impl std::cmp::PartialOrd for BotFinalStatus {
 }
 
 impl std::cmp::Ord for BotFinalStatus {
+    #[allow(unused_variables)]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self.kind_rank().cmp(&other.kind_rank()) {
-            std::cmp::Ordering::Equal => {
-                let self_value = self.kind_value();
-                let other_value = other.kind_value();
-                self_value.total_cmp(&other_value)
-            }
-            ord => ord,
-        }
+        std::cmp::Ordering::Equal
     }
 }
 
@@ -201,72 +183,10 @@ impl ActivityData {
     }
 
     pub fn status_at_time(&self, time_secs: f32) -> BotStatus {
-        let time_us: u32 = (time_secs * 1_000_000.0) as u32;
-
-        let start_secs = match self.start_time_us {
-            Some(start) => {
-                if time_us < start {
-                    return BotStatus::Waiting { time_secs };
-                } else {
-                    start as f32 / 1_000_000.0
-                }
-            }
-            None => {
-                return BotStatus::Waiting { time_secs };
-            }
-        };
-
-        if let Some(end_us) = self.end_time_us {
-            if time_us > end_us {
-                let end_secs = end_us as f32 / 1_000_000.0;
-                return BotStatus::EndedAt {
-                    time_secs: (end_secs - start_secs).max(0.0),
-                };
-            }
-        }
-
-        if let Some(out_us) = self.out_time_us {
-            if time_us > out_us {
-                let out_secs = out_us as f32 / 1_000_000.0;
-                return BotStatus::OutAt {
-                    time_secs: (out_secs - start_secs).max(0.0),
-                };
-            }
-        }
-
-        BotStatus::Racing {
-            time_secs: time_secs - start_secs,
-        }
+        BotStatus::Waiting { time_secs }
     }
 
     pub fn final_status(&self) -> BotFinalStatus {
-        let start_us = match self.start_time_us {
-            Some(start_us) => start_us,
-            None => return BotFinalStatus::NotStarted,
-        };
-
-        if let Some(ended_us) = self.end_time_us {
-            let racing_us = if ended_us > start_us {
-                ended_us - start_us
-            } else {
-                0
-            };
-            return BotFinalStatus::EndedAt {
-                time_secs: racing_us as f32 / 1_000_000.0,
-            };
-        }
-
-        if let Some(out_us) = self.out_time_us {
-            let racing_us = if out_us > start_us {
-                out_us - start_us
-            } else {
-                0
-            };
-            return BotFinalStatus::OutAt {
-                time_secs: racing_us as f32 / 1_000_000.0,
-            };
-        }
-
         BotFinalStatus::NotEnded
     }
 }
