@@ -394,6 +394,8 @@ pub enum TrackSegment {
 }
 
 impl TrackSegment {
+    // Used by EXERCISE 5.1 to detect the finish line.
+    #[allow(dead_code)]
     pub fn is_end(&self) -> bool {
         *self == TrackSegment::End
     }
