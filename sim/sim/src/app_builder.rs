@@ -239,12 +239,6 @@ pub fn create_app(app_type: AppType, track: Track, step_period_us: u32) -> wasmt
         app.add_plugins(RapierPhysicsSetupPlugin);
 
         if !app_type.has_visualization() {
-            let mut tsm = app.world_mut().resource_mut::<TimestepMode>();
-            *tsm = TimestepMode::Fixed {
-                dt: step_period_us as f32 / 1_000_000.0,
-                substeps: 1,
-            };
-            app.world_mut().resource_mut::<Time<Virtual>>().pause();
 
             // `MinimalPlugins` does not bring in `TransformPlugin`, so the resource
             // `propagate_parent_transforms` reads has to be initialized here.
