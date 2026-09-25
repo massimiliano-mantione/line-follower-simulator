@@ -554,13 +554,9 @@ impl FutureReadyCondition {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn wakeup_point<S: SimulationStepper>(&self, current_time: TimeUs, stepper: &S) -> TimeUs {
-        match *self {
-            FutureReadyCondition::ReadyAt(time) => time,
-            FutureReadyCondition::IsActive | FutureReadyCondition::IsInactive => {
-                stepper.get_time_us_at_next_step_after(current_time)
-            }
-        }
+        todo!("when is it worth polling this again?")
     }
 }
 
@@ -721,6 +717,8 @@ pub fn time_us_for_fuel(fuel: u64) -> TimeUs {
     ((fuel * FUEL_UNIT_NS) / 1000) as TimeUs
 }
 
+// The variants and methods below are used by the EXERCISE 7.x bodies.
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum WakeupPoint {
     AtTime(TimeUs),
@@ -738,25 +736,20 @@ impl std::fmt::Display for WakeupPoint {
     }
 }
 
+#[allow(dead_code)]
 impl WakeupPoint {
+
+    #[allow(unused_variables)]
     pub fn set_time(&mut self, new_wakeup_time: TimeUs) {
-        match *self {
-            WakeupPoint::AtTime(current_wakeup_time) => {
-                if new_wakeup_time < current_wakeup_time {
-                    *self = WakeupPoint::AtTime(new_wakeup_time);
-                }
-            }
-            WakeupPoint::Missing => *self = WakeupPoint::AtTime(new_wakeup_time),
-            WakeupPoint::Disabled => {}
-        }
+        todo!("record a pending wakeup, earliest wins, unless disabled")
     }
 
     pub fn disable(&mut self) {
-        *self = WakeupPoint::Disabled;
+        todo!("forbid fast-forwarding for the rest of this round")
     }
 
     pub fn clear(&mut self) {
-        *self = WakeupPoint::Missing;
+        todo!("start a fresh round")
     }
 }
 
@@ -766,6 +759,8 @@ pub struct SteppedData {
     pub imu_fused_data: ImuFusedData,
 }
 
+// The futures registry fields are read by the EXERCISE 7.x bodies.
+#[allow(dead_code)]
 pub struct BotHost<S: SimulationStepper> {
     stepper: S,
     total_simulation_time: TimeUs,
@@ -849,95 +844,35 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     /// Initiate an async operation (immediately returns a handle to the future value)
+    #[allow(unused_variables)]
     fn device_operation_async(
         &mut self,
         current_fuel: u64,
         operation: DeviceOperation,
     ) -> wasmtime::Result<FutureHandle> {
-        let current_time = self.setup_current_time(current_fuel)?;
-        let id = self.next_future_handle_id;
-        self.next_future_handle_id += 1;
-
-        let future_value = FutureValueRequest {
-            ready_condition: operation.ready_condition(current_time, &self.stepper),
-            id,
-            operation: operation.into(),
-            value: FutureValueStatus::Pending,
-        };
-
-        let ready_at = match future_value.ready_condition {
-            FutureReadyCondition::ReadyAt(ready_at) => {
-                self.futures_by_ready_time
-                    .insert(FutureValueReadyTime { ready_at, id });
-                ready_at
-            }
-            FutureReadyCondition::IsActive | FutureReadyCondition::IsInactive => {
-                self.futures_by_activity.insert(id);
-                current_time
-            }
-        };
-        self.futures_by_id.insert(id, future_value);
-
-        Ok(FutureHandle { id, ready_at })
+        todo!("register the future, return a handle")
     }
 
     /// Poll the status of an async operation (returns immediately)
+    #[allow(unused_variables)]
     fn device_poll(
         &mut self,
         current_fuel: u64,
         handle: FutureHandle,
     ) -> wasmtime::Result<PollOperationStatus> {
-        let current_time = self.setup_current_time(current_fuel)?;
-        self.step_until_time(current_time);
-        match self.futures_by_id.get_mut(&handle.id) {
-            Some(f) => match f.value {
-                FutureValueStatus::Pending => {
-                    self.first_wakeup_point
-                        .set_time(f.ready_condition.wakeup_point(current_time, &self.stepper));
-                    Ok(PollOperationStatus::Pending)
-                }
-                FutureValueStatus::Ready(device_value_raw) => {
-                    self.first_wakeup_point.disable();
-                    f.value = FutureValueStatus::Consumed;
-                    Ok(PollOperationStatus::Ready(device_value_raw.into()))
-                }
-                FutureValueStatus::Consumed => {
-                    return Err(wasmtime::Error::msg("Future already consumed"));
-                }
-            },
-            None => {
-                return Err(wasmtime::Error::msg("Future handle not found"));
-            }
-        }
+        todo!("pending, ready, or a bug")
     }
 
     /// Signal future values poll loop start and end to the simulation host
+    #[allow(unused_variables)]
     fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
-        let current_time = self.setup_current_time(current_fuel)?;
-        if start {
-            self.update_futures(current_time);
-            self.first_wakeup_point.clear();
-        } else {
-            if let WakeupPoint::AtTime(wakeup_point) = self.first_wakeup_point {
-                if wakeup_point > current_time {
-                    self.set_current_time(wakeup_point)?;
-                    self.step_until_time(wakeup_point);
-                }
-            }
-            self.first_wakeup_point.disable();
-        }
-        Ok(())
+        todo!("open and close a polling round")
     }
 
     /// Instructs the simulation to forget the handle to an async operation
     /// (is equivalent to dropping the future in Rust)
+    #[allow(unused_variables)]
     fn forget_handle(&mut self, handle: FutureHandle) -> () {
-        self.futures_by_activity.remove(&handle.id);
-        self.futures_by_ready_time.remove(&FutureValueReadyTime {
-            ready_at: handle.ready_at,
-            id: handle.id,
-        });
-        self.futures_by_id.remove(&handle.id);
     }
 
     /// Set the power of both motors
@@ -1327,74 +1262,8 @@ impl<S: SimulationStepper> BotHost<S> {
         Ok(())
     }
 
+    #[allow(unused_variables)]
     fn update_futures(&mut self, current_time: TimeUs) {
-        if !self.futures_by_activity.is_empty() {
-            let is_active = self.stepper.is_active();
-            let mut missing = Vec::new();
-            let mut completed = BTreeSet::new();
-
-            for id in self.futures_by_activity.iter().copied() {
-                match self.futures_by_id.get_mut(&id) {
-                    Some(f) => {
-                        if f.value == FutureValueStatus::Pending {
-                            match f.ready_condition {
-                                FutureReadyCondition::IsActive => {
-                                    if is_active {
-                                        f.value = FutureValueStatus::Ready(DeviceValueRaw::zero());
-                                        completed.insert(id);
-                                    }
-                                }
-                                FutureReadyCondition::IsInactive => {
-                                    if !is_active {
-                                        f.value = FutureValueStatus::Ready(DeviceValueRaw::zero());
-                                        completed.insert(id);
-                                    }
-                                }
-                                FutureReadyCondition::ReadyAt(_) => {}
-                            }
-                        }
-                    }
-                    None => missing.push(id),
-                }
-            }
-            self.futures_by_activity
-                .retain(|id| !completed.contains(id));
-        }
-
-        if !self.futures_by_ready_time.is_empty() {
-            let mut to_remove = Vec::new();
-
-            for rt in self
-                .futures_by_ready_time
-                .iter()
-                .copied()
-                .take_while(|rt| rt.ready_at <= current_time)
-            {
-                match self.futures_by_id.get_mut(&rt.id) {
-                    Some(f) => {
-                        if f.value == FutureValueStatus::Pending {
-                            match f.ready_condition {
-                                FutureReadyCondition::ReadyAt(ready_time) => {
-                                    let value = f.operation.compute_value(
-                                        &self.stepper,
-                                        &self.stepped_data,
-                                        ready_time,
-                                    );
-                                    f.value = FutureValueStatus::Ready(value);
-                                }
-                                FutureReadyCondition::IsActive
-                                | FutureReadyCondition::IsInactive => {}
-                            }
-                            to_remove.push(rt);
-                        }
-                    }
-                    None => to_remove.push(rt),
-                }
-            }
-            for rt in to_remove {
-                self.futures_by_ready_time.remove(&rt);
-            }
-        }
     }
 
     pub fn step(&mut self) {
