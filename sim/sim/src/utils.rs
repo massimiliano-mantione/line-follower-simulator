@@ -52,6 +52,7 @@ impl GetBySide<i16> for MotorDriversDutyCycles {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Angle(f32);
 
+#[allow(dead_code)]
 impl Angle {
     pub fn from_degrees(degrees: f32) -> Self {
         Self(degrees.to_radians())
