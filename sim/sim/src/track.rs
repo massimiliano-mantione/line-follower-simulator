@@ -1,3 +1,6 @@
+// Several of these are used only by the EXERCISE 10.x bodies once implemented.
+#![allow(unused_imports)]
+
 use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::{light::NotShadowCaster, prelude::*};
@@ -22,6 +25,7 @@ const TRACK_ORIGIN_OFFSET: Vec2 = Vec2::new(0.0, -0.25);
 /// * `angle`   - Total arc angle in radians (e.g., PI/2 for 90° turn)
 /// * `height`  - Collider height/thickness
 /// * `segments` - Number of convex segments for smoothness
+#[allow(dead_code)]
 pub fn arc_collider(radius: f32, width: f32, angle: f32, side: Side, height: f32) -> Collider {
     // Approximate the curved arc by composing `segments` small box colliders
     // placed along the arc. Each box is oriented so its long side follows
@@ -343,6 +347,7 @@ impl std::fmt::Display for SegmentTransform {
     }
 }
 
+#[allow(dead_code)]
 impl SegmentTransform {
     pub fn new(position: Vec2, direction: Angle) -> Self {
         Self {
@@ -351,18 +356,14 @@ impl SegmentTransform {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn translate_in_direction(&self, translation: Vec2) -> Self {
-        Self {
-            position: self.position + rotate_vec2(translation, self.direction.to_radians()),
-            direction: self.direction,
-        }
+        *self
     }
 
+    #[allow(unused_variables)]
     pub fn rotate(&self, rotation: Angle) -> Self {
-        Self {
-            position: self.position,
-            direction: Angle::from_radians(self.direction.to_radians() + rotation.to_radians()),
-        }
+        *self
     }
 }
 
@@ -428,38 +429,7 @@ impl TrackSegment {
     }
 
     pub fn collider(&self) -> Collider {
-        match *self {
-            TrackSegment::Start | TrackSegment::End => {
-                Collider::cuboid(TRACK_HALF_WIDTH, TRACK_TIPS_LENGTH / 2.0, TRACK_HALF_HEIGHT)
-            }
-            TrackSegment::Straight(data) => {
-                Collider::cuboid(TRACK_HALF_WIDTH, data.length / 2.0, TRACK_HALF_HEIGHT)
-            }
-            TrackSegment::NinetyDegTurn(data) => {
-                let hl: f32 = (data.line_half_length + TRACK_HALF_WIDTH) / 2.0;
-                let ht = (data.line_half_length - TRACK_HALF_WIDTH) / 2.0;
-                // Collider::cuboid(hl, hl, TRACK_HALF_HEIGHT);
-                Collider::compound(vec![
-                    (
-                        Vec3::NEG_Y * ht,
-                        Quat::IDENTITY,
-                        Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
-                    ),
-                    (
-                        Vec3::NEG_X * ht * data.side.sign(),
-                        Quat::from_rotation_z(FRAC_PI_2),
-                        Collider::cuboid(TRACK_HALF_WIDTH, hl, TRACK_HALF_HEIGHT),
-                    ),
-                ])
-            }
-            TrackSegment::CyrcleTurn(data) => arc_collider(
-                data.radius,
-                TRACK_HALF_WIDTH * 2.0,
-                data.angle.to_radians(),
-                data.side,
-                TRACK_HALF_HEIGHT * 2.0,
-            ),
-        }
+        Collider::cuboid(TRACK_HALF_WIDTH, TRACK_TIPS_LENGTH / 2.0, TRACK_HALF_HEIGHT)
     }
 
     pub fn mesh(&self) -> Mesh {
@@ -484,47 +454,14 @@ impl TrackSegment {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn transform(&self, origin: SegmentTransform) -> Transform {
-        let transform_origin = match *self {
-            TrackSegment::Start | TrackSegment::End => {
-                origin.translate_in_direction(Vec2::Y * TRACK_TIPS_LENGTH / 2.0)
-            }
-            TrackSegment::Straight(data) => {
-                origin.translate_in_direction(Vec2::Y * data.length / 2.0)
-            }
-            TrackSegment::NinetyDegTurn(data) => {
-                origin.translate_in_direction(Vec2::Y * data.line_half_length)
-            }
-            TrackSegment::CyrcleTurn(data) => {
-                origin.translate_in_direction(Vec2::NEG_X * data.radius * data.side.sign())
-            }
-        };
-        Transform::from_translation(transform_origin.position.extend(0.0)).with_rotation(
-            Quat::from_rotation_z(transform_origin.direction.to_radians()),
-        )
+        Transform::default()
     }
 
+    #[allow(unused_variables)]
     pub fn compute_next_origin(&self, origin: SegmentTransform) -> SegmentTransform {
-        match *self {
-            TrackSegment::Start | TrackSegment::End => {
-                origin.translate_in_direction(Vec2::Y * TRACK_TIPS_LENGTH)
-            }
-            TrackSegment::Straight(data) => origin.translate_in_direction(Vec2::Y * data.length),
-            TrackSegment::NinetyDegTurn(data) => origin
-                .translate_in_direction(Vec2::new(
-                    -data.line_half_length * data.side.sign(),
-                    data.line_half_length,
-                ))
-                .rotate(Angle::from_degrees(90.0 * data.side.sign())),
-            TrackSegment::CyrcleTurn(data) => origin
-                .translate_in_direction(Vec2::new(
-                    data.radius * (data.angle.to_radians().cos() - 1.0) * data.side.sign(),
-                    data.radius * data.angle.to_radians().sin(),
-                ))
-                .rotate(Angle::from_radians(
-                    data.angle.to_radians() * data.side.sign(),
-                )),
-        }
+        origin
     }
 
     pub fn spawn(
