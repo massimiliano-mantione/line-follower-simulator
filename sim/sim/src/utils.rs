@@ -79,6 +79,8 @@ pub fn rotate_vec2(v: Vec2, angle: f32) -> Vec2 {
     Vec2::new(v.x * c - v.y * s, v.x * s + v.y * c)
 }
 
+// Used by EXERCISE 5.4 once implemented.
+#[allow(dead_code)]
 pub fn point_to_new_origin(point: Vec3, transform: &GlobalTransform) -> Vec2 {
     rotate_vec2(
         (point - transform.translation()).truncate(),
@@ -122,11 +124,14 @@ impl EntityFeatures {
 }
 
 /// A fast, deterministic generator of random numbers with normal distribution.
+// Used by EXERCISE 5.1 once implemented.
+#[allow(dead_code)]
 #[derive(Resource)]
 pub struct NormalRandom {
     rng: rand::rngs::SmallRng,
 }
 
+#[allow(dead_code)]
 impl NormalRandom {
     pub fn new() -> Self {
         NormalRandom {
