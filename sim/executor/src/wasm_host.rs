@@ -18,6 +18,8 @@ use std::{
     u16,
 };
 
+// `MotorDriversDutyCycles` is used by EXERCISE 3.4 once it is implemented.
+#[allow(unused_imports)]
 use execution_data::{
     ExecutionData, GyroData, ImuFusedData, MotorAngles, MotorDriversDutyCycles, SimulationStepper,
 };
@@ -620,7 +622,10 @@ impl Ord for FutureValueReadyTime {
     }
 }
 
+// Used by EXERCISE 3.2 and EXERCISE 3.5 once they are implemented.
+#[allow(dead_code)]
 const READY_STEPS_GYRO: u32 = 2;
+#[allow(dead_code)]
 const READY_STEPS_IMU_FUSED: u32 = 10;
 
 pub trait DeviceOperationExt {
@@ -634,55 +639,17 @@ pub trait DeviceOperationExt {
 }
 
 impl DeviceOperationExt for DeviceOperation {
+    #[allow(unused_variables)]
     fn ready_condition(
         &self,
         current_time: TimeUs,
         stepper: &impl SimulationStepper,
     ) -> FutureReadyCondition {
-        match *self {
-            DeviceOperation::ReadLineLeft
-            | DeviceOperation::ReadLineRight
-            | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::ReadGyro
-            | DeviceOperation::ReadImuFusedData => {
-                let step_time = stepper.step_us();
-                let stray_time = current_time % step_time;
-                let trigger_time = if stray_time == 0 {
-                    current_time
-                } else {
-                    current_time + (step_time * self.ready_steps()) - stray_time
-                };
-                FutureReadyCondition::ReadyAt(trigger_time)
-            }
-            DeviceOperation::SleepFor(duration) => {
-                FutureReadyCondition::ReadyAt(current_time + duration)
-            }
-            DeviceOperation::SleepUntil(deadline) => {
-                FutureReadyCondition::ReadyAt(deadline.max(current_time))
-            }
-            DeviceOperation::GetTime | DeviceOperation::GetPeriod | DeviceOperation::GetEnabled => {
-                FutureReadyCondition::ReadyAt(current_time)
-            }
-            DeviceOperation::WaitEnabled => FutureReadyCondition::IsActive,
-            DeviceOperation::WaitDisabled => FutureReadyCondition::IsInactive,
-        }
+        todo!("work out when the value is ready")
     }
 
     fn ready_steps(&self) -> u32 {
-        match *self {
-            DeviceOperation::ReadLineLeft
-            | DeviceOperation::ReadLineRight
-            | DeviceOperation::ReadMotorAngles
-            | DeviceOperation::GetTime
-            | DeviceOperation::GetPeriod
-            | DeviceOperation::GetEnabled
-            | DeviceOperation::WaitEnabled
-            | DeviceOperation::WaitDisabled
-            | DeviceOperation::SleepFor(_)
-            | DeviceOperation::SleepUntil(_) => 1,
-            DeviceOperation::ReadGyro => READY_STEPS_GYRO,
-            DeviceOperation::ReadImuFusedData => READY_STEPS_IMU_FUSED,
-        }
+        todo!("return the number of periods this device needs")
     }
 
     fn duration(&self, current_time: TimeUs) -> TimeUs {
@@ -818,34 +785,13 @@ impl<S: SimulationStepper> BotHost<S> {
         }
     }
     /// Perform a blocking operation (returns the provided value, blocking for the needed time)
+    #[allow(unused_variables)]
     fn device_operation_blocking(
         &mut self,
         current_fuel: u64,
         operation: DeviceOperation,
     ) -> wasmtime::Result<DeviceValue> {
-        let start_time = self.setup_current_time(current_fuel)?;
-        match operation.ready_condition(start_time, &self.stepper) {
-            FutureReadyCondition::ReadyAt(ready_at) => {
-                self.step_until_time(ready_at);
-            }
-            FutureReadyCondition::IsActive => {
-                while !self.stepper.is_active() {
-                    self.step();
-                }
-            }
-            FutureReadyCondition::IsInactive => {
-                while self.stepper.is_active() {
-                    self.step();
-                }
-            }
-        }
-        let end_time = self.stepper.get_time_us().max(start_time);
-
-        self.set_current_time(end_time)?;
-        let op: FutureOperation = operation.into();
-        Ok(op
-            .compute_value(&self.stepper, &self.stepped_data, start_time)
-            .into())
+        todo!("step until ready, then answer")
     }
 
     /// Initiate an async operation (immediately returns a handle to the future value)
@@ -941,17 +887,14 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     /// Set the power of both motors
+    #[allow(unused_variables)]
     fn set_motors_power(
         &mut self,
         current_fuel: u64,
         left: MotorPower,
         right: MotorPower,
     ) -> wasmtime::Result<()> {
-        let current_time = self.setup_current_time(current_fuel)?;
-        self.step_until_time(current_time);
-        self.stepper
-            .set_motor_drivers_duty_cycles(MotorDriversDutyCycles { left, right });
-        Ok(())
+        todo!("catch the world up, then apply the command")
     }
 }
 
@@ -1398,23 +1341,12 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     pub fn step(&mut self) {
-        self.stepper.step();
-
-        let steps = self.stepper.get_step_count() as u32;
-        if steps % READY_STEPS_GYRO == 0 {
-            self.stepped_data.gyro_data = self.stepper.get_gyro();
-        }
-        if steps % READY_STEPS_IMU_FUSED == 0 {
-            self.stepped_data.imu_fused_data = self.stepper.get_imu_fused_data();
-        }
-
-        self.update_futures(self.stepper.get_time_us());
+        todo!("one tick, then latch the slow sensors")
     }
 
+    #[allow(unused_variables)]
     pub fn step_until_time(&mut self, target_time: TimeUs) {
-        while self.stepper.get_time_us_at_next_step() <= target_time {
-            self.step();
-        }
+        todo!("step up to, but not past, the target")
     }
 
     pub fn write_log_file(&self) {
