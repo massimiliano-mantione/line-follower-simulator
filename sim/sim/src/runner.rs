@@ -189,6 +189,7 @@ impl execution_data::SimulationStepper for RunnerStepper {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct BotExecutionData {
     pub config: Configuration,
     pub data: ExecutionData,

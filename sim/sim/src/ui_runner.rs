@@ -1,3 +1,6 @@
+// Some imports are used only by the EXERCISE 11.x bodies once implemented.
+#![allow(unused_imports, unused_variables, unused_mut, dead_code)]
+
 use std::{collections::BTreeMap, sync::Mutex};
 
 use bevy::{
@@ -147,6 +150,7 @@ impl RunnerGuiState {
         self.new_bot_sender.lock().unwrap().clone()
     }
 
+    #[allow(unused_variables)]
     pub fn handle_new_bots(
         &mut self,
         commands: &mut Commands,
@@ -156,40 +160,6 @@ impl RunnerGuiState {
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<StandardMaterial>,
     ) {
-        let mut new_bots = Vec::new();
-        let mut errors = Vec::new();
-
-        while let Ok(result) = self.new_bot_receiver.lock().unwrap().try_recv() {
-            match result {
-                Ok(bot) => new_bots.push(bot),
-                Err(err) => errors.push(err.to_string()),
-            }
-        }
-
-        if errors.len() > 0 {
-            self.error_message = Some(errors.join("\n"));
-        }
-
-        let current_bots_by_name = if self.auto_run {
-            let mut bots_by_name = BTreeMap::new();
-            for (entity, bot) in bot_vis.iter() {
-                bots_by_name.insert(bot.config.name.clone(), entity);
-            }
-            bots_by_name
-        } else {
-            BTreeMap::new()
-        };
-
-        for bot in new_bots {
-            if let Some(bot_id) = current_bots_by_name.get(&bot.config.name) {
-                commands.entity(*bot_id).despawn();
-            }
-
-            println!("new bot (steps {})", bot.data.body_data.steps.len());
-            spawn_bot_visualization(
-                commands, track, bot.data, bot.config, bot_assets, meshes, materials,
-            );
-        }
     }
 }
 
@@ -211,10 +181,6 @@ fn runner_gui_update(
     let mut root_ui = viewport_ui(ctx);
     let (mut po_camera, po_transform) = camera.single_mut()?;
 
-    if gui_state.play_active {
-        gui_state.play_time_sec += time.delta_secs();
-    }
-    gui_state.play_time_sec = gui_state.play_time_sec.min(gui_state.play_max_sec).max(0.0);
 
     if gui_state.auto_run {
         if gui_state.play_time_sec == gui_state.play_max_sec {
@@ -300,30 +266,6 @@ fn runner_gui_update(
                 let fwd_clicked = keyboard_input.just_pressed(KeyCode::Period)
                     || keyboard_input.just_pressed(KeyCode::PageUp);
 
-                if shift && ctrl {
-                    if rew_clicked {
-                        gui_state.play_time_sec -= 0.001;
-                    }
-                    if fwd_clicked {
-                        gui_state.play_time_sec += 0.001;
-                    }
-                } else if shift || ctrl {
-                    if rew_pressed || rew_button {
-                        gui_state.play_time_sec -= 0.001;
-                    }
-                    if fwd_pressed || fwd_button {
-                        gui_state.play_time_sec += 0.001;
-                    }
-                } else {
-                    if rew_clicked || rew_button {
-                        gui_state.play_time_sec -= 1.0;
-                        gui_state.play_time_sec = gui_state.play_time_sec.round();
-                    }
-                    if fwd_clicked || fwd_button {
-                        gui_state.play_time_sec += 1.0;
-                        gui_state.play_time_sec = gui_state.play_time_sec.round();
-                    }
-                }
 
                 // Clamp time again (it could have been changed by user commands)
                 gui_state.play_time_sec =
