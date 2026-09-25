@@ -139,6 +139,8 @@ impl RunnerGuiState {
         }
     }
 
+    // Read by the sync systems that EXERCISE 6.10 and 6.11 implement.
+    #[allow(dead_code)]
     pub fn play_time_sec(&self) -> f32 {
         self.play_time_sec
     }
