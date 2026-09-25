@@ -6,6 +6,8 @@ use std::{
 
 use pin_project_lite::pin_project;
 
+// All of these are used by the EXERCISE 8.x bodies once implemented.
+#[allow(unused_imports)]
 use crate::wasm_bindings::devices::{
     DeviceValue, FutureHandle, PollOperationStatus, device_poll, forget_handle, poll_loop,
 };
@@ -28,23 +30,18 @@ fn noop_raw_waker() -> core::task::RawWaker {
     core::task::RawWaker::new(core::ptr::null(), &RWVT)
 }
 
+// Used by EXERCISE 8.1 once it is implemented. Read it: all four vtable entries do
+// nothing, which is exactly right when nobody can wake anybody.
+#[allow(dead_code)]
 #[inline]
 fn noop_waker() -> core::task::Waker {
     unsafe { core::task::Waker::from_raw(noop_raw_waker()) }
 }
 
 /// Run a pinned and boxed future, polling until completion
+#[allow(unused_variables, unused_mut)]
 pub fn run_boxed(mut root_task: PinBoxed<impl Future<Output = ()>>) {
-    let waker = noop_waker();
-    let mut context = Context::from_waker(&waker);
-
-    loop {
-        poll_loop(true);
-        if root_task.as_mut().poll(&mut context) == Poll::Ready(()) {
-            break;
-        }
-        poll_loop(false);
-    }
+    todo!("poll the root task to completion")
 }
 
 /// Run a pinned and boxed future, polling until completion
@@ -53,6 +50,7 @@ pub fn run(root_task: impl Future<Output = ()>) {
 }
 
 /// A future value (wraps a `FutureHandle` from WASM bindings)
+#[allow(dead_code)]
 pub struct FutureValue {
     handle: FutureHandle,
 }
@@ -79,20 +77,17 @@ impl Future for FutureValue {
     type Output = DeviceValue;
 
     fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match device_poll(self.handle) {
-            PollOperationStatus::Ready(value) => Poll::Ready(value),
-            PollOperationStatus::Pending => Poll::Pending,
-        }
+        todo!("translate the host's poll result")
     }
 }
 
 impl Drop for FutureValue {
     fn drop(&mut self) {
-        forget_handle(self.handle);
     }
 }
 
 /// This acts like a single-value channel that only retains the most recent value
+#[allow(dead_code)]
 pub struct ValueWatcher<T> {
     counter: Cell<usize>,
     value: Cell<T>,
@@ -109,33 +104,28 @@ impl<T: Copy + Default> ValueWatcher<T> {
 
     /// Get the current value (returns immediately)
     pub fn get(&self) -> T {
-        self.value.get()
+        todo!("return the current value")
     }
 
     /// Update the current value
+    #[allow(unused_variables)]
     pub fn update(&self, value: T) {
-        self.counter.set(self.counter.get() + 1);
-        self.value.set(value);
+        todo!("store the value and mark it as new")
     }
 
     /// Wait for a new value (set using `update`)
     pub fn next<'a>(&'a self) -> NextValue<'a, T> {
-        NextValue {
-            sender: self,
-            counter: self.counter.get() + 1,
-        }
+        todo!("a future for the next update")
     }
 
     /// Get a stream of new values
     pub fn stream<'a>(&'a self) -> ValueStream<'a, T> {
-        ValueStream {
-            sender: self,
-            counter: self.counter.get(),
-        }
+        todo!("a stream starting from the present")
     }
 }
 
 /// A future value that resolves when its channel is updated
+#[allow(dead_code)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct NextValue<'a, T> {
     sender: &'a ValueWatcher<T>,
@@ -172,11 +162,7 @@ impl<T: Copy + Default> Future for NextValue<'_, T> {
         self: core::pin::Pin<&mut Self>,
         _cx: &mut core::task::Context,
     ) -> core::task::Poll<Self::Output> {
-        if self.sender.counter.get() >= self.counter {
-            core::task::Poll::Ready(self.sender.get())
-        } else {
-            core::task::Poll::Pending
-        }
+        todo!("ready when the channel has moved on")
     }
 }
 
@@ -278,6 +264,7 @@ impl<'a, FUTURE: Future<Output = TO> + 'a, TO, FILTER: Fn(&TO) -> bool> Future
 }
 
 /// An asynchronous stream of values
+#[allow(dead_code)]
 pub struct ValueStream<'a, T: Copy + Default> {
     sender: &'a ValueWatcher<T>,
     counter: usize,
@@ -286,11 +273,6 @@ pub struct ValueStream<'a, T: Copy + Default> {
 impl<T: Copy + Default> ValueStream<'_, T> {
     /// Get the next value from the stream
     pub fn next<'a>(&'a mut self) -> NextValue<'a, T> {
-        let counter = self.sender.counter.get().max(self.counter);
-        self.counter = counter + 1;
-        NextValue {
-            sender: self.sender,
-            counter,
-        }
+        todo!("advance the stream position and return a future")
     }
 }
