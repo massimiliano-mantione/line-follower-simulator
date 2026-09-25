@@ -22,16 +22,6 @@ fn print_sensors_data(sensors_data: Res<SensorsData>) {
         "motor angles: l {} r {}",
         sensors_data.motor_angles.left, sensors_data.motor_angles.right
     );
-    println!(
-        "gyro: r {:.4} p {:.4} y {:.4}",
-        sensors_data.gyro.roll_angular_speed,
-        sensors_data.gyro.pitch_angular_speed,
-        sensors_data.gyro.yaw_angular_speed
-    );
-    println!(
-        "imu: r {:.4} p {:.4} y {:.4}",
-        sensors_data.imu_fused.roll, sensors_data.imu_fused.pitch, sensors_data.imu_fused.yaw
-    );
 }
 
 pub struct SensorsModelPlugin;

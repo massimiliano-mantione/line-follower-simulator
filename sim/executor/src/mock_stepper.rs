@@ -56,21 +56,6 @@ impl execution_data::SimulationStepper for MockStepper {
         }
     }
 
-    fn get_gyro(&self) -> execution_data::GyroData {
-        execution_data::GyroData {
-            roll_angular_speed: 0.0,
-            pitch_angular_speed: 0.0,
-            yaw_angular_speed: 0.0,
-        }
-    }
-
-    fn get_imu_fused_data(&self) -> execution_data::ImuFusedData {
-        execution_data::ImuFusedData {
-            roll: 0.0,
-            pitch: 0.0,
-            yaw: 0.0,
-        }
-    }
 
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition {
         BotPhysicalPosition {

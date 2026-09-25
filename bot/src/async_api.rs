@@ -35,27 +35,6 @@ pub async fn get_motor_angles() -> (u16, u16) {
     (left, right)
 }
 
-/// Get the current values of the gyro (returns pitch, roll, and yaw speed values in deg/s).
-pub async fn read_gyro() -> (i16, i16, i16) {
-    let values = device_operation_async(DeviceOperation::ReadGyro)
-        .into_future()
-        .await;
-    let pitch = values.get_i16(0);
-    let roll = values.get_i16(1);
-    let yaw = values.get_i16(2);
-    (pitch, roll, yaw)
-}
-
-/// Get the current absolute euler angles (returns pitch, roll, and yaw values in deg).
-pub async fn get_imu_fused_data() -> (i16, i16, i16) {
-    let values = device_operation_async(DeviceOperation::ReadImuFusedData)
-        .into_future()
-        .await;
-    let pitch = values.get_i16(0);
-    let roll = values.get_i16(1);
-    let yaw = values.get_i16(2);
-    (pitch, roll, yaw)
-}
 
 /// Sleep for the given time in microseconds.
 pub async fn sleep_for(time_us: u32) {
