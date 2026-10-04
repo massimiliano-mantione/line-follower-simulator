@@ -40,17 +40,14 @@ fn setup_egui(mut commands: Commands, mut egui_global_settings: ResMut<EguiGloba
     egui_global_settings.auto_create_primary_context = false;
 
     // Egui camera.
-    commands.spawn((
+    commands.spawn_scene(bsn! {
         // The `PrimaryEguiContext` component requires everything needed to render a primary context.
-        PrimaryEguiContext,
-        Camera2d,
+        PrimaryEguiContext
+        Camera2d
         // Setting RenderLayers to none makes sure we won't render anything apart from the UI.
-        RenderLayers::none(),
-        Camera {
-            order: 1,
-            ..default()
-        },
-    ));
+        template_value(RenderLayers::none())
+        Camera { order: 1 }
+    });
 }
 
 pub struct GuiSetupPlugin {
@@ -469,33 +466,37 @@ pub fn help_dialog(ctx: &Context, help_state: &mut HelpState, base_text_size: f3
 }
 
 fn setup_camera(mut commands: Commands, track: Res<Track>) {
-    // Camera
-    commands.spawn((PanOrbitCamera {
-        focus: track.camera_target(),
-        target_focus: track.camera_target(),
-        yaw: Some(CameraQuadrant::C.yaw()),
-        target_yaw: CameraQuadrant::C.yaw(),
-        pitch: Some(CameraQuadrant::C.pitch()),
-        target_pitch: CameraQuadrant::C.pitch(),
-        radius: Some(track.camera_radius()),
-        target_radius: track.camera_radius(),
-        force_update: true,
-        axis: [Vec3::X, -Vec3::Z, -Vec3::Y],
-        ..Default::default()
-    },));
+    let target = track.camera_target();
+    let radius = track.camera_radius();
+    let yaw = CameraQuadrant::C.yaw();
+    let pitch = CameraQuadrant::C.pitch();
 
-    commands.spawn((
-        DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
-            shadow_maps_enabled: true,
-            ..default()
+    commands.spawn_scene_list(bsn_list![
+        // Camera
+        PanOrbitCamera {
+            focus: target,
+            target_focus: target,
+            yaw: {Some(yaw)},
+            target_yaw: yaw,
+            pitch: {Some(pitch)},
+            target_pitch: pitch,
+            radius: {Some(radius)},
+            target_radius: radius,
+            force_update: true,
+            axis: {[Vec3::X, -Vec3::Z, -Vec3::Y]},
         },
-        Transform {
-            translation: Vec3::new(0.0, 0.0, 10.0),
-            rotation: Quat::from_axis_angle(Vec3::new(1.0, 1.0, 0.0), FRAC_PI_4),
-            ..default()
-        },
-    ));
+        // Light
+        (
+            DirectionalLight {
+                illuminance: {light_consts::lux::OVERCAST_DAY},
+                shadow_maps_enabled: true,
+            }
+            Transform {
+                translation: {Vec3::new(0.0, 0.0, 10.0)},
+                rotation: {Quat::from_axis_angle(Vec3::new(1.0, 1.0, 0.0), FRAC_PI_4)},
+            }
+        ),
+    ]);
 }
 
 struct CameraSetupPlugin;

@@ -537,27 +537,31 @@ impl TrackSegment {
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<StandardMaterial>,
     ) {
+        let segment = *self;
+        let transform = self.transform(origin);
         if features.has_physics() {
-            commands.spawn((
-                *self,
-                ChildOf(path_parent),
-                self.transform(origin),
-                self.collider(),
-                RigidBody::Fixed,
+            commands.spawn_scene(bsn! {
+                template(move |_| Ok(segment))
+                ChildOf(path_parent)
+                template_value(transform)
+                template_value(self.collider())
+                template_value(RigidBody::Fixed)
                 Friction {
                     coefficient: 0.0,
                     combine_rule: CoefficientCombineRule::Min,
-                },
-            ));
+                }
+            });
         }
         if features.has_visualization() {
-            commands.spawn((
-                *self,
-                ChildOf(line_parent),
-                self.transform(origin),
-                Mesh3d(meshes.add(self.mesh())),
-                MeshMaterial3d(materials.add(Color::srgba(0.0, 0.0, 0.0, 1.0))),
-            ));
+            let mesh = meshes.add(self.mesh());
+            let material = materials.add(Color::srgba(0.0, 0.0, 0.0, 1.0));
+            commands.spawn_scene(bsn! {
+                template(move |_| Ok(segment))
+                ChildOf(line_parent)
+                template_value(transform)
+                Mesh3d(mesh)
+                MeshMaterial3d::<StandardMaterial>(material)
+            });
         }
     }
 }
@@ -630,51 +634,50 @@ pub fn setup_track(
     //let bottom_rot = Quat::from_rotation_z(track.origin.direction.to_radians());
     let bottom_rot = Quat::default();
 
+    let at_height =
+        move |z: f32| Transform::from_xyz(bottom_x, bottom_y, z).with_rotation(bottom_rot);
+
     let track_path_root = commands
-        .spawn((
-            Transform::from_xyz(bottom_x, bottom_y, -FLOOR_HEIGHT).with_rotation(bottom_rot),
-            ChildOf(track_root),
-        ))
+        .spawn_scene(bsn! {
+            ChildOf(track_root)
+            template_value(at_height(-FLOOR_HEIGHT))
+        })
         .id();
-    let track_floor_root = commands
-        .spawn((
-            Transform::from_xyz(bottom_x, bottom_y, -FLOOR_HEIGHT / 2.0).with_rotation(bottom_rot),
-            ChildOf(track_root),
-        ))
-        .id();
+
+    let floor_physics = features.has_physics().then(|| {
+        bsn! {
+            template_value({
+                Collider::cuboid(track.size.x / 2.0, track.size.y / 2.0, FLOOR_HEIGHT / 2.0)
+            })
+            template_value(RigidBody::Fixed)
+            Friction { coefficient: 0.5 }
+        }
+    });
+    commands.spawn_scene(bsn! {
+        ChildOf(track_root)
+        template_value(at_height(-FLOOR_HEIGHT / 2.0))
+        {floor_physics}
+    });
 
     let track_line_root = commands
-        .spawn((
-            Transform::from_xyz(bottom_x, bottom_y, 0.001).with_rotation(bottom_rot),
-            ChildOf(track_root),
-        ))
+        .spawn_scene(bsn! {
+            ChildOf(track_root)
+            template_value(at_height(0.001))
+        })
         .id();
-
-    if features.has_physics() {
-        commands.entity(track_floor_root).insert((
-            Collider::cuboid(track.size.x / 2.0, track.size.y / 2.0, FLOOR_HEIGHT / 2.0),
-            RigidBody::Fixed,
-            Friction::new(0.5),
-        ));
-    }
 
     if features.has_visualization() {
         let mesh = meshes.add(quad_mesh(track.size.x, track.size.y));
+        let alpha = if is_bottom { 1.0 } else { 0.1 };
+        let material = materials.add(Color::srgba(1.0, 1.0, 1.0, alpha));
 
-        let material = materials.add(Color::srgba(
-            1.0,
-            1.0,
-            1.0,
-            if is_bottom { 1.0 } else { 0.1 },
-        ));
-
-        commands.spawn((
-            Transform::from_xyz(bottom_x, bottom_y, 0.0).with_rotation(bottom_rot),
-            ChildOf(track_root),
-            Mesh3d(mesh),
-            MeshMaterial3d(material),
-            NotShadowCaster,
-        ));
+        commands.spawn_scene(bsn! {
+            ChildOf(track_root)
+            template_value(at_height(0.0))
+            Mesh3d(mesh)
+            MeshMaterial3d::<StandardMaterial>(material)
+            NotShadowCaster
+        });
     }
 
     if !is_bottom || features.has_physics() {
@@ -708,7 +711,7 @@ impl Plugin for TrackPlugin {
                   track: Res<Track>,
                   mut meshes: ResMut<Assets<Mesh>>,
                   mut materials: ResMut<Assets<StandardMaterial>>| {
-                let track_root = commands.spawn(Transform::default()).id();
+                let track_root = commands.spawn_scene(bsn! { Transform }).id();
                 setup_track(
                     &mut commands,
                     track_root,
