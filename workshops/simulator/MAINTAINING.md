@@ -212,6 +212,9 @@ Verify: `cargo test -p executor` (a blocking `sleep_for(d)` lands on a step boun
   bumper positions, …) — deriving those from config is fiddly and teaches nothing
 - = **the `LineSensor` child-spawn loop** (it belongs to `05`)
 - = `Velocity`, `ExternalForce`, `Transform`, `Motors`, `BotPositionDetector`
+- = the `bsn!` blocks themselves: the exercise comments sit *inside* them, with a
+  short hint on `template_value(...)` / `template(...)`, so the participant fills in
+  physics rather than learning the macro (a plain `.insert((...))` also works)
 
 Those last ones are kept against the original plan: removing `Velocity` makes
 `compute_imu_data` panic on an empty query, sending the participant hunting through
@@ -228,7 +231,7 @@ the physics lesson.
 - body of `RapierPhysicsSetupPlugin::build` (gravity on −Z, `RapierConfiguration::new(0.001)`)
 
 Ship this branch with `RapierDebugRenderPlugin` **enabled** (already present,
-commented out at `ui.rs:505`) so colliders are visible while debugging.
+commented out in `CameraSetupPlugin` in `ui.rs`) so colliders are visible while debugging.
 
 Verify: `cargo run --release -p sim -- test` and drive with WASD.
 Bonus for fast finishers: the DC torque-speed curve in `pwm_to_torque`.
@@ -268,11 +271,13 @@ live values.
 
 - `sync_bot_body`, `sync_bot_wheel`, `sync_bot_layers`
 - `BotVisualization::build_transform`, body of `spawn_bot_visualization`
-- = everything in `bot/vis.rs` (~400 lines of mesh assembly: craft, not concept)
+- = everything in `bot/vis.rs` (~350 lines of mesh assembly: craft, not concept)
 
-The idea: one entity tree, **two disjoint component sets** — physics components in
-the simulator, `*ExecutionData` components in the visualizer — plus a private track
-copy per bot, stacked on Z layers and sorted by ranking.
+The idea: **two entity layouts for one robot, bridged only by the recording.** The
+simulator's robot is flat (three rigid bodies joined by `ImpulseJoint`s); the
+visualizer's is a tree (wheels as children of the body) carrying `*ExecutionData`,
+shaped by what is recorded: one body `Transform` and one angle per wheel per tick.
+Plus a private track copy per bot, stacked on Z layers and sorted by ranking.
 
 Verify: `sim run -i sim/bots/bot.wasm`, press space → bot animates and wheels turn;
 add a second bot → layers stack and sort.
@@ -490,6 +495,15 @@ git switch main
 Each rebase replays exactly one commit. Conflicts only where the edit touches the
 same lines a removal commit deleted — and then the fix is usually to redo that
 removal by hand, since the surrounding code has changed anyway.
+
+**If `main`'s history was rewritten** (squashed, amended, filtered), `git rebase main`
+no longer knows where a lesson commit starts and tries to replay the whole old history
+under it. Name the old base explicitly; every branch's parent is the same commit:
+
+```bash
+OLD=$(git rev-parse ws/simulator/01-wasmtime^)   # check it is the same for all twelve
+for b in ...; do git rebase --onto main "$OLD" "ws/simulator/$b" || break; done
+```
 
 **Editing one lesson's removal commit:**
 

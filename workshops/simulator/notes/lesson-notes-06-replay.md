@@ -23,7 +23,7 @@ playback time — and stack several robots on the same track, ranked.
 `sim/sim/src/visualizer.rs` — `sync_bot_body`, `sync_bot_wheel`, `sync_bot_layers`,
 `BotVisualization::build_transform`, body of `spawn_bot_visualization`
 
-Kept: every type and field, and all ~400 lines of mesh assembly in `bot/vis.rs`. That
+Kept: every type and field, and all ~350 lines of mesh assembly in `bot/vis.rs`. That
 is craft, not concept, and re-deriving a robot out of cylinders and spheres would eat
 the slot.
 
@@ -49,17 +49,38 @@ again.
 
 Then the architectural punchline, and this is the thing to leave them with:
 
-> **The same entity tree is used twice, with two disjoint component sets.**
+> **Same robot, two entity layouts: each one shaped by what drives it.**
 
-During simulation the bot entities carry `Collider`, `RigidBody`, `ImpulseJoint`,
-`Velocity`. During visualization the *same* spawn functions (`spawn_bot_body`,
-`spawn_bot_wheel` — shared, unchanged) build the same tree, but the components
-attached are `BodyExecutionData` and `WheelExecutionData`. Look at
-`bot/mod.rs::BotPlugin::build` and `app_builder.rs::AppType::entity_features()`:
-one `EntityFeatures` enum — `Physics`, `Visualization`, `PhysicsAndVisualization` —
-decides which set of systems and components exist. `test` mode is the interesting
-case: it asks for *both*, which is why you can drive a physically simulated robot
-around with the arrow keys.
+During simulation the robot is **flat**: `setup_bot_entities` spawns the body and the
+two wheels as three separate top-level entities, and `setup_bot_model` gives them
+`Collider`, `RigidBody`, `Velocity`. What holds them together is an `ImpulseJoint`
+per wheel, not parent/child: each is an independent Rapier rigid body and the solver
+owns all three transforms. The only children are the 16 `LineSensor`s riding on the
+body. There is no mesh anywhere.
+
+During replay the robot is a **tree**: `spawn_bot_visualization` builds a
+`BotVisualization` root with its own track copy, the body under it carrying
+`BodyExecutionData`, and the wheels as *children of the body* carrying
+`WheelExecutionData`. The hierarchy is shaped by the recording. We store the body's
+full `Transform` but only one *angle* per wheel, so each wheel sits fixed at its axle
+position relative to the body and `sync_bot_wheel` only turns it. Ask the room why
+that is enough: the joint already forced the wheel to stay on the axle, so its
+position was never information worth recording.
+
+The bridge between the two is a contract, not shared entities: one `Transform` plus
+two `f32` per tick. The visual spawn functions (`spawn_bot_body`, `spawn_bot_wheel`)
+are shared, but with `test` mode, not with the physics. In `test` mode,
+`EntityFeatures::PhysicsAndVisualization` builds the flat physics robot *and* hangs
+the same mesh subtrees under its entities, with no `ExecutionData`, so the meshes
+just follow the solver. That is why you can drive a physically simulated robot with
+the arrow keys. Look at `bot/mod.rs::BotPlugin::build` and
+`app_builder.rs::AppType::entity_features()`: one `EntityFeatures` enum (`Physics`,
+`Visualization`, `PhysicsAndVisualization`) decides which systems and components
+exist.
+
+(`spawn_bot_wheel` shows the two cases side by side: it places the wheel at the axle
+only when it is given `WheelExecutionData`, because under a physics wheel the parent
+is already in the right place.)
 
 ## The pieces
 

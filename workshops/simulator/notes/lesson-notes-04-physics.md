@@ -24,6 +24,12 @@ the revolute `ImpulseJoint` per wheel.
 
 `sim/sim/src/app_builder.rs` — body of `RapierPhysicsSetupPlugin::build`.
 
+The chassis and wheel removal sites are inside `bsn!` blocks, which may be the first
+time some participants see Bevy 0.19's scene macro. The brief and the exercise
+comments give the two rules they need (`template_value(...)` for function-built and
+enum values, `template(...)` for `ImpulseJoint`); if someone is fighting the macro,
+tell them a plain `.insert((...))` is fine, and move on — this slot is about physics.
+
 Kept: every geometry constant and every derived dimension (`body_world`,
 `bodypart_body`, bumper positions…). Deriving those from config is fiddly arithmetic
 that teaches nothing. Also kept: the `LineSensor` child-spawn loop (Lesson 05's

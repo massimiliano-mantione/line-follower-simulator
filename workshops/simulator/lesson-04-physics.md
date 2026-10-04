@@ -5,7 +5,7 @@
 
 At the end of this one you drive your own robot around with the arrow keys.
 
-## Before you start: two things about this world
+## Before you start: three things about this world
 
 **It is Z-up.** X is across the axle, Y is forward, **Z is height**. Bevy's
 convention is Y-up; we use Z-up because that is what CAD, robotics and the track
@@ -15,6 +15,13 @@ plane all use. Half the confusion in this lesson comes from this one fact.
 width, front and back length, wheel diameter, ground clearance and sensor geometry.
 All the dimensions in `setup_bot_model` are already derived from it — your job is the
 physics, not the arithmetic.
+
+**The components go in a `bsn!` block.** The scaffolding uses Bevy 0.19's scene
+macro: one component per line, no commas. Two rules cover this lesson: a value
+built by a function or an enum variant goes in `template_value(...)`
+(`template_value(RigidBody::Dynamic)`), and a type without `Default`, like
+`ImpulseJoint`, goes in `template(move |_| Ok(joint))`. The exercise comments repeat
+this where you need it. A plain `commands.entity(..).insert((...))` works just as well.
 
 ## Your task
 

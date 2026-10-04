@@ -108,12 +108,12 @@ Four things to say about it, no more:
    time, *when the robot asks*. `Time<Virtual>` is paused. The simulation is a batch
    job that the robot drives.
 
-4. **Simulation and visualization are two different worlds over the same tree.**
-   During simulation, entities carry Rapier components. The run produces a flat
-   recording (`ExecutionData`: one `Transform` per step, plus wheel angles). The
-   visualizer then spawns the *same* entity tree with `BodyExecutionData` /
-   `WheelExecutionData` components instead, and the UI is a pure function of
-   `play_time_sec`. That is why scrubbing is free and why you can stack five bots
+4. **Simulation and visualization are two different worlds, bridged only by data.**
+   During simulation the robot is three Rapier rigid bodies joined by joints. The
+   run produces a flat recording (`ExecutionData`: one body `Transform` per step,
+   plus wheel angles). The visualizer then spawns its *own* entities for the robot,
+   a tree with `BodyExecutionData` / `WheelExecutionData` components, shaped by
+   that recording, and the UI is a pure function of `play_time_sec`. That is why scrubbing is free and why you can stack five bots
    racing side by side.
 
 ## 3. Determinism, and why we are strict about it (4 min)

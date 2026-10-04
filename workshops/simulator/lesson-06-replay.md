@@ -19,14 +19,18 @@ angles per tick into `ExecutionData`, and the visualizer never touches physics a
 
 And the architectural punchline:
 
-> **The same entity tree is used twice, with two disjoint component sets.**
+> **Same robot, two entity layouts: each one shaped by what drives it.**
 
-During simulation the bot entities carry `Collider`, `RigidBody`, `ImpulseJoint`,
-`Velocity`. During visualization the *same* spawn functions build the same tree, but
-what is attached is `BodyExecutionData` and `WheelExecutionData`. One
-`EntityFeatures` enum — `Physics`, `Visualization`, `PhysicsAndVisualization` —
-decides which systems and components exist. (`test` mode asks for **both**, which is
-why you can drive a physically simulated robot with the arrow keys.)
+During simulation the robot is **flat**: body and wheels are three separate rigid
+bodies (`Collider`, `RigidBody`, `Velocity`) held together by joints, not by
+parent/child, because the physics solver moves each one. During replay it is a
+**tree**: the wheels are children of the body, carrying `WheelExecutionData` under a
+body carrying `BodyExecutionData`. That shape follows the recording: the body's full
+`Transform`, but only an *angle* per wheel. The two never share entities, only that
+data. One `EntityFeatures` enum (`Physics`, `Visualization`,
+`PhysicsAndVisualization`) decides which systems and components exist. (`test` mode
+asks for **both**: the physics robot with the meshes hung under it, which is why you
+can drive it with the arrow keys.)
 
 ## Your task
 
@@ -45,7 +49,7 @@ why you can drive a physically simulated robot with the arrow keys.)
 Suggested order: 6.1, 6.6, 6.10 (now something moves), 6.2, 6.11, then 6.8 to get a
 robot on screen at all, then 6.3–6.5 and 6.7/6.9 for the ranking and stacking.
 
-All ~400 lines of mesh assembly in `bot/vis.rs` are left alone — that is craft, not
+All ~350 lines of mesh assembly in `bot/vis.rs` are left alone — that is craft, not
 concept.
 
 ## How to verify
