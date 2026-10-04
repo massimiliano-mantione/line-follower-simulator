@@ -183,6 +183,75 @@ teaching tool in this lesson:
 - delete the body reaction torque → no squat under acceleration;
 - set the length unit to 1.0 → the visible tremble.
 
+### Aside: how fragile determinism is (3 min)
+
+Worth a few minutes after the break-it-live list, because it is the opposite kind of
+change: not a physics bug, just a *different but equivalent* way to spawn entities.
+We spent Slots 1 and 2 making the simulation deterministic to the instruction, and
+it is: the same binary gives bit-identical results, run after run. But "the same
+binary" is doing a lot of work in that sentence.
+
+Look at the `LineSensor` loop at the end of `setup_bot_model` (still present on this
+branch; it is Lesson 05's territory). It parents each sensor with `ChildOf` at spawn
+time:
+
+```rust
+commands.spawn_scene(bsn! {
+    ChildOf(body)
+    Transform { translation: sensor_body }
+    LineSensor
+});
+```
+
+Before the code moved to `bsn!`, it spawned the sensor first and attached it after:
+
+```rust
+let sensor = commands.spawn((Transform::from_translation(sensor_body), LineSensor)).id();
+commands.entity(body).add_child(sensor);
+```
+
+The two produce the same entity tree with the same components. The sensors have no
+collider and no rigid body, so Rapier ignores them. Yet the race result changes
+(run on `main`, `cd sim && cargo run --release -p sim -- run --cli -i bots/bot.wasm`,
+add `-t race` for the second row):
+
+| Track | `ChildOf` at spawn | `add_child` afterwards |
+|---|---|---|
+| `simple` | 21.3645 s, 44729 frames | 21.2355 s, 44471 frames |
+| `race` | 49.2115 s, 100423 frames | 49.2205 s, 100441 frames |
+
+The robot finishes both races either way. Each variant repeats exactly; only the
+switch between them changes the result. The robot does not get "faster" with one of
+them: on the `simple` track `add_child` wins by 129 ms, and on the `race` track it
+loses by 9 ms. That is chaos, not a bias. The frame count printed by `--cli` is
+enough to show the difference live: swap the two snippets, re-run, compare.
+
+The mechanism, verified by printing the Rapier handles in both variants:
+
+1. Bevy stores entities by *archetype* (their exact set of components), and a query
+   iterates archetypes in the order they were created.
+2. `spawn` + `add_child` moves each sensor through an extra archetype (without
+   `ChildOf`) before its final one. `ChildOf` at spawn skips it. Different history,
+   different archetype order.
+3. bevy_rapier creates the Rapier colliders by iterating a Bevy query. The rigid-body
+   handles come out identical, but the **collider handles do not**: the chassis
+   collider is handle 0 in one variant and handle 2 in the other.
+4. Rapier's internal ordering follows those handles, and floating-point addition is
+   not associative: sum the same contact forces in a different order and the last
+   bit can change. The chassis position already differs in the last bit at the
+   second physics step, while the robot is still waiting for the start signal. A
+   line follower is a feedback loop, so one bit grows into 129 ms by the finish line.
+
+The takeaway for the room: **determinism is a property of the whole program, not of
+the physics engine.** Rapier is deterministic for the same inputs in the same order,
+and that order can come from code that has nothing to do with physics. That is why
+our guarantee is "same binary, same result", why replay (Lesson 06) stores
+trajectories instead of re-simulating, and why a simulator update can legitimately
+change a recorded race time.
+
+If you swap the prebuilt robot (`sim/bots/bot.wasm`), re-measure the table; the
+numbers belong to the current robot and code.
+
 Hook for Slot 4: "it drives, but it is blind. Next we give it eyes."
 
 ---

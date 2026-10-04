@@ -62,81 +62,86 @@ pub fn setup_bot_model(
 
     // Static body with motors
     let body = body_query.single().unwrap();
-    commands.entity(body).insert((
-        Collider::compound(vec![
-            (
-                bodypart_body - body_world,
-                Quat::IDENTITY,
-                Collider::cuboid(
-                    body_width * 0.5,
-                    // (length_front + length_back) * 0.5,
-                    length_back,
-                    BOT_BODY_HEIGHT * 0.5,
-                ),
+    let collider = Collider::compound(vec![
+        (
+            bodypart_body - body_world,
+            Quat::IDENTITY,
+            Collider::cuboid(
+                body_width * 0.5,
+                // (length_front + length_back) * 0.5,
+                length_back,
+                BOT_BODY_HEIGHT * 0.5,
             ),
-            (
-                Vec3::new(0.0, length_front - body_front_length / 2.0, 0.0) + bodypart_body
-                    - body_world,
-                Quat::IDENTITY,
-                Collider::cuboid(
-                    body_width * 0.5,
-                    body_front_length * 0.5,
-                    BOT_BODY_HEIGHT * 0.5,
-                ),
+        ),
+        (
+            Vec3::new(0.0, length_front - body_front_length / 2.0, 0.0) + bodypart_body
+                - body_world,
+            Quat::IDENTITY,
+            Collider::cuboid(
+                body_width * 0.5,
+                body_front_length * 0.5,
+                BOT_BODY_HEIGHT * 0.5,
             ),
-            (
-                front_bumper_world - body_world,
-                Quat::IDENTITY,
-                Collider::capsule_x(bumper_width / 2.0, BOT_BUMPER_DIAMETER / 2.0),
-            ),
-            (
-                back_bumper_world - body_world,
-                Quat::IDENTITY,
-                Collider::capsule_x(bumper_width / 2.0, BOT_BUMPER_DIAMETER / 2.0),
-            ),
-        ]),
-        RigidBody::Dynamic,
+        ),
+        (
+            front_bumper_world - body_world,
+            Quat::IDENTITY,
+            Collider::capsule_x(bumper_width / 2.0, BOT_BUMPER_DIAMETER / 2.0),
+        ),
+        (
+            back_bumper_world - body_world,
+            Quat::IDENTITY,
+            Collider::capsule_x(bumper_width / 2.0, BOT_BUMPER_DIAMETER / 2.0),
+        ),
+    ]);
+    commands.entity(body).apply_scene(bsn! {
+        template_value(collider)
+        template_value(RigidBody::Dynamic)
         Friction {
             coefficient: 0.1,
             combine_rule: CoefficientCombineRule::Min,
-        },
-        ColliderMassProperties::Mass(BOT_BODY_WEIGHT),
-        CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP),
-        Transform::from_xyz(body_world.x, body_world.y, body_world.z),
-        GlobalTransform::default(),
-        Motors::new(gear_ratio_num, gear_ratio_den),
-        BotPositionDetector::default(),
-        ExternalForce::default(),
-        Velocity::zero(),
-    ));
+        }
+        template_value(ColliderMassProperties::Mass(BOT_BODY_WEIGHT))
+        template_value(CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP))
+        Transform { translation: body_world }
+        GlobalTransform
+        template(move |_| Ok(Motors::new(gear_ratio_num, gear_ratio_den)))
+        BotPositionDetector
+        ExternalForce
+        Velocity
+    });
 
     // Wheels
     for (entity, wheel) in wheels_query {
         let side = wheel.side;
         let wheel_world = Vec3::new(width_axle / 2.0 * -side.sign(), 0.0, wheel_diameter / 2.0);
 
-        commands.entity(entity).insert((
-            Collider::ball(wheel_diameter / 2.0),
-            Transform::from_xyz(wheel_world.x, wheel_world.y, wheel_world.z),
-            RigidBody::Dynamic,
+        let joint = ImpulseJoint::new(
+            body,
+            TypedJoint::RevoluteJoint(
+                RevoluteJointBuilder::new(Vec3::X)
+                    .local_anchor1(wheel_world - body_world) // parent's local anchor
+                    .local_anchor2(Vec3::ZERO)
+                    .build(),
+            ),
+        );
+
+        commands.entity(entity).apply_scene(bsn! {
+            template_value(Collider::ball(wheel_diameter / 2.0))
+            Transform { translation: wheel_world }
+            template_value(RigidBody::Dynamic)
             Friction {
                 coefficient: 0.8,
                 combine_rule: CoefficientCombineRule::Max,
-            },
-            ColliderMassProperties::Mass(BOT_WHEEL_QUAD_DENSITY * wheel_diameter * wheel_diameter),
-            CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP),
-            Velocity::zero(),
-            ExternalForce::default(),
-            ImpulseJoint::new(
-                body,
-                TypedJoint::RevoluteJoint(
-                    RevoluteJointBuilder::new(Vec3::X)
-                        .local_anchor1(wheel_world - body_world) // parent's local anchor
-                        .local_anchor2(Vec3::ZERO)
-                        .build(),
-                ),
-            ),
-        ));
+            }
+            template_value(ColliderMassProperties::Mass(
+                BOT_WHEEL_QUAD_DENSITY * wheel_diameter * wheel_diameter,
+            ))
+            template_value(CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP))
+            Velocity
+            ExternalForce
+            template(move |_| Ok(joint))
+        });
     }
 
     // Sensors
@@ -148,12 +153,10 @@ pub fn setup_bot_model(
         );
         let sensor_body = sensor_world - body_world;
 
-        let sensor = commands
-            .spawn((
-                Transform::from_xyz(sensor_body.x, sensor_body.y, sensor_body.z),
-                LineSensor::default(),
-            ))
-            .id();
-        commands.entity(body).add_child(sensor);
+        commands.spawn_scene(bsn! {
+            ChildOf(body)
+            Transform { translation: sensor_body }
+            LineSensor
+        });
     }
 }

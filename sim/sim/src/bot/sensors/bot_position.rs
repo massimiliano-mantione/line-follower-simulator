@@ -4,7 +4,7 @@ use bevy_rapier3d::prelude::*;
 use crate::track::TrackSegment;
 use execution_data::{BotPhysicalPosition, BotPosition, SensorsData};
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct BotPositionDetector {}
 
 pub fn compute_bot_position(

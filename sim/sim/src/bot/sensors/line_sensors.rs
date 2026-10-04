@@ -110,7 +110,7 @@ impl TrackSimulateLine for TrackSegment {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct LineSensor {}
 
 pub fn compute_sensor_readings(

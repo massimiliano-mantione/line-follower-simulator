@@ -34,13 +34,16 @@ egui layout".
 
 ```rust
 egui_global_settings.auto_create_primary_context = false;
-commands.spawn((
-    PrimaryEguiContext,
-    Camera2d,
-    RenderLayers::none(),        // render nothing from the world
-    Camera { order: 1, ..default() },   // draw after the 3D camera
-));
+commands.spawn_scene(bsn! {
+    PrimaryEguiContext
+    Camera2d
+    template_value(RenderLayers::none())   // render nothing from the world
+    Camera { order: 1 }                     // draw after the 3D camera
+});
 ```
+
+(Plain `commands.spawn((…, Camera { order: 1, ..default() }))` is an equally good
+answer; `main` uses Bevy 0.19's `bsn!` scene macro.)
 
 Four lines, and each one is load-bearing. We turn off the automatic egui context and
 create our own, attached to a dedicated 2D camera that renders *no* render layers and
