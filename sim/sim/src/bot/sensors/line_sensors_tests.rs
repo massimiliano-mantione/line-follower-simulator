@@ -40,7 +40,11 @@ fn black_at(z: f32) -> f32 {
 #[test]
 fn full_contrast_near_the_ground() {
     assert_close(line_reflection(0.0, Z_GROUND), 0.0, "centred on the line");
-    assert_close(line_reflection(0.05, Z_GROUND), 100.0, "well clear of the line");
+    assert_close(
+        line_reflection(0.05, Z_GROUND),
+        100.0,
+        "well clear of the line",
+    );
 }
 
 #[test]
@@ -143,7 +147,11 @@ fn readings_are_symmetric_about_the_line() {
 fn a_non_finite_distance_reads_as_white() {
     let z = 0.004;
     assert_close(line_reflection(f32::NAN, z), white_at(z), "NaN distance");
-    assert_close(line_reflection(f32::INFINITY, z), white_at(z), "infinite distance");
+    assert_close(
+        line_reflection(f32::INFINITY, z),
+        white_at(z),
+        "infinite distance",
+    );
 }
 
 // --- per-segment distance to the line ----------------------------------------

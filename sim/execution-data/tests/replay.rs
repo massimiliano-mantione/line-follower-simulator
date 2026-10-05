@@ -5,8 +5,7 @@
 use bevy::math::Vec3;
 use bevy::transform::components::Transform;
 use execution_data::{
-    ActivityData, BodyExecutionData, BotFinalStatus, BotStatus, WheelDataSide,
-    WheelExecutionData,
+    ActivityData, BodyExecutionData, BotFinalStatus, BotStatus, WheelDataSide, WheelExecutionData,
 };
 
 const PERIOD_US: u32 = 500;
@@ -26,7 +25,11 @@ fn playback_indexes_the_recording_by_period() {
     let data = body_data(10);
 
     assert_eq!(data.at_time_secs(0.0).translation.x, 0.0);
-    assert_eq!(data.at_time_secs(0.0005).translation.x, 1.0, "one 500us tick");
+    assert_eq!(
+        data.at_time_secs(0.0005).translation.x,
+        1.0,
+        "one 500us tick"
+    );
     assert_eq!(data.at_time_secs(0.0010).translation.x, 2.0);
     // Mid-tick truncates to the sample that was current at that instant.
     assert_eq!(data.at_time_secs(0.00075).translation.x, 1.0);
@@ -36,7 +39,11 @@ fn playback_indexes_the_recording_by_period() {
 fn playback_clamps_outside_the_recording() {
     let data = body_data(10);
 
-    assert_eq!(data.at_time_secs(-5.0).translation.x, 0.0, "before the start");
+    assert_eq!(
+        data.at_time_secs(-5.0).translation.x,
+        0.0,
+        "before the start"
+    );
     assert_eq!(data.at_time_secs(999.0).translation.x, 9.0, "after the end");
 }
 

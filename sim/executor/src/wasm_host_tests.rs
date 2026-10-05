@@ -38,7 +38,12 @@ fn fuel_and_time_are_inverses() {
     assert_eq!(fuel_for_time_us(1_000), 20_000);
 
     for t in [0u32, 1, 7, 500, 1_000, 999_999] {
-        assert_eq!(time_us_for_fuel(fuel_for_time_us(t)), t, "round trip for {}", t);
+        assert_eq!(
+            time_us_for_fuel(fuel_for_time_us(t)),
+            t,
+            "round trip for {}",
+            t
+        );
     }
 }
 
@@ -113,7 +118,11 @@ fn blocking_sleep_advances_clock_and_steps_physics() {
         .unwrap();
 
     assert_eq!(h.current_time().unwrap(), 1_000);
-    assert_eq!(h.stepper.get_step_count(), 2, "two 500us ticks fit in 1000us");
+    assert_eq!(
+        h.stepper.get_step_count(),
+        2,
+        "two 500us ticks fit in 1000us"
+    );
 }
 
 #[test]
