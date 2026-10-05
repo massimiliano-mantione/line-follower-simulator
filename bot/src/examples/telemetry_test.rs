@@ -142,6 +142,14 @@ impl Pid {
 
 #[allow(unused_variables)]
 pub async fn run(sensor_spacing_mm: f32) {
+    // EXERCISE 9.2: allocate the sample buffer here, before the race starts.
+    //
+    // Use `Vec::with_capacity` and never let it grow mid-race: an allocation in a
+    // control loop is an unbounded latency spike. 10,000 samples of ~40 bytes is
+    // 400 KB, which is plausible on an MCU with 512 KB, and at 2 kHz covers 5
+    // seconds - enough for the interesting part of a lap.
+    //
+    // Get the column spec once, here, too.
 
     wait_remote_enabled().await;
 
@@ -160,6 +168,11 @@ pub async fn run(sensor_spacing_mm: f32) {
         let (wl, wr) = get_motor_angles_immediate();
         let err = (pid.err() * 100.0) as i16;
 
+        // EXERCISE 9.3: push one sample.
+        //
+        // Everything worth recording is already in scope: `time`, `steps`, the 16
+        // sensor values in `vals`, the wheel angles `wl`/`wr`, the outputs `pwm_l`/
+        // `pwm_r`, and the line error `err`. Build a `TelBlock` and append it.
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
@@ -172,8 +185,52 @@ pub async fn run(sensor_spacing_mm: f32) {
         }
     }
 
+    // EXERCISE 9.4: flush the buffer, now that the race is over.
+    //
+    // `write_csv_file(name, bytes, spec)` takes the raw bytes plus the column spec,
+    // and the host writes both a .bin and a .csv. `csv::transmute_buf` (provided)
+    // reinterprets your `Vec<TelBlock>` as bytes.
+    //
+    // Note *where* this happens: after the loop. The host charges 10 us per byte, so
+    // flushing 400 KB costs real simulated time - but it happens once the race has
+    // ended, where it cannot hurt. Doing it inside the loop is what this whole
+    // design exists to avoid.
 }
 
+// EXERCISE 9.1: design the telemetry sample.
+//
+// We want to see *every decision the robot took*: a timestamp, the step count, all
+// 16 sensor values, both wheel angles, both PWM outputs, and the line error. About
+// 40 bytes.
+//
+// Streaming that live is not an option. 40 bytes at 2 kHz is 80 KB/s over a
+// Bluetooth serial link - and remember lesson 02: transmitting *costs simulated
+// time*. `write_line` charges 100 us per character, so a 60-character log line is 6
+// ms, which at 2 kHz is twelve missed control cycles. Logging inside the control loop
+// destroys the thing you are trying to measure. So we buffer in RAM and flush once.
+//
+// Two things to write:
+//
+//  - the packed sample. `#[repr(C)]`, fixed size. Give it a field per quantity
+//    above.
+//
+//  - `csv_spec()`, a parallel array describing the byte layout, built with
+//    `csv::col(name, kind)` and the `csv::C_U32` / `C_U16` / `C_I16` / `C_U8`
+//    constants.
+//
+// The trap, and it is the instructive part: the host walks your bytes using *only*
+// the spec, so **the spec must account for every byte the compiler inserted**,
+// including tail padding added for alignment. That is what `csv::PAD_8` / `PAD_16`
+// are for - and an explicit padding field in the struct makes it visible rather than
+// implicit. Get this wrong and the CSV shears: every row offset by a couple of
+// bytes, every column full of plausible nonsense.
+//
+// Two arrays that must agree and that the compiler cannot check for you. Worth
+// asking yourself how you would make that safe - a derive macro, or a const
+// assertion on `size_of::<TelBlock>()`.
+//
+// See `csv::named` too: it maps a u8 to strings, so an enum column exports as text
+// rather than as `0`. Small feature, large quality-of-life gain in a 10,000-row CSV.
 #[repr(C)]
 #[allow(dead_code)]
 struct TelBlock {
