@@ -20,6 +20,21 @@ impl BodyExecutionData {
 
     #[allow(unused_variables)]
     pub fn at_time_secs(&self, time_secs: f32) -> Transform {
+        // EXERCISE 6.1: what was the robot's pose at `time_secs`?
+        //
+        // This is the cheapest function of the day and the one that makes the whole
+        // UI feel good. `steps` holds one sample per simulation tick, `period` is
+        // the tick length in microseconds. There is no trick: work out which sample
+        // was current at that instant, and return it.
+        //
+        // Because this is just an index, scrubbing is free, single-tick stepping is
+        // free, and playing backwards works. Ask yourself what "advance the
+        // simulation to time t" would have cost instead.
+        //
+        // Two edge cases that both really happen: playback time can run past the end
+        // of the recording (and, with some UI controls, below zero), and a robot that
+        // traps during `setup` produces an *empty* recording - so do not index into
+        // nothing.
         todo!("index the recording by time")
     }
 }
@@ -81,6 +96,7 @@ impl WheelExecutionData {
 
     #[allow(unused_variables)]
     pub fn at_time_secs(&self, time_secs: f32) -> f32 {
+        // EXERCISE 6.2: the same thing for a wheel angle, in radians.
         todo!("index the recording by time")
     }
 }
@@ -161,6 +177,18 @@ impl std::cmp::PartialOrd for BotFinalStatus {
 impl std::cmp::Ord for BotFinalStatus {
     #[allow(unused_variables)]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // EXERCISE 6.5: rank two results. Ascending order is best-first.
+        //
+        // "Sort the robots by how well they did" sounds trivial and is not, because
+        // the four outcomes are not comparable until you say what the categories
+        // are. Finishers beat crashers, crashers beat robots that never finished,
+        // and robots that never started come last - and *within* a category, the
+        // time decides.
+        //
+        // `kind_rank` and `kind_value` above are already written for you. Note that
+        // the times are f32, so think about which comparison to use on them.
+        //
+        // Right now everything ties, which is why the ranking never re-orders.
         std::cmp::Ordering::Equal
     }
 }
@@ -183,10 +211,25 @@ impl ActivityData {
     }
 
     pub fn status_at_time(&self, time_secs: f32) -> BotStatus {
+        // EXERCISE 6.3: what is this robot doing at `time_secs` of playback?
+        //
+        // Drives the timer and the colour next to each robot's name in the side
+        // panel. The three optional timestamps on `self` are written by
+        // `AppWrapper::step` as the race unfolds.
+        //
+        // The important detail: report time *relative to the start signal*, not
+        // absolute playback time. The one-second countdown must not be charged to
+        // anyone's lap time.
+        //
+        // Right now everything reports Waiting, which is why the timers never move.
         BotStatus::Waiting { time_secs }
     }
 
     pub fn final_status(&self) -> BotFinalStatus {
+        // EXERCISE 6.4: summarise the whole run, for ranking.
+        //
+        // Same three timestamps as 6.3, same relative-to-start rule. Did it finish,
+        // crash, never finish, or never start?
         BotFinalStatus::NotEnded
     }
 }
