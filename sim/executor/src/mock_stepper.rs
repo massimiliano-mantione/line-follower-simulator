@@ -56,6 +56,7 @@ impl execution_data::SimulationStepper for MockStepper {
         }
     }
 
+    // EXERCISE 12.6 (continued): the mock reports zeros for everything.
 
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition {
         BotPhysicalPosition {

@@ -35,6 +35,7 @@ pub async fn get_motor_angles() -> (u16, u16) {
     (left, right)
 }
 
+// EXERCISE 12.7 (continued): the async twins of the two new device reads.
 
 /// Sleep for the given time in microseconds.
 pub async fn sleep_for(time_us: u32) {

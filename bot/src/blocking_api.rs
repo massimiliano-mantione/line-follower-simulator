@@ -31,6 +31,14 @@ pub fn get_motor_angles() -> (u16, u16) {
     (left, right)
 }
 
+// EXERCISE 12.7: expose the two new devices to robot authors.
+//
+// `read_gyro` returns roll, pitch and yaw angular velocity; `get_imu_fused_data`
+// returns absolute roll, pitch and yaw angles. Both arrive as three i16 values
+// packed into the eight bytes of a `device-value` - see how the neighbouring
+// functions unpack theirs.
+//
+// Add the async twins in `async_api.rs` too.
 
 /// Get the current time in microseconds.
 pub fn get_time_us() -> u32 {

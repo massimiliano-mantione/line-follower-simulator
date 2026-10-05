@@ -160,6 +160,7 @@ impl execution_data::SimulationStepper for RunnerStepper {
         self.app_wrapper.sensors_data().motor_angles
     }
 
+    // EXERCISE 12.6 (continued): the real stepper forwards to `SensorsData`.
 
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition {
         self.app_wrapper.sensors_data().bot_physical_position

@@ -307,6 +307,17 @@ pub struct MotorAngles {
     pub right: f32,
 }
 
+// EXERCISE 12.3: the data types for the two new sensors.
+//
+// A gyroscope reports angular *velocity* in rad/s; a fused IMU reports absolute
+// *angles* in radians. Both have roll, pitch and yaw.
+//
+// Give each one a `From<Vec3>` conversion, and note that the axis mapping is a
+// *choice* tied to the Z-up convention in this codebase: roll comes from y, pitch
+// from x, yaw from z. That is exactly the sort of thing that has to be written down
+// somewhere, or it gets rediscovered painfully.
+//
+// Then add a field per sensor to `SensorsData` below.
 
 /// Bot logical positions
 #[derive(Debug, Clone, Copy, Default)]
@@ -343,6 +354,7 @@ impl std::fmt::Display for BotPhysicalPosition {
 #[derive(Clone, Copy, Resource, Default)]
 pub struct SensorsData {
     pub motor_angles: MotorAngles,
+    // EXERCISE 12.3 (continued): one field per new sensor.
     pub line_sensors: [f32; 16],
     pub bot_position: BotPosition,
     pub bot_physical_position: BotPhysicalPosition,
@@ -395,6 +407,12 @@ pub trait SimulationStepper {
     fn get_line_sensors_right(&self) -> [f32; 8];
     /// Get the current motor angles.
     fn get_motor_angles(&self) -> MotorAngles;
+    // EXERCISE 12.6: one accessor per new sensor.
+    //
+    // This is the architectural seam. Adding a method here means every implementor
+    // must be updated - `MockStepper` and `RunnerStepper`. That sounds like a cost
+    // and is actually the seam doing its job: it is what lets the whole clock and
+    // futures machinery be tested with no Bevy at all.
 
     /// Get absolute bot position
     fn get_absolute_bot_position(&self) -> BotPhysicalPosition;

@@ -44,6 +44,19 @@ world line-follower-robot {
             /// Read angle position of motors (2 u16 values),
             /// ready every period
             read-motor-angles,
+            // EXERCISE 12.1: add the gyroscope and the fused IMU back.
+            //
+            // Two variants belong here. Write their doc comments too: on a contract,
+            // the *timing* is part of the interface, and the rest of the codebase
+            // depends on knowing it.
+            //
+            //   read-gyro             3 i16 values - roll, pitch and yaw angular
+            //                         velocity - ready every 2 periods
+            //   read-imu-fused-data   3 i16 values - roll, pitch and yaw angles -
+            //                         ready every 10 periods
+            //
+            // Then regenerate the guest bindings (EXERCISE 12.2) and let the
+            // compiler walk you down through the other six layers.
             /// Get time elapsed since initialization in microseconds (1 u32 value), always available
             get-time,
             /// Get the simulation period microseconds (1 u32 value) and the number of periods computed so far (another u32 value), always available
