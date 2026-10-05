@@ -262,7 +262,7 @@ live values.
 `sim/execution-data/src/lib.rs`
 
 - `BodyExecutionData::at_time_secs`, `WheelExecutionData::at_time_secs`
-- `ActivityData::{status_at_time, final_status}`, `Ord`/`PartialOrd` for `BotFinalStatus`
+- `ActivityData::{status_at_time, final_status}`, `Ord` for `BotFinalStatus` (= `PartialOrd`, which delegates to it)
 - = every struct, field and enum
 
 `sim/sim/src/data.rs` — body of `store_data`

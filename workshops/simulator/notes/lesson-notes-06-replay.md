@@ -16,7 +16,8 @@ playback time — and stack several robots on the same track, ranked.
 
 - `BodyExecutionData::at_time_secs`, `WheelExecutionData::at_time_secs`
 - `ActivityData::{status_at_time, final_status}`
-- `PartialOrd` / `Ord` for `BotFinalStatus`
+- `Ord` for `BotFinalStatus` (`PartialOrd` stays: it just delegates to `Ord::cmp`,
+  so there is one ranking to write)
 
 `sim/sim/src/data.rs` — body of `store_data`
 

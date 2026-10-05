@@ -166,10 +166,7 @@ impl std::cmp::Eq for BotFinalStatus {}
 
 impl std::cmp::PartialOrd for BotFinalStatus {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match self.kind_rank().cmp(&other.kind_rank()) {
-            std::cmp::Ordering::Equal => self.kind_value().partial_cmp(&other.kind_value()),
-            ord => Some(ord),
-        }
+        Some(self.cmp(other))
     }
 }
 
