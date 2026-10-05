@@ -75,7 +75,12 @@ ws/simulator/11-ui         opt  sim/src/{ui,ui_runner}.rs
 ws/simulator/12-new-device capstone  wit/world.wit + all five layers
 ```
 
-**Twelve branches, one commit each, and that commit contains only code.** The briefs
+**Twelve branches, two commits each, and those commits contain only code.** The
+first removes the feature (with its `todo!()`s, degraded return values and
+`#[allow]`s); the second adds nothing but the `// EXERCISE n.m` hint comments. The
+split exists for the participant's IDE: `lesson.sh` puts them on `my/NN` at the
+first commit and applies the second as uncommitted changes, so every hint shows up
+as a change marker (§6). The briefs
 and the speaker notes are ordinary files on `main`, so editing them is a normal
 commit with no rebase at all. Because every lesson branch sits on top of `main`, all
 of them are present in the working tree on every branch — you can read lesson 9's
@@ -96,6 +101,11 @@ brief while sitting on lesson 2.
    types are the scaffolding.
 5. **A lesson branch contains no prose.** Briefs and notes live on `main`. The only
    words on a branch are the `// EXERCISE n.m:` comments at the removal sites.
+6. **The hints commit adds comment lines only.** Every block in it starts with
+   `// EXERCISE n.m`, and every exercise number on the branch appears in it. The
+   comments that justify an `#[allow]` ("Used by EXERCISE 4.3 once implemented")
+   are *not* hints: they belong with their attribute, in the removal commit. §9
+   checks all of this.
 
 ## 4. What the workshop adds to the project
 
@@ -103,7 +113,8 @@ brief while sitting on lesson 2.
 |---|---|
 | `workshops/simulator/README.md` | participant-facing: setup, lesson index, run commands |
 | `workshops/simulator/MAINTAINING.md` | this document |
-| `workshops/simulator/lesson.sh` | lesson switching |
+| `workshops/simulator/lesson.sh` | lesson switching, `my/NN` working branches, `--reset` |
+| `workshops/simulator/split-hints.py` | splits a one-commit lesson into removal + hints (§7) |
 | `workshops/simulator/lesson-NN-slug.md` | the twelve briefs |
 | `workshops/simulator/notes/lesson-notes-NN-slug.md` | the thirteen speaker scripts (00 is the intro and the ROS wrap-up) |
 | `workshops/simulator/samples/telemetry-example.csv` | 14k rows of real telemetry, for lesson 09 |
@@ -431,7 +442,8 @@ pure function instead, so the suite does not depend on either choice.
 
 ```bash
 ./workshops/simulator/lesson.sh                 # list, and where you are
-./workshops/simulator/lesson.sh 02-fuel         # switch (accepts 02, 02-fuel, fuel)
+./workshops/simulator/lesson.sh 02-fuel         # open (accepts 2, 02, 02-fuel, fuel)
+./workshops/simulator/lesson.sh --reset         # start the current lesson over
 ./workshops/simulator/lesson.sh --solution      # back to main
 ```
 
@@ -439,9 +451,27 @@ One checkout, one target directory. Switching lesson touches only the three work
 crates, so cargo reuses every third-party artifact (this is what invariant 3 buys)
 and a switch costs about seven seconds in release instead of a Bevy rebuild.
 
-It refuses to switch with uncommitted changes, telling the participant to
-`git commit -am wip` first. Each lesson being its own branch means such a commit
-stays with that lesson.
+**Participants never work on `ws/simulator/NN`.** Opening a lesson creates
+`my/NN` at `ws/simulator/NN^` (the removal commit) and restores the hinted files
+from the lesson tip into the working tree, unstaged. The starting commit is
+recorded in `branch.my/NN.lessonBase`:
+
+- `my/NN` still at its base means "untouched": opening the lesson rebuilds it from
+  the current published version. Otherwise it holds the participant's commits and
+  opening just switches to it, warning if the lesson has moved on since.
+- Leaving a lesson whose working tree is exactly the hints (nothing staged, tree
+  identical to `ws/simulator/NN`) discards them silently; anything else must be
+  committed first (`git commit -am wip`).
+- `--reset` commits any uncommitted work, keeps the old branch as
+  `my/NN-before-reset-<time>`, and starts over.
+
+**A fresh clone has no local `ws/simulator/*` branches,** only
+`origin/ws/simulator/*`. `lesson.sh` creates the local branch from the remote on
+first use and marks it with `branch.ws/simulator/NN.lessonMirror=true`; marked
+branches are reset to the remote whenever it differs, so a participant picks up a
+lesson fixed during the day with `git fetch` plus `--reset`. Your own local
+branches carry no mark and are never touched. (This also makes the briefs'
+`git diff ws/simulator/NN..main` work in a fresh clone.)
 
 ### The worktree design that had to be abandoned
 
@@ -480,7 +510,7 @@ directory per worktree**, and budget the disk and the build time accordingly.
 nothing else to touch. This is the whole point of keeping the prose off the branches.
 
 **Changing the code on `main`** — including swapping the prebuilt robot — means
-replaying the twelve one-commit branches:
+replaying the twelve two-commit branches:
 
 ```bash
 git switch main && <edit> && git commit
@@ -492,7 +522,7 @@ done
 git switch main
 ```
 
-Each rebase replays exactly one commit. Conflicts only where the edit touches the
+Each rebase replays the lesson's two commits. Conflicts only where the edit touches the
 same lines a removal commit deleted — and then the fix is usually to redo that
 removal by hand, since the surrounding code has changed anyway.
 
@@ -505,14 +535,27 @@ OLD=$(git rev-parse ws/simulator/01-wasmtime^)   # check it is the same for all 
 for b in ...; do git rebase --onto main "$OLD" "ws/simulator/$b" || break; done
 ```
 
-**Editing one lesson's removal commit:**
+**Editing one lesson's hint comments** (the top commit):
 
 ```bash
 git switch ws/simulator/05-sensors && <edit> && git commit --amend --no-edit
 ```
 
-That is the entire operation now. Nothing is stacked on top of a lesson branch, so
-there is nothing downstream to repair.
+**Editing one lesson's removal commit** is easiest by squashing the two and
+splitting again. `split-hints.py` rebuilds both commits with plumbing (no checkout),
+keeping the removal commit's message and author and the tip's tree byte-identical:
+
+```bash
+git switch ws/simulator/05-sensors && <edit> && git commit -a --amend --no-edit
+git reset --soft main && git commit -C ORIG_HEAD~1      # back to one commit
+git switch main
+python3 workshops/simulator/split-hints.py main ws/simulator/05-sensors
+```
+
+A hint block is a run of consecutive comment lines *added* by the branch, starting
+a comment run with `// EXERCISE n.m`; anything else stays in the removal commit.
+Use `--dry-run` to see what it would move. Nothing is stacked on top of a lesson
+branch, so there is nothing downstream to repair.
 
 > **Never `git add -A` / `git add .` in this repo.** `bot/src/massi.rs` is a
 > deliberately untracked experiment, and a bare `git add -A` sweeps it into whatever
@@ -602,3 +645,35 @@ still makes sense — that is on you.
 Because the match is literal, **write task numbers out in full in the briefs**: a
 range like `8.4–8.7` hides 8.5 and 8.6 from the check. Both briefs that used ranges
 have been expanded, and it reads better in a table anyway.
+
+### The hints commit (invariant 6)
+
+The second commit on each branch must add only comment lines; each chunk must start
+with an `// EXERCISE n.m` line and must not continue a comment the removal commit
+kept; the removal commit must not keep any hint; and no exercise may be missing from
+the hints:
+
+```bash
+for L in $SLUGS; do
+  B="ws/simulator/$L"
+  NONC=$(git diff -U0 "$B^" "$B" | grep -E '^[-+]' | grep -vE '^(\+\+\+|---) ' \
+         | grep -vE '^\+\s*//' | grep -c .)
+  START=$(git diff -U0 "$B^" "$B" | awk '/^@@/ { getline;
+          if ($0 !~ /^\+[ \t]*\/\/+[ \t]*EXERCISE [0-9]+\.[0-9]+/) print }' | grep -c .)
+  CONT=$(git diff -U1 "$B^" "$B" | awk '/^@@/ { prev = ""; next }
+          /^\+/ { if (prev ~ /^ [ \t]*\/\//) print; prev = "+"; next } { prev = $0 }' | grep -c .)
+  LEFT=$(git diff -U0 main "$B^" | grep -cE '^\+\s*//+\s*EXERCISE [0-9]+\.[0-9]+\b.*:')
+  MISS=$(comm -23 <(git diff main.."$B" | grep -oE 'EXERCISE [0-9]+\.[0-9]+' | sort -u) \
+                  <(git diff "$B^" "$B" | grep -oE 'EXERCISE [0-9]+\.[0-9]+' | sort -u) | wc -l)
+  [ $(( NONC + START + CONT + LEFT + MISS )) -ne 0 ] \
+    && printf "%-14s code:%s bad-start:%s continues-comment:%s hints-left:%s missing:%s\n" \
+              "$L" $NONC $START $CONT $LEFT $MISS
+done
+echo "(no output = every hints commit is clean)"
+```
+
+A non-zero `continues-comment` means the tail of a wrapped justification comment
+("... is used by" / "// EXERCISE 4.1 and 4.2 once they are implemented.") was taken
+for a hint, because that second line happens to start with `EXERCISE n.m`.
+`split-hints.py` only starts a hint at the beginning of a comment run for exactly
+this reason; if it fires, check that rule, then re-split the branch (§7).

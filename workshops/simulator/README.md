@@ -46,7 +46,8 @@ One checkout, one branch per lesson. Switch with the helper:
 
 ```bash
 ./workshops/simulator/lesson.sh              # the lesson list, and where you are now
-./workshops/simulator/lesson.sh 02           # switch to a lesson (or: 02-fuel, fuel)
+./workshops/simulator/lesson.sh 02           # open a lesson (or: 2, 02-fuel, fuel)
+./workshops/simulator/lesson.sh --reset      # start the current lesson over
 ./workshops/simulator/lesson.sh --solution   # back to main, the full application
 ```
 
@@ -56,17 +57,28 @@ as you switch.
 Switching recompiles only the three workshop crates — Bevy, Rapier and Wasmtime are
 never rebuilt, so it takes seconds rather than the ~20 minutes of step 3.
 
-> **Commit before you switch.** Each lesson is its own branch, so
-> `git commit -am "wip"` keeps your work on that lesson and the helper will then let
-> you move on. It refuses to switch with uncommitted changes rather than dragging
-> them into another lesson.
+**Opening a lesson** puts you on your own branch, `my/NN-slug`, with the lesson's
+`// EXERCISE` hint comments applied as **uncommitted changes**. Your IDE's change
+markers (and `git diff --stat`) therefore point at every place you need to write
+code, and nothing else.
+
+> **Commit whenever you like.** `git commit -am "wip"` keeps your work on
+> `my/NN-slug`; opening the lesson again later brings you straight back to it. The
+> helper refuses to switch lesson while you have uncommitted work, rather than
+> dragging it into another lesson. (Untouched hints are fine: they are simply
+> re-applied next time.)
+>
+> **Starting over:** `lesson.sh --reset` saves whatever you had on
+> `my/NN-slug-before-reset-<time>` and gives you the lesson fresh. If the lesson is
+> updated during the day, `git fetch` and then `--reset` to pick up the new version.
 
 In each lesson:
 
 - **`workshops/simulator/lesson-NN-slug.md`** is your brief: the goal, the files to
   touch, how to verify, and progressive hints.
 - Every place you need to write code is marked with a comment beginning
-  `// EXERCISE`. Nothing else has been changed.
+  `// EXERCISE`, and those comments are your uncommitted changes. Nothing else has
+  been changed.
 - Types, struct fields, components and plugin wiring are all **left in place**. They
   are the scaffolding — read them, they tell you what the code must do.
 - **The solution is `main`.** Each brief ends with the exact `git diff` command. Use
@@ -97,7 +109,7 @@ Lessons are **independent**. If one defeats you, the next still works.
 Finished a slot early? Take one from the optional pool.
 
 ```bash
-./lesson.sh 05           # short names work: 05, 05-sensors, sensors
+./workshops/simulator/lesson.sh 05     # short names work: 5, 05, 05-sensors, sensors
 ```
 
 ---
