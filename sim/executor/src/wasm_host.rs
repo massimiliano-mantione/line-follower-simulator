@@ -717,11 +717,16 @@ const FUEL_UNIT_NS: u64 = 50;
 
 #[allow(unused_variables)]
 pub fn fuel_for_time_us(time_us: TimeUs) -> u64 {
+    // EXERCISE 2.1: how much fuel buys `time_us` microseconds of robot time?
+    //
+    // One fuel unit is one instruction is FUEL_UNIT_NS nanoseconds. Mind the units:
+    // the argument is in microseconds and the constant is in nanoseconds.
     todo!("convert microseconds to fuel units")
 }
 
 #[allow(unused_variables)]
 pub fn time_us_for_fuel(fuel: u64) -> TimeUs {
+    // EXERCISE 2.2: the inverse of `fuel_for_time_us`.
     todo!("convert fuel units to microseconds")
 }
 
@@ -1290,30 +1295,81 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     fn check_fuel(&self) -> wasmtime::Result<()> {
+        // EXERCISE 2.3: has the robot run out?
+        //
+        // This is the *only* failure mode a runaway robot has. An infinite loop is
+        // not a hang: it is a race that ends. Returning an error here becomes a
+        // WASM trap, which ends the run.
+        //
+        // Remember that `skipped_fuel` is fuel the host has already spent on the
+        // robot's behalf, so it is not really available any more.
         todo!("error when the budget is spent")
     }
 
     #[allow(unused_variables)]
     fn setup_current_time(&mut self, current_fuel: u64) -> wasmtime::Result<TimeUs> {
+        // EXERCISE 2.4: resample the clock.
+        //
+        // Called at the top of every host function with the balance Wasmtime
+        // reports. Between two host calls the robot burned an unknown number of
+        // instructions, and that is exactly the time we want to account for, so the
+        // clock must be re-read on entry rather than cached.
         todo!("record the new balance and report the time")
     }
 
     fn current_time(&self) -> wasmtime::Result<TimeUs> {
+        // EXERCISE 2.5: what time is it?
+        //
+        // The heart of the whole workshop. `BotHost` has three relevant fields:
+        //
+        //   total_simulation_time  the whole race, in microseconds
+        //   current_fuel           what Wasmtime says is left of the budget
+        //   skipped_fuel           fuel the host has charged on the robot's behalf
+        //
+        // The store started with `fuel_for_time_us(total_simulation_time)` units.
+        //
+        // Hint: do not try to accumulate elapsed time. Work out how much of the
+        // budget is *unspent*, convert that to microseconds, and reason from there.
         todo!("derive the simulated time from the remaining budget")
     }
 
     #[allow(unused_variables)]
     fn skip_fuel(&mut self, fuel: u64) -> wasmtime::Result<()> {
+        // EXERCISE 2.6: charge the robot for work the host did for it.
+        //
+        // Wasmtime's balance is untouched - the robot did not execute these
+        // instructions - but our clock must still move forward.
         todo!("record the debit, then check the robot can still afford it")
     }
 
     #[allow(unused_variables)]
     fn skip_time(&mut self, time: TimeUs) -> wasmtime::Result<()> {
+        // EXERCISE 2.7: the same thing, in microseconds.
+        //
+        // This is what makes logging honest. On a real robot a debug line over a
+        // serial link costs milliseconds and wrecks the control loop; most
+        // simulators let you print for free and therefore lie to you. `write_line`
+        // charges 100 us per character through here, and `write_file` 10 us a byte.
         todo!("convert and delegate")
     }
 
     #[allow(unused_variables)]
     fn set_current_time(&mut self, time: TimeUs) -> wasmtime::Result<()> {
+        // EXERCISE 2.8: move the clock to a specific instant.
+        //
+        // Used after the physics has been stepped forward (lesson 03): the world
+        // moved, so the clock must be told where it now is.
+        //
+        // This is the inverse of `current_time`. Work out what the remaining budget
+        // *would have to be* for the clock to read `time`, then solve for
+        // `skipped_fuel`:
+        //
+        //     remaining_fuel == self.current_fuel - self.skipped_fuel
+        //
+        // Two things must be rejected rather than clamped, because both mean the
+        // host has a bug: a target beyond the end of the race, and a target that
+        // would need more fuel than the robot has left (which includes moving the
+        // clock *backwards*).
         todo!("solve for skipped_fuel")
     }
 
