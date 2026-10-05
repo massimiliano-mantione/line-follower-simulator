@@ -160,6 +160,34 @@ impl RunnerGuiState {
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<StandardMaterial>,
     ) {
+        // EXERCISE 11.4: collect robots that finished simulating, and show them.
+        //
+        // Loading a robot means running a whole 60-second race, which takes seconds -
+        // far too long to block a 60 fps UI. So it happens on another thread, and the
+        // result arrives on the `mpsc` channel held in this resource (see
+        // `process_new_bot`, and the file dialog at the end of `runner_gui_update`).
+        //
+        // Called once per frame. Drain the receiver *without blocking*
+        // (`try_recv` in a `while let`), then:
+        //
+        //  - errors go into `self.error_message`, joined by newlines, which pops the
+        //    error modal;
+        //  - successes get a visualization spawned via `spawn_bot_visualization`.
+        //
+        // One extra rule for `auto_run` (server/competition mode): a new robot with
+        // the *same name* as an existing one replaces it, so re-submitting a robot
+        // updates its entry instead of stacking a second copy. Despawn the old one
+        // first. Outside `auto_run`, loading the same robot twice is allowed.
+        //
+        // The same channel is how `server.rs` works: in `serve` mode an HTTP POST of
+        // a .wasm is simulated on a worker thread and sends down this very
+        // `Sender`. One channel, two producers, and the UI cannot tell the
+        // difference:
+        //
+        //     cargo run --release -p sim -- serve
+        //     curl -X POST --data-binary @bots/bot.wasm http://localhost:9999
+        //
+        // Until this is written, loading a robot appears to do nothing at all.
     }
 }
 
@@ -181,6 +209,17 @@ fn runner_gui_update(
     let mut root_ui = viewport_ui(ctx);
     let (mut po_camera, po_transform) = camera.single_mut()?;
 
+    // EXERCISE 11.2: advance the playback clock.
+    //
+    // There is exactly *one* piece of mutable playback state in this whole UI:
+    // `play_time_sec`. Every control writes to it, and the visualization systems
+    // (lesson 06) read it. There is no playback state machine, no seeking mode, no
+    // invalidation - playing forward, scrubbing backwards and stepping one 500 us
+    // tick are all "assign a different float". Ask yourself what the same feature
+    // would have cost if the visualizer were driving the physics engine live.
+    //
+    // When playing, advance it by the real frame delta (`time.delta_secs()`), and
+    // keep it within 0..play_max_sec.
 
     if gui_state.auto_run {
         if gui_state.play_time_sec == gui_state.play_max_sec {
@@ -266,6 +305,19 @@ fn runner_gui_update(
                 let fwd_clicked = keyboard_input.just_pressed(KeyCode::Period)
                     || keyboard_input.just_pressed(KeyCode::PageUp);
 
+                // EXERCISE 11.3: the fine-seek controls.
+                //
+                // The booleans above tell you what is held and what was pressed.
+                // Wire them up so that:
+                //
+                //   ctrl + shift + rewind/forward   one tick   (0.001 s), on press
+                //   ctrl or shift + rewind/forward  slow       (0.001 s), while held
+                //   neither                         one second, on press, and snap
+                //                                   the result to a whole second
+                //
+                // `*_button` is the on-screen button, `*_clicked` is a key press,
+                // `*_pressed` is a key held down - note which of those each mode
+                // should use, and why holding differs from pressing.
 
                 // Clamp time again (it could have been changed by user commands)
                 gui_state.play_time_sec =

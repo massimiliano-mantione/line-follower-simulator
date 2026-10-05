@@ -40,6 +40,19 @@ fn common_gui_setup(app: &mut App) {
 
 #[allow(unused_variables)]
 fn setup_egui(mut commands: Commands, mut egui_global_settings: ResMut<EguiGlobalSettings>) {
+    // EXERCISE 11.1: put the UI on top of the 3D scene, explicitly.
+    //
+    // In an ECS renderer, "UI over the scene" is not a special mode - it is a second
+    // camera with a render order and an empty layer mask. Four things:
+    //
+    //  - turn off egui's automatic primary context, so we can attach it to a camera
+    //    of our own (`EguiGlobalSettings::auto_create_primary_context`);
+    //  - spawn an entity with `PrimaryEguiContext` and `Camera2d`;
+    //  - give it `RenderLayers::none()`, so it renders nothing from the world;
+    //  - give it a `Camera` with `order: 1`, so it draws *after* the scene camera.
+    //
+    // Leaving this empty lets egui fall back to creating its own context, so the UI
+    // still appears - but it is not ours, and nothing else in this file can reach it.
 }
 
 pub struct GuiSetupPlugin {
