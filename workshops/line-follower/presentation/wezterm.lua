@@ -12,7 +12,8 @@ config.keys = {
 config.font = wezterm.font 'FiraCode Nerd Font Mono'
 config.font_size = 22
 config.hide_tab_bar_if_only_one_tab = true
-config.default_cwd = '/home/massi/data/massi/bots/line-follower-simulator/presentation'
+-- The directory holding this file, i.e. the slides (term.sh also passes --cwd).
+config.default_cwd = wezterm.config_dir
 
 --config.color_scheme = 'Batman'
 
