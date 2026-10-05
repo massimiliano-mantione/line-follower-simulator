@@ -358,11 +358,20 @@ impl SegmentTransform {
 
     #[allow(unused_variables)]
     pub fn translate_in_direction(&self, translation: Vec2) -> Self {
+        // EXERCISE 10.1: move forward, in whatever direction we are currently facing.
+        //
+        // This is the turtle. `translation` is in *local* coordinates - +Y is
+        // "ahead" - so it has to be rotated into world space before being added to
+        // the position. `rotate_vec2` (provided) does the rotation.
+        //
+        // Note this returns a new value rather than mutating: `transform` needs to
+        // compute a segment's own placement without disturbing the chain.
         *self
     }
 
     #[allow(unused_variables)]
     pub fn rotate(&self, rotation: Angle) -> Self {
+        // EXERCISE 10.2: turn in place.
         *self
     }
 }
@@ -429,6 +438,23 @@ impl TrackSegment {
     }
 
     pub fn collider(&self) -> Collider {
+        // EXERCISE 10.5: the physics surface for this segment.
+        //
+        // Note the scale: TRACK_HALF_WIDTH is 0.1, so this is a 200 mm slab of
+        // *drivable surface*, not a 20 mm painted line. The line has no collider at
+        // all - lesson 05 computes distance to it analytically. One declaration,
+        // three different artifacts.
+        //
+        //  - Start / End: a cuboid TRACK_TIPS_LENGTH long.
+        //  - Straight: the same, `data.length` long.
+        //  - CyrcleTurn: `arc_collider` (provided) builds it from convex segments.
+        //  - NinetyDegTurn: a square corner is *two* overlapping cuboids, not one
+        //    rotated one. Build a compound.
+        //
+        // Every segment is TRACK_HALF_HEIGHT * 2 thick.
+        //
+        // Right now every segment gets the Start/End shape, which is why the track
+        // has no surface to speak of.
         Collider::cuboid(TRACK_HALF_WIDTH, TRACK_TIPS_LENGTH / 2.0, TRACK_HALF_HEIGHT)
     }
 
@@ -456,11 +482,45 @@ impl TrackSegment {
 
     #[allow(unused_variables)]
     pub fn transform(&self, origin: SegmentTransform) -> Transform {
+        // EXERCISE 10.3: where does this segment *sit*?
+        //
+        // Careful: this is not the same question as 10.4. `origin` is where the
+        // segment *starts*, but colliders and meshes are built centred on their own
+        // local origin, so each type needs shifting:
+        //
+        //  - Start / End: forward by half of TRACK_TIPS_LENGTH.
+        //  - Straight: forward by half its length.
+        //  - NinetyDegTurn: forward by `line_half_length`.
+        //  - CyrcleTurn: sideways by `radius`, so the transform lands on the
+        //    *centre of the circle*. That is what lets lesson 05 write
+        //    `local_point.length() - radius`. Mind `side.sign()`.
+        //
+        // Then turn that `SegmentTransform` into a Bevy `Transform`: position in the
+        // XY plane at z = 0, rotated about Z by the direction.
+        //
+        // Conflating "where do I sit" with "where does the next one start" is the
+        // most common bug here, and it makes the track drift apart segment by
+        // segment.
         Transform::default()
     }
 
     #[allow(unused_variables)]
     pub fn compute_next_origin(&self, origin: SegmentTransform) -> SegmentTransform {
+        // EXERCISE 10.4: where does the *next* segment start?
+        //
+        // Thread the turtle through. Per type:
+        //
+        //  - Start / End: forward by TRACK_TIPS_LENGTH.
+        //  - Straight: forward by its length.
+        //  - NinetyDegTurn: a square corner, so the exit is offset on *both* axes by
+        //    `line_half_length`, and then rotated 90 degrees. Mind the sign.
+        //  - CyrcleTurn: the chord of the arc, then rotate by the arc angle. This is
+        //    the only real trigonometry in the workshop - derive it. For an arc of
+        //    radius r swept through angle a, starting along +Y with the centre off
+        //    to the side, work out the displacement of the end point relative to the
+        //    start, then apply `side.sign()`.
+        //
+        // Right now nothing advances, so the whole track is stacked at the origin.
         origin
     }
 
