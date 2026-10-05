@@ -12,6 +12,20 @@ fn store_data(
     motor_angles: Res<MotorAngles>,
     mut exec_data: ResMut<ExecutionData>,
 ) {
+    // EXERCISE 6.6: record one sample per simulation tick. Three lines.
+    //
+    // The body's transform and both wheel angles, appended to the vectors in
+    // `exec_data`. That is the entire recording - no sensor values, no PWM, no
+    // forces. It is the minimum needed to redraw the run, and everything else a
+    // robot author wants to inspect goes through telemetry that the *robot* writes
+    // itself, because the robot knows what is worth recording and pays for it in
+    // simulated time.
+    //
+    // Note where this system runs: `BotUpdate`, ordered after `compute_imu_data`, so
+    // the sample it takes is the state *after* this tick's sensors and transforms
+    // have been computed.
+    //
+    // Until this is written, every run reports "data has 0 frames".
 }
 
 pub struct StoreExecDataPlugin {
