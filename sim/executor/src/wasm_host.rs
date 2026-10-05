@@ -301,6 +301,8 @@ pub enum FutureOperation {
     ReadLineLeft,
     ReadLineRight,
     ReadMotorAngles,
+    // EXERCISE 12.4: two more operations belong here, and in every `match` over
+    // this enum below. The compiler will point you at each one.
     GetTime,
     GetPeriod,
     Sleep,
@@ -358,6 +360,8 @@ impl FutureOperation {
             FutureOperation::ReadMotorAngles => {
                 DeviceValueRaw::from_motor_angles(stepper.get_motor_angles())
             }
+            // EXERCISE 12.4 (continued): these two read from `stepped_data`, not
+            // from the stepper. That asymmetry is the point - see EXERCISE 12.5.
             FutureOperation::GetTime => DeviceValueRaw::zero().with_u32(0, current_time),
             FutureOperation::GetPeriod => DeviceValueRaw::zero()
                 .with_u32(0, stepper.step_us())
@@ -494,6 +498,8 @@ impl DeviceValueRaw {
             .with_u16(1, (angles.right * (u16::MAX as f32) / (PI * 2.0)) as u16)
     }
 
+    // EXERCISE 12.4 (continued): pack each sensor's three values into the eight
+    // bytes of a device value, as i16s. `from_motor_angles` above is the pattern.
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -596,6 +602,8 @@ impl Ord for FutureValueReadyTime {
     }
 }
 
+// EXERCISE 12.5: the sample rates of the two new devices, in simulation steps.
+// These are stated in the contract you wrote in 12.1 - the numbers are 2 and 10.
 
 pub trait DeviceOperationExt {
     fn ready_condition(
@@ -731,6 +739,8 @@ impl WakeupPoint {
 /// Latched samples for devices that are not available on every tick.
 #[derive(Clone, Copy, Default)]
 pub struct SteppedData {
+    // EXERCISE 12.5 (continued): one field per slow device, holding its most recent
+    // sample.
 }
 
 pub struct BotHost<S: SimulationStepper> {
@@ -1365,6 +1375,17 @@ impl<S: SimulationStepper> BotHost<S> {
     pub fn step(&mut self) {
         self.stepper.step();
 
+        // EXERCISE 12.5 (continued): latch the slow sensors here.
+        //
+        // The asymmetry is worth understanding rather than just reproducing: line
+        // sensors and motor angles are read *live* off the stepper in
+        // `compute_value`, but the gyro and IMU are read from `stepped_data`. A gyro
+        // that integrates over 2 ms genuinely cannot give you a fresh value on
+        // demand, and pretending otherwise would let a robot poll its way to a
+        // higher effective sample rate. The latch is not an optimisation, it is the
+        // model.
+        //
+        // Use the step count and `%` to refresh each field when it is due.
 
         self.update_futures(self.stepper.get_time_us());
     }

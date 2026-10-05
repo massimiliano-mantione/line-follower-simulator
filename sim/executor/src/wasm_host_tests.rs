@@ -150,6 +150,9 @@ fn ready_condition_rounds_up_to_a_step_boundary() {
         DeviceOperation::ReadLineLeft.ready_condition(1_300, &stepper),
         FutureReadyCondition::ReadyAt(1_500)
     ));
+    // EXERCISE 12.5: once the slow devices exist, assert that they wait
+    // proportionally longer - ReadGyro for READY_STEPS_GYRO steps and
+    // ReadImuFusedData for READY_STEPS_IMU_FUSED.
 }
 
 #[test]
