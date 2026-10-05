@@ -556,6 +556,13 @@ impl FutureReadyCondition {
 
     #[allow(unused_variables)]
     pub fn wakeup_point<S: SimulationStepper>(&self, current_time: TimeUs, stepper: &S) -> TimeUs {
+        // EXERCISE 7.1: the earliest time at which polling this again could succeed.
+        //
+        // For a deadline that is simply the deadline. For an activity condition
+        // there is no deadline at all - the enable signal could change on any tick -
+        // so the earliest useful moment is the next tick boundary.
+        //
+        // See: SimulationStepper::get_time_us_at_next_step_after
         todo!("when is it worth polling this again?")
     }
 }
@@ -738,6 +745,21 @@ impl std::fmt::Display for WakeupPoint {
 
 #[allow(dead_code)]
 impl WakeupPoint {
+    // EXERCISE 7.2: this little three-state machine *is* the algorithm.
+    //
+    // Over one polling round the host accumulates "the earliest moment at which any
+    // pending future could become ready". Three states:
+    //
+    //   Missing   nothing pending has been seen yet this round
+    //   AtTime(t) something is pending, and t is the earliest wakeup seen so far
+    //   Disabled  do not fast-forward at all
+    //
+    // The rules:
+    //  - `clear` starts a fresh round.
+    //  - `set_time` records a pending future, keeping only the *earliest*.
+    //  - `disable` is sticky: once disabled, `set_time` must do nothing. This is
+    //    what happens when some future *was* ready, meaning the guest made progress
+    //    and has real work to do, so time must not jump.
 
     #[allow(unused_variables)]
     pub fn set_time(&mut self, new_wakeup_time: TimeUs) {
@@ -850,6 +872,25 @@ impl<S: SimulationStepper> BotHost<S> {
         current_fuel: u64,
         operation: DeviceOperation,
     ) -> wasmtime::Result<FutureHandle> {
+        // EXERCISE 7.3: register a pending operation and hand back a handle.
+        //
+        // Allocate an id from `next_future_handle_id`, work out the ready condition
+        // (reuse `ready_condition` from lesson 03 - do not reimplement it), build a
+        // `FutureValueRequest` and file it in `futures_by_id`.
+        //
+        // Then file it in *one* of the two secondary indices, because there are two
+        // kinds of waiting:
+        //
+        //   futures_by_ready_time   a BTreeSet ordered by (ready_at, id), so the
+        //                           host can walk only the futures that have
+        //                           matured. The id is in the key because two
+        //                           futures can mature on the same tick and a set
+        //                           would otherwise collapse them into one.
+        //   futures_by_activity     the ones waiting on the enable signal, which
+        //                           has no deadline.
+        //
+        // Return a handle carrying the id and the deadline (for an activity
+        // condition, the current time will do).
         todo!("register the future, return a handle")
     }
 
@@ -860,12 +901,43 @@ impl<S: SimulationStepper> BotHost<S> {
         current_fuel: u64,
         handle: FutureHandle,
     ) -> wasmtime::Result<PollOperationStatus> {
+        // EXERCISE 7.4: answer a poll, and note what it implies for fast-forwarding.
+        //
+        // Read the clock, catch the physics up to it, then look the handle up. Three
+        // outcomes:
+        //
+        //   Pending   record this future's wakeup point (7.1, 7.2) and say so.
+        //   Ready     return the value, mark the request `Consumed`, and *disable*
+        //             the wakeup point - the guest made progress this round.
+        //   Consumed  an error. Polling a future after it resolved is a bug in the
+        //             guest's executor, not a tolerable condition.
+        //
+        // An unknown handle is also an error.
         todo!("pending, ready, or a bug")
     }
 
     /// Signal future values poll loop start and end to the simulation host
     #[allow(unused_variables)]
     fn poll_loop(&mut self, current_fuel: u64, start: bool) -> wasmtime::Result<()> {
+        // EXERCISE 7.5: the handshake that makes awaiting cheap.
+        //
+        // The guest's executor has no waker, so when nothing is ready it just spins,
+        // and every spin burns fuel, which *advances simulated time*. A robot
+        // awaiting a 20 ms sleep would pay 20 ms of CPU for it, when a real MCU
+        // would idle. So the guest brackets each polling round:
+        //
+        //     loop {
+        //         poll_loop(true);
+        //         if root_task.poll(cx).is_ready() { break; }
+        //         poll_loop(false);
+        //     }
+        //
+        // `start == true`:  mature any futures whose time has come, and begin a
+        //                   fresh round.
+        // `start == false`: the round is over. If a wakeup point survived it, then
+        //                   nothing was ready, so jump the clock to that point and
+        //                   step the physics there. Then disable, so a stray poll
+        //                   outside a round cannot move time.
         todo!("open and close a polling round")
     }
 
@@ -873,6 +945,14 @@ impl<S: SimulationStepper> BotHost<S> {
     /// (is equivalent to dropping the future in Rust)
     #[allow(unused_variables)]
     fn forget_handle(&mut self, handle: FutureHandle) -> () {
+        // EXERCISE 7.6: cancel an operation.
+        //
+        // Called from `FutureValue::drop` on the guest side, so dropping a future in
+        // Rust cancels the operation here. `or!(sleep_for(MAX_TIME), race_task())`
+        // depends on it: when the race task wins, the sleep is dropped and the host
+        // must stop tracking it.
+        //
+        // Remove it from all three indices.
     }
 
     /// Set the power of both motors
@@ -1264,6 +1344,26 @@ impl<S: SimulationStepper> BotHost<S> {
 
     #[allow(unused_variables)]
     fn update_futures(&mut self, current_time: TimeUs) {
+        // EXERCISE 7.7: mature every future whose moment has arrived.
+        //
+        // Called once per tick from `step`, and again at the start of every polling
+        // round. Two passes, one per index:
+        //
+        //  - `futures_by_activity`: compare each pending request's condition against
+        //    `self.stepper.is_active()`, and mark the matching ones ready.
+        //  - `futures_by_ready_time`: the set is ordered by time, so
+        //    `take_while(|rt| rt.ready_at <= current_time)` touches only what has
+        //    matured - no need to scan the rest.
+        //
+        // Mature requests get their value from `operation.compute_value(...)`. One
+        // detail that is easy to get wrong and that no test would catch: compute it
+        // at the future's **ready time**, not at `current_time`. The sample is taken
+        // when the device would have sampled it, not when the robot got round to
+        // collecting it, so a robot that polls late gets stale data - exactly as it
+        // would on hardware.
+        //
+        // Remember to drop matured entries from the secondary index, and mind that
+        // you cannot mutate a collection while iterating it.
     }
 
     pub fn step(&mut self) {
