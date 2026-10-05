@@ -22,6 +22,7 @@ fn print_sensors_data(sensors_data: Res<SensorsData>) {
         "motor angles: l {} r {}",
         sensors_data.motor_angles.left, sensors_data.motor_angles.right
     );
+    // EXERCISE 12.8 (continued): print the new sensors here too.
 }
 
 pub struct SensorsModelPlugin;
