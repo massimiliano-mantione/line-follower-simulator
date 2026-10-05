@@ -1,9 +1,12 @@
 ---
 default:
+  # Center every element unless its own style says otherwise (presenterm >= 0.16).
+  alignment: center
   margin:
     percent: 8
   colors:
-    foreground: "e6e6e6"
+    # The color the slides' text lines had as h4/h5 headings.
+    foreground: "d2d2d2"
     #background: "040312"
 
 slide_title:
@@ -93,7 +96,6 @@ headings:
   h4:
     prefix: ""
     alignment: center
-    skip_newline: true
     colors:
       foreground: "d2d2d2"
   h5:

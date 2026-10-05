@@ -92,7 +92,7 @@ simulator.
 9. **The race.**
 
 The slides are in [`presentation/`](presentation), written for
-[presenterm](https://github.com/mfontanini/presenterm).
+[presenterm](https://github.com/mfontanini/presenterm) 0.16 or later; `presentation/pres.sh` starts them.
 
 ---
 
