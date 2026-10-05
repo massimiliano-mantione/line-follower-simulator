@@ -44,6 +44,27 @@ fn pwm_to_torque(
     gear_ratio_num: u32,
     gear_ratio_den: u32,
 ) -> f32 {
+    // EXERCISE 4.4 (do 4.3 first): model a brushed DC motor.
+    //
+    // Returning 0.0 is why the robot does not move. A linear `k * pwm` is a fine
+    // first approximation - get that working, then make it realistic:
+    //
+    // A brushed DC motor's torque falls linearly with speed, from stall torque at
+    // zero speed to zero at its no-load speed:
+    //
+    //     T = STALL_TORQUE * |pwm| * (1 - |w_motor| / (NO_LOAD_OMEGA * |pwm|))
+    //
+    // Reference values for a small toy motor (Core DC Motor 6V, or similar):
+    //     NO_LOAD_RPM   40000.0     rpm, at full drive
+    //     STALL_TORQUE  0.001       N.m, at pwm = 1.0 and zero speed
+    //
+    // Then the gearbox. `gear_ratio` here is num/den (default 1/20 = 0.05), meaning
+    // wheel revolutions per motor revolution - so the motor spins *faster* than the
+    // wheel and the gearbox *amplifies* torque. Watch the direction of both
+    // conversions, and beware a zero denominator.
+    //
+    // Finally: PWM is bounded by PWM_MIN..PWM_MAX, and the sign of the result must
+    // follow the sign of the drive.
     0.0
 }
 
@@ -54,6 +75,28 @@ fn apply_motors_pwm(
     mut wheels_query: Query<(&Wheel, &Transform, &Velocity, &mut ExternalForce), Without<Motors>>,
     mut motors_query: Query<(&Motors, &mut ExternalForce), Without<Wheel>>,
 ) {
+    // EXERCISE 4.3: turn duty cycles into torque on the wheels.
+    //
+    // Four things:
+    //
+    //  1. Do nothing unless the race is running. `data.activity_data` knows. Without
+    //     this, robots crawl away during the one-second countdown.
+    //
+    //  2. For each wheel, work out its angular velocity about its own axle. The
+    //     wheel's `axle` is in body-local space, so rotate it by the wheel's
+    //     transform first; then project the angular velocity onto it. Pass that and
+    //     the duty cycle for this side to `pwm_to_torque` (4.4).
+    //
+    //  3. Apply the torque along the wheel's *rotated* axle - using a world axis
+    //     instead drives fine in a straight line and diverges hilariously in turns.
+    //
+    //  4. Newton's third law: the motor pushes against its own mount, so the
+    //     chassis gets the *reaction* torque, summed over both wheels. Omit it and
+    //     the robot never squats under acceleration - which also means the sensor
+    //     bar never lifts, which means lesson 05's height attenuation never fires.
+    //
+    // See: GetBySide::get_by_side, ExternalForce::torque,
+    //      ActivityData::is_active_now
 }
 
 pub struct MotorsModelPlugin;

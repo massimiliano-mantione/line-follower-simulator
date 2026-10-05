@@ -188,6 +188,23 @@ impl Plugin for RapierPhysicsSetupPlugin {
             RapierPhysicsPlugin::<NoUserData>::default().with_custom_initialization(
                 RapierContextInitialization::InitializeDefaultRapierContext {
                     rapier_configuration: {
+                        // EXERCISE 4.5: configure the physics world.
+                        //
+                        // Two problems with this default, and both are visible the
+                        // moment you run `sim test`:
+                        //
+                        //  - Bevy's convention is Y-up, but this world is Z-up (X is
+                        //    across the axle, Y is forward, Z is height) because that
+                        //    is what CAD, robotics and the track plane all use. Fix
+                        //    the gravity vector.
+                        //
+                        //  - `RapierConfiguration::new` takes a length unit. Our
+                        //    robot is 10 cm long with 25 mm wheels, and Rapier's
+                        //    default tolerances assume human-scale objects - at our
+                        //    scale they are enormous relative to the parts, so
+                        //    bodies jitter and joints look springy. This one number
+                        //    separates a simulator that works from one that visibly
+                        //    trembles.
                         RapierConfiguration::new(1.0)
                     },
                     integration_parameters: IntegrationParameters::default(),

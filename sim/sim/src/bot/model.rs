@@ -70,6 +70,30 @@ pub fn setup_bot_model(
     // Static body with motors
     let body = body_query.single().unwrap();
     commands.entity(body).apply_scene(bsn! {
+        // EXERCISE 4.1: give the chassis a physical body.
+        //
+        // The dimensions above are already derived from the robot's own
+        // configuration - your job is the physics. You need:
+        //
+        //  - a compound collider: the main body cuboid at `bodypart_body`, a shorter
+        //    front cuboid `body_front_length` long, and a capsule bumper at each of
+        //    `front_bumper_world` and `back_bumper_world`. Every part is positioned
+        //    relative to `body_world`, which is why the constants above subtract it.
+        //  - a dynamic rigid body.
+        //  - friction: the chassis should *slide* rather than catch, so a low
+        //    coefficient combined with `CoefficientCombineRule::Min`.
+        //  - a mass of BOT_BODY_WEIGHT.
+        //  - a collision group. Without one the wheels collide with the body they
+        //    are jointed to and the robot explodes on spawn. Put every bot part in
+        //    BOT_COLLISION_GROUP and have it collide with everything *except* that.
+        //
+        // In `bsn!`, a value built by a function or an enum variant (a `Collider`,
+        // `RigidBody::Dynamic`, ...) goes in `template_value(...)`; a struct with
+        // named fields (`Friction { .. }`) can be written directly. Or insert them
+        // with a plain `commands.entity(body).insert((...))` if you prefer.
+        //
+        // See: Collider::{compound, cuboid, capsule_x}, RigidBody, Friction,
+        //      ColliderMassProperties, CollisionGroups
         Transform { translation: body_world }
         GlobalTransform
         template(move |_| Ok(Motors::new(gear_ratio_num, gear_ratio_den)))
@@ -84,6 +108,30 @@ pub fn setup_bot_model(
         let wheel_world = Vec3::new(width_axle / 2.0 * -side.sign(), 0.0, wheel_diameter / 2.0);
 
         commands.entity(entity).apply_scene(bsn! {
+            // EXERCISE 4.2: give each wheel a body, and bolt it to the chassis.
+            //
+            //  - a collider. Note the reference solution uses a *ball*, not a
+            //    cylinder: a cylinder contacting a plane along an edge makes contact
+            //    points flicker between rim and face and the robot jitters, while a
+            //    sphere touches at one point and is also a fair model of a tyre's
+            //    contact patch. Try a cylinder if you want to see it.
+            //  - a dynamic rigid body, high friction combined with
+            //    `CoefficientCombineRule::Max` so the wheel grips whatever it
+            //    touches, and a mass of
+            //    BOT_WHEEL_QUAD_DENSITY * wheel_diameter * wheel_diameter.
+            //  - the same collision group as the chassis.
+            //  - a revolute joint to `body`, with one rotational degree of freedom
+            //    about the axle. Mind the two frames: anchor 1 is where the axle
+            //    sits in the *body's* frame (`wheel_world - body_world`), anchor 2
+            //    is the wheel's centre in its *own* frame. Swap them and the wheel
+            //    orbits the robot instead of spinning on it.
+            //
+            // `ImpulseJoint` has no `Default`, so `bsn!` cannot take it through
+            // `template_value(...)`: build it before the macro and add it with
+            // `template(move |_| Ok(joint))`.
+            //
+            // See: Collider::ball, ImpulseJoint::new, TypedJoint::RevoluteJoint,
+            //      RevoluteJointBuilder::{new, local_anchor1, local_anchor2}
             Transform { translation: wheel_world }
             Velocity
             ExternalForce
