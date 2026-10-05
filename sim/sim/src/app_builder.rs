@@ -239,6 +239,19 @@ pub fn create_app(app_type: AppType, track: Track, step_period_us: u32) -> wasmt
         app.add_plugins(RapierPhysicsSetupPlugin);
 
         if !app_type.has_visualization() {
+            // EXERCISE 3.7: turn the game loop into a subroutine.
+            //
+            // Two things are missing here, and together they are what let the robot
+            // drive the simulation rather than the other way round:
+            //
+            //  - Rapier must take exactly one fixed step per tick, of
+            //    `step_period_us` microseconds. See `TimestepMode::Fixed`.
+            //  - Bevy's virtual clock must not advance on its own. See
+            //    `Time<Virtual>` and `pause()`.
+            //
+            // Without these the simulation still runs, but it is no longer
+            // deterministic - which is the whole point of the exercise, so it will
+            // not fail loudly. Try it both ways.
 
             // `MinimalPlugins` does not bring in `TransformPlugin`, so the resource
             // `propagate_parent_transforms` reads has to be initialized here.

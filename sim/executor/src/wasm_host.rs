@@ -645,10 +645,41 @@ impl DeviceOperationExt for DeviceOperation {
         current_time: TimeUs,
         stepper: &impl SimulationStepper,
     ) -> FutureReadyCondition {
+        // EXERCISE 3.1: when will this operation's value be available?
+        //
+        // This is a pure function of the operation and the clock, which is why it
+        // lives on the extension trait rather than on `BotHost`: it is testable
+        // without a host.
+        //
+        // Four groups to handle:
+        //
+        //  - Device reads (line sensors, motor angles, gyro, IMU). A real sensor is
+        //    sampled by an interrupt on a fixed schedule; you cannot read it
+        //    *between* samples. So a robot asking at 1300 us with a 500 us period
+        //    does not get an answer now - it gets one at 1500 us, and pays 200 us
+        //    for asking at an awkward moment. Slow devices wait `ready_steps()`
+        //    boundaries rather than one. If the clock is already on a boundary, the
+        //    value is available immediately.
+        //
+        //  - Sleeps. `SleepFor` is relative, `SleepUntil` is absolute - and a
+        //    deadline already in the past must not move the clock backwards.
+        //
+        //  - Host state reads (`GetTime`, `GetPeriod`, `GetEnabled`). These are not
+        //    devices at all and never wait.
+        //
+        //  - `WaitEnabled` / `WaitDisabled`. Waiting for the start signal cannot be
+        //    expressed as a deadline, which is why `FutureReadyCondition` has three
+        //    variants instead of being a plain timestamp.
+        //
+        // See: SimulationStepper::step_us
         todo!("work out when the value is ready")
     }
 
     fn ready_steps(&self) -> u32 {
+        // EXERCISE 3.2: how many sample periods does this device need?
+        //
+        // Most devices are ready every period. The gyro and the fused IMU are not -
+        // see READY_STEPS_GYRO and READY_STEPS_IMU_FUSED above.
         todo!("return the number of periods this device needs")
     }
 
@@ -791,6 +822,24 @@ impl<S: SimulationStepper> BotHost<S> {
         current_fuel: u64,
         operation: DeviceOperation,
     ) -> wasmtime::Result<DeviceValue> {
+        // EXERCISE 3.3: run the world forward until this operation can answer.
+        //
+        // Five steps, and the order matters:
+        //
+        //   1. read the clock (lesson 02 gave you `setup_current_time`)
+        //   2. ask the operation when it will be ready (3.1)
+        //   3. step the physics until then - or, for the activity conditions, until
+        //      the stepper agrees
+        //   4. tell the clock where it ended up
+        //   5. compute and return the value
+        //
+        // One subtlety in step 4: stepping deliberately stops *short* of
+        // overshooting the target, so the physics clock may be behind the instant
+        // the robot asked for. The robot's clock must take the later of the two -
+        // stepping one more tick would let a robot buy 499 us of physics by
+        // sleeping for 1 us.
+        //
+        // See: FutureOperation::compute_value, SimulationStepper::is_active
         todo!("step until ready, then answer")
     }
 
@@ -894,6 +943,14 @@ impl<S: SimulationStepper> BotHost<S> {
         left: MotorPower,
         right: MotorPower,
     ) -> wasmtime::Result<()> {
+        // EXERCISE 3.4: apply a new motor command. Three lines, and the ordering is
+        // the whole point.
+        //
+        // The robot spent time computing this command. Over that interval the *old*
+        // duty cycle was what the motors were doing, so the world has to be caught
+        // up before the new one is applied. Get this backwards and the robot's
+        // decisions act retroactively: it becomes slightly clairvoyant, and its lap
+        // times improve for no honest reason.
         todo!("catch the world up, then apply the command")
     }
 }
@@ -1341,11 +1398,30 @@ impl<S: SimulationStepper> BotHost<S> {
     }
 
     pub fn step(&mut self) {
+        // EXERCISE 3.5: advance the world by exactly one tick.
+        //
+        // Three things happen here. Step the stepper; then latch the slow sensors.
+        // Not every device is available every tick: the gyro updates every
+        // READY_STEPS_GYRO steps and the fused IMU every READY_STEPS_IMU_FUSED, and
+        // `stepped_data` holds their most recent samples. Reading the gyro gives you
+        // the last sample, not a fresh one - exactly like a real device. (Line
+        // sensors and motor angles are different: they are read straight off the
+        // stepper because they are cheap and continuous.)
+        //
+        // Finally call `self.update_futures(...)`. That belongs to lesson 07 and is
+        // a no-op for the blocking path; just call it.
         todo!("one tick, then latch the slow sensors")
     }
 
     #[allow(unused_variables)]
     pub fn step_until_time(&mut self, target_time: TimeUs) {
+        // EXERCISE 3.6: step until one more tick would overshoot `target_time`.
+        //
+        // Careful with the comparison: it is about the time *after* the next step,
+        // not the current one. Off by one here means every blocking operation drifts
+        // by a tick.
+        //
+        // See: SimulationStepper::get_time_us_at_next_step
         todo!("step up to, but not past, the target")
     }
 
