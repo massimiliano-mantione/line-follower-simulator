@@ -306,7 +306,7 @@ into *account*
 
 ---
 
-🤖 How does a 🅿 🅸 🅳 Controller really look like 🤖
+🤖 What does a 🅿 🅸 🅳 Controller really look like 🤖
 ---
 
 the complete feedback control architecture
@@ -358,7 +358,7 @@ loop {
 🤖 Sampling Rate (Δt) 🤖
 ---
 
-What frequency we want?
+What frequency do we want?
 
 <!-- pause -->
 ⛔ *Too Slow* ⛔\
@@ -426,6 +426,9 @@ Because Δt is in the denominator, the derivative is **extremely sensitive to no
 
 <!-- pause -->
 Practical tips: Filter with a low-pass the error (*before* taking the derivative), or the derivative term itself.
+
+<!-- pause -->
+*(a poor man's low pass filter is a **rolling average**)*
 
 ---
 
@@ -618,7 +621,7 @@ at **0.5㎑** they cover **20s**\
 *this is more than enough!*
 
 <!-- pause -->
-**push** each *sample* to a *ring buffer* while the robot **runs**\
+**push** each *sample* into a *ring buffer* while the robot **runs**\
 **save** the *data file* when the race **stops**
 
 <!-- pause -->
