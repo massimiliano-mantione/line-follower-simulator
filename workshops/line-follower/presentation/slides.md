@@ -306,6 +306,159 @@ into *account*
 
 ---
 
+🤖 How does a 🅿 🅸 🅳 Controller really look like 🤖
+---
+
+the complete feedback control architecture
+
+![image:width:70%](img/PID-algorithm.png)
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+<!-- column: 0 -->
+**Input**
+
+- **Error (e)**: Setpoint - Process Variable.
+<!-- pause -->
+  - **_Setpoint_**: Your desired target (center line, error = 0).
+  - **_Process Variable_**: The actual reading from your line sensors.
+
+<!-- pause -->
+
+<!-- column: 1 -->
+**Output**
+
+- **Output (u)**: The correction value (e.g., 'turn' command).
+- **Final Actuator (here Process)**: The part that moves the robot (Motors & their dynamics).
+
+---
+
+🤖 Continuous to Discrete: The Practical Challenge 🤖
+---
+
+<!-- pause -->
+The mathematical definition is continuous (dt, dⓔ, ∫ⓔ dt)...
+
+<!-- pause -->
+...but our code runs on a microcontroller!
+
+<!-- pause -->
+We sample (read sensors) and calculate at finite intervals Δt.
+
+<!-- pause -->
+~~~rust
+loop {
+    // how do we translate the 🅿 🅸 🅳 into a discrete procedure?
+}
+~~~
+
+---
+
+🤖 Sampling Rate (Δt) 🤖
+---
+
+What frequency we want?
+
+<!-- pause -->
+⛔ *Too Slow* ⛔\
+The robot will "miss" details, overcorrect, or be late to sense the line.
+
+<!-- pause -->
+✅ *As fast as possible?* ✅\
+Not quite. Many subtle issues, number precision is the most slippery one.
+
+<!-- pause -->
+A good minimum is to sample at least *2-5 times* faster than the fastest event.
+
+<!-- pause -->
+Example: line width 20㎜, speed 1.5m/s.
+Sensing *time* ~13㎳. Sample at ≤ 2㎳ (500㎐).
+
+<!-- pause -->
+**EXPERIMENT!**
+
+---
+
+🤖 Control Rate vs. Measurement Noise 🤖
+---
+
+<!-- pause -->
+In the real world, measurement noise can make higher control rates unstable.
+
+<!-- pause -->
+🔴\
+High Sampling Rate (e.g., 2㎑) with a noisy sensor will generate extreme jitter in the control output, especially the Derivative.
+
+<!-- pause -->
+A common solution:
+
+<!-- pause -->
+**1. Sample Fast**\
+For sensing details and filtering.
+
+<!-- pause -->
+**2. Control Slower**\
+Update motor output at a rate the system can handle steadily (e.g., 200㎐).
+
+<!-- pause -->
+*more on decoupling loops later!*
+
+---
+
+🤖 Derivative in Discrete (`ₖ🄳 `) 🤖
+---
+
+<!-- pause -->
+The derivative is the "electronic damper".
+
+<!-- pause -->
+continuous: dⓔ / dt
+
+<!-- pause -->
+discrete: (ⓔₖ - ⓔₖ₋₁) / Δt
+
+*(where ⓔₖ is the current error and ⓔₖ₋₁ the previous one.)*
+
+<!-- pause -->
+⚠️ **WARNING** ⚠️\
+Because Δt is in the denominator, the derivative is **extremely sensitive to noise**. A tiny error difference over a tiny time can create a massive output.
+
+<!-- pause -->
+Practical tips: Filter with a low-pass the error (*before* taking the derivative), or the derivative term itself.
+
+---
+
+🤖 Integral in Discrete (`ₖ🄸 `) 🤖
+---
+
+<!-- pause -->
+The integral takes the **past** into account to eliminate steady-state error.
+
+<!-- pause -->
+continuous: ∫ⓔ dt
+
+<!-- pause -->
+discrete: ∑ (ⓔₖ ⋅ Δt)
+
+<!-- pause -->
+This is just a running sum! You must preserve its state:
+
+~~~rust
+let mut integral_sum = 0.0;
+loop {
+    // ...
+    integral_sum += current_error * dt;
+    // ...
+}
+~~~
+
+<!-- pause -->
+Practical Tip: **Anti-windup**\
+Clamp the `integral_sum` within limits to prevent it from growing out of control on long, sharp turns.
+
+---
+
 EXPERIMENT
 ---
 
