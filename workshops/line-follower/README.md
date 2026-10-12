@@ -67,12 +67,19 @@ Your robot lives in [`bot/`](../../bot):
 - It talks to the hardware through a small device API: `get_time_us`,
   `get_line_sensors`, `set_motors_pwm`, `sleep_for`, `console_log` and a few more.
 
-Build it and race it:
+### Build it and race it!
+
+- Manually (from repository root):
 
 ```bash
 cd bot && ./build.sh                # builds the WASM and copies it into sim/
 cd ../sim
 cargo run --release -p sim -- run -i line_follower_robot.wasm
+```
+
+- Or, more simply:
+```bash
+cd bot && ./run-bot.sh              # executes the manual steps
 ```
 
 The simulator runs the whole race first, then lets you replay it like a video:
