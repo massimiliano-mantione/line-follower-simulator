@@ -49,6 +49,12 @@ cargo run --release -p sim -- test  # drive a robot with the arrow keys or WASD
 If you get a window with a robot on a track, you are ready. Press `/` or `F1` there
 for the command help.
 
+> [!NOTE]
+> If you encounter build errors related to `libudev-sys`, install the development libraries for your Linux distribution:
+> - Ubuntu / Debian: `sudo apt update && sudo apt install libudev-dev`
+> - Fedora: `sudo dnf install systemd-devel`
+> - Arch Linux: `sudo pacman -S systemd`
+
 ## How it works
 
 Your robot lives in [`bot/`](../../bot):
