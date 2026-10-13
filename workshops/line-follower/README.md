@@ -82,6 +82,16 @@ cargo run --release -p sim -- run -i line_follower_robot.wasm
 cd bot && ./run-bot.sh              # executes the manual steps
 ```
 
+> [!TIP]
+> To select a track (one of `line`, `angle`, `turn`, `simple`, `race`) add the -t option *before* the `run` command as follows:
+> ```
+> cargo run --release -p sim -- -t <TRACK> run -i line_follower_robot.wasm
+> ```
+> or simply append the track name to the script command:
+> ```
+> ./run-bot.sh <TRACK>
+> ``` 
+
 The simulator runs the whole race first, then lets you replay it like a video:
 pause, scrub, slow down, and load other robots next to yours.
 
