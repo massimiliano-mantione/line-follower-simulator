@@ -19,7 +19,7 @@ use crate::{
     track::Track,
     ui::{
         HelpState, camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
-        rl, rlc, viewport_ui,
+        rl, rlc, update_camera_pointer_input, viewport_ui,
     },
 };
 
@@ -149,6 +149,8 @@ fn test_gui_update(
                 );
             });
         });
+
+    update_camera_pointer_input(ctx, &root_ui, &mut po_camera);
 
     // Handle motor control if keyboard_camera_control returns false
     if !keyboard_camera_control(

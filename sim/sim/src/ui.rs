@@ -196,6 +196,29 @@ pub fn viewport_ui(ctx: &Context) -> Ui {
     )
 }
 
+/// Keeps the camera from reacting to the mouse while it is used on the gui.
+///
+/// `PanOrbitCamera` checks `Context::egui_wants_pointer_input`, but that no longer
+/// sees our panels: they are shown inside `viewport_ui` rather than in the root `Ui`
+/// that bevy_egui hands to egui, so egui thinks the whole viewport is free. Without
+/// this, the click that starts dragging a slider also starts moving the camera.
+///
+/// Call it after all panels have been shown in `root_ui`, so its available rect is
+/// the part of the viewport left to the 3D view. The decision is only updated while
+/// no mouse button is down, so a drag stays with whoever it started on.
+pub fn update_camera_pointer_input(ctx: &Context, root_ui: &Ui, camera: &mut PanOrbitCamera) {
+    if ctx.input(|i| i.pointer.any_down()) {
+        return;
+    }
+    let over_gui = ctx.egui_wants_pointer_input()
+        || ctx
+            .pointer_latest_pos()
+            .is_some_and(|pos| !root_ui.available_rect_before_wrap().contains(pos));
+    if camera.enabled == over_gui {
+        camera.enabled = !over_gui;
+    }
+}
+
 pub fn rl(ui: &mut Ui, text: impl Into<String>, size: f32) -> Response {
     ui.label(egui::RichText::new(text).size(size))
 }

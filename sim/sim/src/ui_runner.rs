@@ -34,7 +34,7 @@ use crate::{
     track::Track,
     ui::{
         HelpState, camera_buttons, error_dialog, help_dialog, icon_button, keyboard_camera_control,
-        process_new_bot, rl, viewport_ui,
+        process_new_bot, rl, update_camera_pointer_input, viewport_ui,
     },
     visualizer::{
         BotVisualization, spawn_bot_visualization, sync_bot_body, sync_bot_layers, sync_bot_wheel,
@@ -458,6 +458,8 @@ fn runner_gui_update(
                 gui_state.as_mut().bot_with_pending_remove = None;
             }
         });
+
+    update_camera_pointer_input(ctx, &root_ui, &mut po_camera);
 
     keyboard_camera_control(
         &mut po_camera,
