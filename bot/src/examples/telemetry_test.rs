@@ -9,8 +9,8 @@ const PWM_MAX: i16 = 200;
 const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
-const KP: f32 = 20.0;
-const KD: f32 = 10_000_000.0;
+const KP: f32 = 90.0;
+const KD: f32 = 1_000_000.0;
 const KI: f32 = 0.0;
 
 const OUT_PWM_INNER: i16 = -600;
@@ -56,6 +56,10 @@ impl Pid {
 
     fn err(&self) -> f32 {
         self.err_mm
+    }
+
+    fn err_derivative(&self) -> f32 {
+        self.err_derivative
     }
 
     fn update_time(&mut self) {
@@ -160,6 +164,7 @@ pub async fn run(sensor_spacing_mm: f32) {
         let (pwm_l, pwm_r) = pid.compute_pwm(vals);
         let (wl, wr) = get_motor_angles_immediate();
         let err = (pid.err() * 100.0) as i16;
+        let der = (pid.err_derivative() * 1_000_000_000.0) as i16;
 
         tel_buf.push(TelBlock::new(
             time,
@@ -168,10 +173,12 @@ pub async fn run(sensor_spacing_mm: f32) {
             [wl, wr],
             [pwm_l, pwm_r],
             err,
+            der,
         ));
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
+        // sleep_for(500).await;
 
         set_motors_pwm(pwm_l, pwm_r);
 
@@ -192,11 +199,11 @@ struct TelBlock {
     w: [u16; 2],
     pwm: [i16; 2],
     e: i16,
-    pad: u16,
+    d: i16,
 }
 
 impl TelBlock {
-    fn new(time: u32, steps: u32, vals: [u8; 16], w: [u16; 2], pwm: [i16; 2], e: i16) -> Self {
+    fn new(time: u32, steps: u32, vals: [u8; 16], w: [u16; 2], pwm: [i16; 2], e: i16, d: i16) -> Self {
         Self {
             time,
             steps,
@@ -204,7 +211,7 @@ impl TelBlock {
             w,
             pwm,
             e,
-            pad: 0,
+            d,
         }
     }
 
@@ -233,7 +240,7 @@ impl TelBlock {
             csv::col("pwm_l", csv::C_I16),
             csv::col("pwm_r", csv::C_I16),
             csv::col("err", csv::C_I16),
-            csv::col(".", csv::PAD_16),
+            csv::col("der", csv::C_I16),
         ]
     }
 }
