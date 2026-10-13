@@ -486,7 +486,7 @@ let's find a solution!
 
 ---
 
-Can we go faster?
+🏎️💨 Can we go faster? 🏎️💨
 ---
 
 in principle, yes
