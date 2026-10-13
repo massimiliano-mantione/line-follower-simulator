@@ -1,14 +1,14 @@
 use crate::blocking_api::{
-    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, wait_remote_enabled,
+    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, sleep_for, wait_remote_enabled,
 };
 
 const PWM_MAX: i16 = 400;
 const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
-const KP: f32 = 80.0;
-const KD: f32 = 10_000_000.0;
-const KI: f32 = 0.001;
+const KP: f32 = 90.0;
+const KD: f32 = 2_000_000.0;
+const KI: f32 = 0.0003;
 
 fn calibrated_line_value(raw: u8) -> f32 {
     (255 - raw) as f32
@@ -106,9 +106,10 @@ pub fn run(sensor_spacing_mm: f32) {
         let vals = get_line_sensors();
         let (pwm_l, pwm_r) = pid.compute_pwm(vals);
 
-        pid.log_vars();
-
         set_motors_pwm(pwm_l, pwm_r);
+
+        // pid.log_vars();
+        sleep_for(500);
 
         if get_time_us() > MAX_TIME {
             console_log("timeout");
