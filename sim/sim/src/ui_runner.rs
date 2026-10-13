@@ -125,7 +125,7 @@ impl RunnerGuiState {
             new_bot_receiver: Mutex::new(receiver),
             base_text_size: 10.0,
             play_time_sec: 0.0,
-            play_active: false,
+            play_active: auto_run,
             play_max_sec: 60.0,
             output,
             logs,
@@ -217,7 +217,8 @@ fn runner_gui_update(
     gui_state.play_time_sec = gui_state.play_time_sec.min(gui_state.play_max_sec).max(0.0);
 
     if gui_state.auto_run {
-        if gui_state.play_time_sec == gui_state.play_max_sec {
+        // Swap in new bots when the replay loop ends, or right away when nothing is shown yet
+        if gui_state.play_time_sec == gui_state.play_max_sec || bot_vis.is_empty() {
             gui_state.play_time_sec = 0.0;
             gui_state.handle_new_bots(
                 &mut commands,
