@@ -365,7 +365,7 @@ What frequency do we want?
 The robot will "miss" details, overcorrect, or be late to sense the line.
 
 <!-- pause -->
-✅ *As fast as possible?* ✅\
+🏎️💨 *As fast as possible?* 🏎️💨\
 Not quite. Many subtle issues, number precision is the most slippery one.
 
 <!-- pause -->
