@@ -7,10 +7,10 @@ const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
 const KP: f32 = 90.0;
-const KD: f32 = 20_000_000.0;
-const KI: f32 = 0.0;
+const KD: f32 = 2_000_000.0;
+const KI: f32 = 0.0003;
 
-const OUT_PWM_INNER: i16 = -PWM_MAX;
+const OUT_PWM_INNER: i16 = -300;
 
 fn calibrated_line_value(raw: u8) -> f32 {
     (255 - raw) as f32
@@ -147,10 +147,12 @@ pub fn run(sensor_spacing_mm: f32) {
         let vals = get_line_sensors();
         let (pwm_l, pwm_r) = pid.compute_pwm(vals);
 
+        
+        set_motors_pwm(pwm_l, pwm_r);
+        
         // console_log(&format!("LINE {:?}", vals));
         // pid.log_vars();
-
-        set_motors_pwm(pwm_l, pwm_r);
+        sleep_for(500);
 
         if get_time_us() > MAX_TIME {
             console_log("timeout");
