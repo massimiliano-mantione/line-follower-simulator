@@ -4,13 +4,9 @@ use crate::blocking_api::{
 };
 
 const LINE: u8 = 80;
-const PWM_MAX: i16 = 300;
-const PWM_MIN: i16 = -100;
-const MAX_TIME: u32 = 10_000_000;
-
-fn calibrated_line_value(raw: u8) -> f32 {
-    (255 - raw) as f32
-}
+const PWM_MAX: i16 = 200;
+const PWM_MIN: i16 = -250;
+const MAX_TIME: u32 = 50_000_000;
 
 pub fn run() {
     wait_remote_enabled();
@@ -26,20 +22,7 @@ pub fn run() {
         let left = left_v < LINE;
         let right = right_v < LINE;
 
-        // Compute error
-        let err_mm_num: f32 = vals
-            .into_iter()
-            .map(calibrated_line_value)
-            .enumerate()
-            .map(|(i, v)| {
-                let x = (i as f32 - 7.5) * 4.0;
-                x * v
-            })
-            .sum();
-        let err_mm_den: f32 = vals.into_iter().map(|v| v as f32).sum();
-        let err_mm = err_mm_num / err_mm_den;
-
-        console_log(&format!("ERR {} LINE {:?}", err_mm, vals));
+        console_log(&format!("LINE {:?}", vals));
 
         // console_log(&format!(
         //     " - val {} {} [{} {}] line {} {}",
