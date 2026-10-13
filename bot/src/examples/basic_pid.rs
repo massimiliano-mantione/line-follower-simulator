@@ -2,13 +2,13 @@ use crate::blocking_api::{
     console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, wait_remote_enabled,
 };
 
-const PWM_MAX: i16 = 500;
+const PWM_MAX: i16 = 400;
 const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
-const KP: f32 = 0.5;
-const KD: f32 = 0.0;
-const KI: f32 = 0.0;
+const KP: f32 = 80.0;
+const KD: f32 = 10_000_000.0;
+const KI: f32 = 0.001;
 
 fn calibrated_line_value(raw: u8) -> f32 {
     (255 - raw) as f32

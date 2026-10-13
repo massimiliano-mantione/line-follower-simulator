@@ -2,12 +2,12 @@ use crate::blocking_api::*;
 
 const LINE_THRESHOLD: f32 = 150.0;
 
-const PWM_MAX: i16 = 300;
+const PWM_MAX: i16 = 400;
 const MAX_TIME: u32 = 50_000_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
-const KP: f32 = 70.0;
-const KD: f32 = 11_000_000.0;
+const KP: f32 = 90.0;
+const KD: f32 = 20_000_000.0;
 const KI: f32 = 0.0;
 
 const OUT_PWM_INNER: i16 = -PWM_MAX;
