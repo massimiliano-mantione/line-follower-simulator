@@ -13,7 +13,7 @@ use bevy::transform::systems::{
     sync_simple_transforms,
 };
 use bevy_rapier3d::prelude::*;
-use bevy_rapier3d::rapier::prelude::IntegrationParameters;
+use bevy_rapier3d::rapier::prelude::{FrictionModel, IntegrationParameters};
 use executor::wasm_host::exports::robot::Configuration;
 use executor::wasmtime;
 
@@ -192,7 +192,15 @@ impl Plugin for RapierPhysicsSetupPlugin {
                         config.gravity = Vec3::NEG_Z * 9.81;
                         config
                     },
-                    integration_parameters: IntegrationParameters::default(),
+                    integration_parameters: IntegrationParameters {
+                        // Since Rapier 0.30 the default is `FrictionModel::Simplified`, which adds
+                        // a "twist" constraint to every contact manifold that cancels rotation
+                        // around the contact normal. On the ball-shaped wheels this resists the
+                        // bot yawing, so it can barely steer: use per-point Coulomb friction, as
+                        // older Rapier versions did.
+                        friction_model: FrictionModel::Coulomb,
+                        ..IntegrationParameters::default()
+                    },
                 },
             ),
         ));
