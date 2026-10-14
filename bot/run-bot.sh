@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-./build.sh
+cargo build --target wasm32-wasip2 --release
 
 if [ $? -eq 0 ]; then 
+    cp target/wasm32-wasip2/release/line_follower_robot.wasm ../sim
+
     echo "Build successful. Running the simulator with the new WASM file..."
 
     if [ -z "$1" ]; then
