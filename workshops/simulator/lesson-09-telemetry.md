@@ -11,8 +11,14 @@ Needs the WASM toolchain: `rustup target add wasm32-wasip2`.
 ## The setup — it is a numbers argument
 
 We want to see **every decision the robot took**: timestamp, step count, all 16
-sensor values, both wheel angles, both PWM outputs, the line error. About 40 bytes.
-At a 500 µs period that is 2 kHz.
+sensor values, both wheel angles, both PWM outputs, the line error and its
+derivative, and what the robot concluded about the track: which side the line was
+last seen on (`dir`), and whether it has lost it (`out`). About 40 bytes. At a
+500 µs period that is 2 kHz.
+
+`dir` and `out` could be recomputed from the sensor values, but only by
+re-implementing the robot's logic. Recording them tells you what the robot actually
+believed, and when the line is lost that belief is what drives the motors.
 
 Stream it live over Bluetooth serial?
 
@@ -52,6 +58,9 @@ the spec must account for every byte the compiler inserted, including tail paddi
 That is what `csv::PAD_8` / `PAD_16` are for. If the spec is off, the CSV shears: every
 row offset by a couple of bytes, every column full of plausible nonsense.
 
+For `dir` and `out`, have a look at `csv::named`: it maps a `u8` to strings, so those
+columns export as `left`/`right` and `in`/`out` rather than `0`/`1`.
+
 ## How to verify
 
 ```bash
@@ -75,6 +84,9 @@ This half is the point, and it changes how you think about tuning:
   hits its limit is where the robot **stops being able to steer**.
 - plot the 16 sensor columns as a heat map over time. You can *see* the line sweeping
   across the bar — and see it leave entirely at a 90° corner.
+- put `out` and `dir` on the same timeline: every stretch of `out` is the robot
+  steering blind on what it remembered, and `dir` tells you whether it remembered
+  the right side.
 - divide `steps` by `time`: how many control iterations you got per physics tick,
   which is your real CPU headroom.
 

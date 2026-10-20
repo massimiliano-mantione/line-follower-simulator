@@ -26,8 +26,16 @@ host-side CSV writer. The API is given; the *schema design* is the exercise.
 *(Put the constraint on the board before any code.)*
 
 We want to see **every decision the robot took**: timestamp, 16 sensor values, both
-wheel angles, both PWM outputs, the line error. About 40 bytes. At a 500 µs period
-that is 2 kHz.
+wheel angles, both PWM outputs, the line error and its derivative. And also what the
+robot concluded about the track: which side the line was last seen on (`dir`), and
+whether it has lost it (`out`). About 40 bytes. At a 500 µs period that is 2 kHz.
+
+You could recompute `dir` and `out` from the sensor values, but only by
+re-implementing the robot's logic, and then you would know what your copy of the
+logic thinks. Recording them tells you what the robot actually believed. When the
+line is lost, that belief is what drives the motors, so if the robot leaves the track
+at a corner, these two columns tell you whether it misread the sensors or drew the
+wrong conclusion from them.
 
 Could we stream it over Bluetooth serial while the robot races? *(Ask the room.)*
 
@@ -60,12 +68,15 @@ struct TelBlock {
     time: u32, steps: u32,
     vals: [u8; 16],
     w: [u16; 2], pwm: [i16; 2],
-    e: i16,
+    e: i16, d: i16,
+    dir: u8, out: u8,
     pad: u16,          // explicit tail padding
 }
 ```
 
-The explicit `pad` field is the key point. `csv::transmute_buf` reinterprets the
+The fields add up to 38 bytes, but the struct contains `u32`s, so its size must be a
+multiple of 4: it is 40. Moving `dir` and `out` elsewhere does not help, it only moves
+the gap inside the struct. The explicit `pad` field is the key point. `csv::transmute_buf` reinterprets the
 `Vec<TelBlock>` as bytes and the host walks it with the column spec, so **the spec
 must account for every byte the compiler inserted**, including tail padding to
 satisfy alignment. Hence `ValueKind::Pad8` / `Pad16` in the WIT and
@@ -81,7 +92,10 @@ to look at it before fixing it.
   csv::col("s1", csv::C_U8), /* ... s16 ... */
   csv::col("wl", csv::C_U16), csv::col("wr", csv::C_U16),
   csv::col("pwm_l", csv::C_I16), csv::col("pwm_r", csv::C_I16),
-  csv::col("err", csv::C_I16), csv::col(".", csv::PAD_16) ]
+  csv::col("err", csv::C_I16), csv::col("der", csv::C_I16),
+  csv::col("dir", csv::named([csv::nv("left", 0), csv::nv("right", 1)])),
+  csv::col("out", csv::named([csv::nv("in", 0), csv::nv("out", 1)])),
+  csv::col(".", csv::PAD_16) ]
 ```
 
 Two arrays that must agree and that the compiler cannot check. How would you make
@@ -89,9 +103,10 @@ this safe? *(Ask the room.)* A derive macro, or a const assertion on
 `size_of::<TelBlock>() == spec_size()`. It is a good five-minute discussion, and a
 reasonable thing to actually build if you are keen.
 
-There is also `ValueKind::Named`, which maps a `u8` to strings so an enum column
-(`Direction::Left`) exports as text rather than `0`. A small feature, and a large
-quality-of-life gain when you are reading a 10,000-row CSV.
+That is also where `ValueKind::Named` (`csv::named`) comes in: it maps a `u8` to
+strings, so `dir` and `out` export as `left`/`right` and `in`/`out` rather than
+`0`/`1`. A small feature, and a large quality-of-life gain when you are reading a
+10,000-row CSV.
 
 **The loop.** `Vec::with_capacity(20000)` up front: never grow mid-race, because an
 allocation is an unbounded latency spike. Push one sample per iteration. Flush after
@@ -120,6 +135,9 @@ you look at a robot:
   hits its limit is where the robot stops being able to steer.
 - plot the 16 sensor columns as a heat map over time and you can *see* the line
   crossing the bar; you can see it leave entirely at a 90° corner.
+- put `out` and `dir` on the same timeline: every stretch of `out` is the robot
+  steering blind on what it remembered, and `dir` tells you whether it remembered
+  the right side.
 - correlate `steps` against `time`: the ratio tells you how many control iterations
   the robot got per physics tick, which is its real-world CPU headroom.
 

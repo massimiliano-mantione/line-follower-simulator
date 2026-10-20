@@ -62,6 +62,17 @@ impl Pid {
         self.err_derivative
     }
 
+    fn dir(&self) -> u8 {
+        match self.dir {
+            Direction::Left => 0,
+            Direction::Right => 1,
+        }
+    }
+
+    fn out(&self) -> u8 {
+        self.out as u8
+    }
+
     fn update_time(&mut self) {
         self.last_time_us = self.time_us;
         self.time_us = get_time_us();
@@ -165,6 +176,8 @@ pub async fn run(sensor_spacing_mm: f32) {
         let (wl, wr) = get_motor_angles_immediate();
         let err = (pid.err() * 100.0) as i16;
         let der = (pid.err_derivative() * 1_000_000_000.0) as i16;
+        let dir = pid.dir();
+        let out = pid.out();
 
         tel_buf.push(TelBlock::new(
             time,
@@ -174,6 +187,8 @@ pub async fn run(sensor_spacing_mm: f32) {
             [pwm_l, pwm_r],
             err,
             der,
+            dir,
+            out,
         ));
 
         //console_log(&format!("LINE {:?}", vals));
@@ -200,10 +215,23 @@ struct TelBlock {
     pwm: [i16; 2],
     e: i16,
     d: i16,
+    dir: u8,
+    out: u8,
+    pad: u16,
 }
 
 impl TelBlock {
-    fn new(time: u32, steps: u32, vals: [u8; 16], w: [u16; 2], pwm: [i16; 2], e: i16, d: i16) -> Self {
+    fn new(
+        time: u32,
+        steps: u32,
+        vals: [u8; 16],
+        w: [u16; 2],
+        pwm: [i16; 2],
+        e: i16,
+        d: i16,
+        dir: u8,
+        out: u8,
+    ) -> Self {
         Self {
             time,
             steps,
@@ -212,10 +240,13 @@ impl TelBlock {
             pwm,
             e,
             d,
+            dir,
+            out,
+            pad: 0,
         }
     }
 
-    fn csv_spec() -> [csv::CsvColumn; 24] {
+    fn csv_spec() -> [csv::CsvColumn; 27] {
         [
             csv::col("time", csv::C_U32),
             csv::col("steps", csv::C_U32),
@@ -241,6 +272,9 @@ impl TelBlock {
             csv::col("pwm_r", csv::C_I16),
             csv::col("err", csv::C_I16),
             csv::col("der", csv::C_I16),
+            csv::col("dir", csv::named([csv::nv("left", 0), csv::nv("right", 1)])),
+            csv::col("out", csv::named([csv::nv("in", 0), csv::nv("out", 1)])),
+            csv::col(".", csv::PAD_16),
         ]
     }
 }
