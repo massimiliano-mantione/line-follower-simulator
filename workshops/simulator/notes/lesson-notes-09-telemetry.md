@@ -108,11 +108,24 @@ strings, so `dir` and `out` export as `left`/`right` and `in`/`out` rather than
 `0`/`1`. A small feature, and a large quality-of-life gain when you are reading a
 10,000-row CSV.
 
-**The loop.** `Vec::with_capacity(20000)` up front: never grow mid-race, because an
-allocation is an unbounded latency spike. Push one sample per iteration. Flush after
-the loop:
+**The loop.** `Vec::with_capacity(TEL_CAPACITY)` up front: never grow mid-race,
+because an allocation is an unbounded latency spike. Push one sample per iteration,
+and when the buffer is full, overwrite the oldest one: it is a ring buffer. The
+solution keeps 20,000 samples, 800 KB, the last 10 seconds at 2 kHz. The last ones
+are the interesting ones: when a robot leaves the track, what you want to see is
+what happened just before. This is what I do on my real robots, where a race can last
+three minutes and no buffer could hold all of it.
+
+Why not keep the whole race here? Not because of RAM: the simulator has plenty.
+Because of the flush. At 10 µs per byte, 800 KB cost 8 s of simulated time, and the
+whole run has a 60 s budget. A buffer for a 50 s race would be about 4 MB, a 40 s
+flush, and the robot runs out of fuel before the file is written. Even here, the cost
+of moving data is what shapes the design.
+
+After the loop, put the oldest sample first, then flush:
 
 ```rust
+tel_buf.rotate_left(tel_oldest);
 write_csv_file("telemetry", csv::transmute_buf(&tel_buf), &csv_spec);
 ```
 

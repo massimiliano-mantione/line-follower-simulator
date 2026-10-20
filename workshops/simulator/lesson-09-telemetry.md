@@ -33,6 +33,13 @@ So invert it. **Buffer in RAM, flush once at the end:**
 
 - 10,000 samples × 40 bytes = 400 KB. Plausible on an MCU with 512 KB.
 - At 2 kHz that covers 5 seconds; at 500 Hz, 20 seconds.
+- Size the buffer once and make it a **ring buffer**: when it is full, overwrite the
+  oldest sample rather than letting it grow. You keep the last seconds of the race,
+  which are the ones you want when the robot leaves the track. Before the flush, put
+  the oldest sample first.
+- Do not size it for the whole race: the flush costs 10 µs/byte, and the whole run
+  has a 60 s budget, so a 4 MB buffer would take 40 s to flush and the robot would
+  run out of fuel before the file is written.
 - `write_file` charges 10 µs/byte, so the flush costs real simulated time — but it
   happens *after* the race, where it cannot hurt.
 

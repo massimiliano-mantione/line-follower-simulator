@@ -7,6 +7,10 @@ const LINE_THRESHOLD: f32 = 150.0;
 
 const PWM_MAX: i16 = 200;
 const MAX_TIME: u32 = 50_000_000;
+// A ring buffer of 20,000 samples of 40 bytes: the last 10 s of the race at 2 kHz.
+// The flush costs 10 us per byte, so 800 KB take 8 s of simulated time, which still
+// fits in the 60 s budget after a race that runs until MAX_TIME (50 s).
+const TEL_CAPACITY: usize = 20_000;
 
 const ERR_INTEGRAL_CLIP: f32 = 1_000_000.0;
 const KP: f32 = 90.0;
@@ -156,7 +160,8 @@ impl Pid {
 }
 
 pub async fn run(sensor_spacing_mm: f32) {
-    let mut tel_buf = Vec::with_capacity(20000);
+    let mut tel_buf = Vec::with_capacity(TEL_CAPACITY);
+    let mut tel_oldest = 0;
     let csv_spec = TelBlock::csv_spec();
 
     wait_remote_enabled().await;
@@ -174,12 +179,12 @@ pub async fn run(sensor_spacing_mm: f32) {
         let vals = get_line_sensors().await;
         let (pwm_l, pwm_r) = pid.compute_pwm(vals);
         let (wl, wr) = get_motor_angles_immediate();
-        let err = (pid.err() * 100.0) as i16;
-        let der = (pid.err_derivative() * 1_000_000_000.0) as i16;
+        let err = (pid.err() * 100.0) as i16; // hundredths of mm
+        let der = (pid.err_derivative() * 1_000_000.0) as i16; // mm/s
         let dir = pid.dir();
         let out = pid.out();
 
-        tel_buf.push(TelBlock::new(
+        let sample = TelBlock::new(
             time,
             steps,
             vals,
@@ -189,7 +194,14 @@ pub async fn run(sensor_spacing_mm: f32) {
             der,
             dir,
             out,
-        ));
+        );
+        // Never grow the buffer mid-race: once it is full, overwrite the oldest sample.
+        if tel_buf.len() < TEL_CAPACITY {
+            tel_buf.push(sample);
+        } else {
+            tel_buf[tel_oldest] = sample;
+            tel_oldest = (tel_oldest + 1) % TEL_CAPACITY;
+        }
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
@@ -203,6 +215,8 @@ pub async fn run(sensor_spacing_mm: f32) {
         }
     }
 
+    // Oldest sample first.
+    tel_buf.rotate_left(tel_oldest);
     write_csv_file("telemetry", csv::transmute_buf(&tel_buf), &csv_spec);
 }
 
