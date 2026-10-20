@@ -81,43 +81,33 @@ traps early. This optimisation is invisible in behaviour and decisive in cost.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — why does `set_time` keep the earliest rather than the latest?</summary>
+### Hint 1 — why does `set_time` keep the earliest rather than the latest?
 
 Because the round may have polled several pending futures, and time may only advance
 to the point where the *first* of them could make progress. Jumping past it would
 skip work the robot was waiting to do.
-</details>
 
-<details>
-<summary>Hint 2 — why two secondary indices instead of one?</summary>
+### Hint 2 — why two secondary indices instead of one?
 
 Deadlines are sortable and can be walked in order; conditions on the enable signal
 are not — they have no time at all, and must be re-checked against the stepper. Also
 note why the ready-time key is `(ready_at, id)` and not just `ready_at`.
-</details>
 
-<details>
-<summary>Hint 3 — 7.7, my values look slightly stale or slightly fresh</summary>
+### Hint 3 — 7.7, my values look slightly stale or slightly fresh
 
 Look at which time you pass to `compute_value`. A future that matured at 1500 µs but
 was collected at 1900 µs must report the 1500 µs sample.
-</details>
 
-<details>
-<summary>Hint 4 — a borrow-checker fight in `update_futures`</summary>
+### Hint 4 — a borrow-checker fight in `update_futures`
 
 You cannot remove entries from the index while iterating it. Collect what needs
 removing into a `Vec` first, then drain it.
-</details>
 
-<details>
-<summary>Hint 5 — the async robot works but still runs out of fuel</summary>
+### Hint 5 — the async robot works but still runs out of fuel
 
 The fast-forward is not firing. Either `poll_loop(false)` is not acting on the
 recorded wakeup point, or something is calling `disable` when it should not — check
 that only a *ready* poll disables it.
-</details>
 
 ## Solution
 

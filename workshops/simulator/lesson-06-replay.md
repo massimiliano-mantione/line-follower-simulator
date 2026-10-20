@@ -69,52 +69,40 @@ Before 6.6 works, every run reports `data has 0 frames`.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 6.1, is there really no trick?</summary>
+### Hint 1 — 6.1, is there really no trick?
 
 No. Divide the time by the period to get a sample index, clamp it into range, and
 return that element. That is what makes scrubbing and backwards playback free.
 
 Do handle the empty recording: `steps.len() - 1` on an empty vector underflows, and a
 robot that traps during `setup` produces exactly that.
-</details>
 
-<details>
-<summary>Hint 2 — 6.3, everybody's lap time is one second too long</summary>
+### Hint 2 — 6.3, everybody's lap time is one second too long
 
 You are reporting absolute playback time. Subtract the robot's own start time — the
 countdown is not part of anyone's lap.
-</details>
 
-<details>
-<summary>Hint 3 — 6.5, how do I compare four different kinds of outcome?</summary>
+### Hint 3 — 6.5, how do I compare four different kinds of outcome?
 
 `kind_rank` and `kind_value` are already written. Compare the ranks first; only when
 they are equal does the value decide. And since the values are `f32`, `Ord` needs a
 total comparison — look at `f32::total_cmp`.
-</details>
 
-<details>
-<summary>Hint 4 — the wheels teleport to the middle of the robot</summary>
+### Hint 4 — the wheels teleport to the middle of the robot
 
 You replaced the wheel's whole `Transform`. It is already positioned relative to the
 body; only its `rotation` should change.
-</details>
 
-<details>
-<summary>Hint 5 — the winner ends up hidden at the bottom of the stack</summary>
+### Hint 5 — the winner ends up hidden at the bottom of the stack
 
 Ascending rank order puts the best result first, and layer 0 is the *bottom* of the
 stack. One of those needs reversing.
-</details>
 
-<details>
-<summary>Hint 6 — playback lags the recording by one tick</summary>
+### Hint 6 — playback lags the recording by one tick
 
 Check which schedule `store_data` runs in and what it is ordered after. Sampling
 before this tick's sensors and transforms have been computed shifts the entire
 recording.
-</details>
 
 ## Solution
 

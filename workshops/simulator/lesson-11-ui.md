@@ -62,33 +62,25 @@ curl -X POST --data-binary @bots/bot.wasm http://localhost:9999
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 11.2, playback runs away past the end of the recording</summary>
+### Hint 1 — 11.2, playback runs away past the end of the recording
 
 Clamp after advancing. And note the clamp has to happen *again* after the keyboard
 handlers in 11.3 run, since they can push the value back out of range — look for the
 "Clamp time again" comment.
-</details>
 
-<details>
-<summary>Hint 2 — 11.3, holding the key jumps a second per frame</summary>
+### Hint 2 — 11.3, holding the key jumps a second per frame
 
 `just_pressed` versus `pressed`. Coarse seeking should fire once per key press; fine
 seeking is the one that should repeat while held.
-</details>
 
-<details>
-<summary>Hint 3 — 11.4, the UI freezes for several seconds when I load a robot</summary>
+### Hint 3 — 11.4, the UI freezes for several seconds when I load a robot
 
 You are blocking on the channel. `try_recv` in a `while let`, never `recv`.
-</details>
 
-<details>
-<summary>Hint 4 — in serve mode, re-submitting a robot stacks a second copy</summary>
+### Hint 4 — in serve mode, re-submitting a robot stacks a second copy
 
 That is the `auto_run` rule: match on `config.name` against the existing
 `BotVisualization` entities and despawn the old one first.
-</details>
 
 ## Solution
 

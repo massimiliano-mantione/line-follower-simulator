@@ -66,52 +66,40 @@ the bar. Nothing else in this workshop gives feedback that direct.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 5.2, how wide is the transition?</summary>
+### Hint 1 — 5.2, how wide is the transition?
 
 A 45-degree half-aperture cone from height `z` illuminates a disc of radius `z`.
 tan 45° = 1. So the transition width is not a constant you need to invent — it is
 already one of your parameters.
-</details>
 
-<details>
-<summary>Hint 2 — 5.3, what does "collapses toward ambient" mean numerically?</summary>
+### Hint 2 — 5.3, what does "collapses toward ambient" mean numerically?
 
 At `Z_MIN` the sensor reads the full 0–100 range. At `Z_MAX` it reads
 `VALUE_AMBIENT`–`VALUE_AMBIENT` — a range of zero width. In between, the *available
 range* narrows linearly from both ends. So: work out the min and max readable values
 for this `z`, then place `value` proportionally between them.
-</details>
 
-<details>
-<summary>Hint 3 — my sensors work on the straight and go mad in the first corner</summary>
+### Hint 3 — my sensors work on the straight and go mad in the first corner
 
 You are using the sensor's **world** X coordinate instead of its position in the
 *segment's* local frame. `point_to_new_origin(point, transform)` is provided for
 exactly this. (The two frames are easy to mix up, and seeing the difference once
 makes it stick.)
-</details>
 
-<details>
-<summary>Hint 4 — the robot steers confidently the wrong way in turns</summary>
+### Hint 4 — the robot steers confidently the wrong way in turns
 
 `data.side.sign()` on the turn segments. Your distance is correct in magnitude and
 mirrored in sign.
-</details>
 
-<details>
-<summary>Hint 5 — the lift model never seems to do anything</summary>
+### Hint 5 — the lift model never seems to do anything
 
 Check where your `z` comes from. A sensor's *local* transform has a constant z (it is
 bolted to the chassis); you want its **global** one.
-</details>
 
-<details>
-<summary>Hint 6 — sensors read strange values even off the track</summary>
+### Hint 6 — sensors read strange values even off the track
 
 Either the `QueryFilter` predicate is missing, so you are hitting the robot's own
 bumper, or the miss case is returning a raw 100.0 without attenuating it for height.
-</details>
 
 ## Things worth breaking on purpose
 

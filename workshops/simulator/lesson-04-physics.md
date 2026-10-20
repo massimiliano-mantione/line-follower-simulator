@@ -64,50 +64,38 @@ There are no unit tests here — the feedback is the window.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — everything falls sideways</summary>
+### Hint 1 — everything falls sideways
 
 Y-up thinking. Look at the gravity vector in 4.5.
-</details>
 
-<details>
-<summary>Hint 2 — the robot explodes the instant it spawns</summary>
+### Hint 2 — the robot explodes the instant it spawns
 
 The wheels are colliding with the chassis they are jointed to. Every bot part needs
 to be in `BOT_COLLISION_GROUP` and to collide with everything *except* that group.
 `CollisionGroups::new(memberships, filter)` — and `!group` is how you say "not this
 one".
-</details>
 
-<details>
-<summary>Hint 3 — the wheels orbit the robot instead of spinning</summary>
+### Hint 3 — the wheels orbit the robot instead of spinning
 
 The two joint anchors are in different frames. `local_anchor1` is in the *body's*
 frame, so it is where the axle sits relative to the body's origin; `local_anchor2` is
 in the *wheel's* own frame, so it is the wheel's centre. One of them is not the value
 you think it is.
-</details>
 
-<details>
-<summary>Hint 4 — it trembles, or the joints look springy</summary>
+### Hint 4 — it trembles, or the joints look springy
 
 The length unit in 4.5. Our robot is two orders of magnitude smaller than what
 Rapier's default tolerances assume.
-</details>
 
-<details>
-<summary>Hint 5 — it drives, but it never squats under acceleration</summary>
+### Hint 5 — it drives, but it never squats under acceleration
 
 You are applying torque to the wheels but not the reaction to the chassis. Sum the
 negated wheel torques and put the total on the `Motors` entity's `ExternalForce`.
-</details>
 
-<details>
-<summary>Hint 6 — it drives straight but goes wrong in turns</summary>
+### Hint 6 — it drives straight but goes wrong in turns
 
 You are applying torque along a world axis instead of the wheel's current axle. The
 axle has to be rotated by the wheel's transform first.
-</details>
 
 ## Things worth breaking on purpose
 

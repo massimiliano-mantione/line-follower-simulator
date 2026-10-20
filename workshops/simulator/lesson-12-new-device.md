@@ -98,35 +98,27 @@ the sensor the advanced control strategy needs.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — the component fails to instantiate after I edit the WIT</summary>
+### Hint 1 — the component fails to instantiate after I edit the WIT
 
 Check that 12.2 was run and that its output was moved over
 `bot/src/wasm_bindings.rs`. Guest and host must be generated from the same contract:
 the variant encoding is positional.
-</details>
 
-<details>
-<summary>Hint 2 — which axis is which?</summary>
+### Hint 2 — which axis is which?
 
 This world is Z-up: X across the axle, Y forward, Z height. So roll is about y, pitch
 about x, yaw about z. Look at the `From<Vec3>` conversions you are writing — that
 mapping is the only place it is recorded.
-</details>
 
-<details>
-<summary>Hint 3 — the gyro always reads zero</summary>
+### Hint 3 — the gyro always reads zero
 
 Either the latch in `step()` is not refreshing the field, or `compute_value` is
 reading from the stepper instead of from `stepped_data`.
-</details>
 
-<details>
-<summary>Hint 4 — the values are one tick stale in the recording</summary>
+### Hint 4 — the values are one tick stale in the recording
 
 `store_data` in `data.rs` is ordered `.after(compute_imu_data)`. Check where you put
 your system in `SensorsModelPlugin`'s chain.
-</details>
 
 ## Solution
 

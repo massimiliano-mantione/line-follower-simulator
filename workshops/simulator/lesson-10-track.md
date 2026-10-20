@@ -70,8 +70,7 @@ it.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 10.3 vs 10.4, I do not see the difference</summary>
+### Hint 1 — 10.3 vs 10.4, I do not see the difference
 
 10.4 is the turtle's *next position*: where the following segment begins. 10.3 is
 where *this* segment's geometry should be placed, and because colliders and meshes
@@ -79,32 +78,25 @@ are centred on their own origin, that is generally the **middle** of the segment
 its start.
 
 For a straight of length L: the next origin is L ahead; this segment sits L/2 ahead.
-</details>
 
-<details>
-<summary>Hint 2 — the arc chord in 10.4</summary>
+### Hint 2 — the arc chord in 10.4
 
 Put the arc's centre at the local origin. Starting on the circle along +Y and
 sweeping through angle `a`, the start point is at radius r and the end point is at
 angle `a` around. Take the difference of those two positions, and remember that a
 left turn and a right turn mirror each other.
-</details>
 
-<details>
-<summary>Hint 3 — my arcs look right but lesson 05's sensors go mad over them</summary>
+### Hint 3 — my arcs look right but lesson 05's sensors go mad over them
 
 `transform` for `CyrcleTurn` must place the **centre of the circle**, not a point on
 it. That is the contract `line_sensors.rs` relies on when it computes
 `local_point.length() - radius`.
-</details>
 
-<details>
-<summary>Hint 4 — the track spirals or folds through itself</summary>
+### Hint 4 — the track spirals or folds through itself
 
 Usually a `side.sign()` sitting on the wrong term, or a rotation applied before
 a translation instead of after. Try `-t angle` first: with two corners, an error is
 easy to see.
-</details>
 
 ## Extension
 

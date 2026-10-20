@@ -83,42 +83,32 @@ executor.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 8.1, where exactly do the poll_loop calls go?</summary>
+### Hint 1 — 8.1, where exactly do the poll_loop calls go?
 
 `poll_loop(true)` at the top of each iteration, before polling. `poll_loop(false)`
 at the bottom — but only on iterations that are going round again. Think about what
 closing the bracket would mean on the iteration where the task completed.
-</details>
 
-<details>
-<summary>Hint 2 — 8.2, what do I do with the `Context`?</summary>
+### Hint 2 — 8.2, what do I do with the `Context`?
 
 Nothing. That is the point. There is no waker to register, so the argument is unused
 (hence the underscore in its name).
-</details>
 
-<details>
-<summary>Hint 3 — `or!` leaks operations / the host complains about handles</summary>
+### Hint 3 — `or!` leaks operations / the host complains about handles
 
 8.3. When a combinator drops the losing future, the host still has it registered.
-</details>
 
-<details>
-<summary>Hint 4 — 8.6 vs 8.7: what is the difference?</summary>
+### Hint 4 — 8.6 vs 8.7: what is the difference?
 
 `next()` waits for something strictly newer than what is here now. `stream()` starts
 *at* the present and then advances one position per value, so a consumer sees each
 update exactly once.
-</details>
 
-<details>
-<summary>Hint 5 — 8.8, a consumer task misses updates</summary>
+### Hint 5 — 8.8, a consumer task misses updates
 
 Check your comparison. If the channel advanced twice while this task was not polled,
 the counter has already gone past the value being waited for — and it must still be
 considered ready, which `==` does not do.
-</details>
 
 ## Solution
 

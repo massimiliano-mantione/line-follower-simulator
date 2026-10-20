@@ -89,39 +89,31 @@ cargo run --release -p sim -- -p 200  run --cli -i bots/bot.wasm
 
 ## Hints
 
-<details>
-<summary>Hint 1 — 3.6, the stepping loop</summary>
+### Hint 1 — 3.6, the stepping loop
 
 One `while` loop over one condition. The subtle point is comparing the *current* stepper time
 against the target; you want the time it *would* reach by stepping once more, so that
 you never overshoot. `SimulationStepper` has a method for exactly that.
-</details>
 
-<details>
-<summary>Hint 2 — 3.1, rounding to a boundary</summary>
+### Hint 2 — 3.1, rounding to a boundary
 
 You need the distance from the current clock to the previous boundary. Modulo the step
 period gives you that. If it is zero you are already on a boundary and the value is
 available now; otherwise move forward to the next one — and for a slow device, out by
 `ready_steps()` periods rather than one.
-</details>
 
-<details>
-<summary>Hint 3 — 3.3, the value comes out wrong / the clock is off by a tick</summary>
+### Hint 3 — 3.3, the value comes out wrong / the clock is off by a tick
 
 Two things to check. First, the clock at the end: stepping stops short of the target,
 so the physics clock may be behind the instant the robot asked for — take the later of
 the two. Second, `compute_value` takes a time argument, and for `GetTime` that is what
 the robot observes.
-</details>
 
-<details>
-<summary>Hint 4 — 3.5, what does "latch" mean?</summary>
+### Hint 4 — 3.5, what does "latch" mean?
 
 `self.stepped_data` has a field per slow sensor. After stepping, check the step count
 against `READY_STEPS_GYRO` and `READY_STEPS_IMU_FUSED` with `%`, and refresh the
 corresponding field when it is due. Everything else reads live off the stepper.
-</details>
 
 ## Solution
 

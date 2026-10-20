@@ -86,28 +86,22 @@ whoever is debugging it, which is the entire reason you design it yourself.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — how do I know how much padding to declare?</summary>
+### Hint 1 — how do I know how much padding to declare?
 
 `std::mem::size_of::<TelBlock>()` versus the sum of your declared column sizes. If
 they differ, the difference is padding the compiler inserted and your spec has to
 name it.
-</details>
 
-<details>
-<summary>Hint 2 — the first few columns are right and the rest are garbage</summary>
+### Hint 2 — the first few columns are right and the rest are garbage
 
 That is a shear: one column's declared width does not match its field's actual width,
 so everything after it is offset. Check each `C_*` constant against its field type.
-</details>
 
-<details>
-<summary>Hint 3 — where exactly should the flush go?</summary>
+### Hint 3 — where exactly should the flush go?
 
 After the loop, before `run` returns. Inside the loop it would charge 10 µs per byte
 per iteration and wreck the control loop — which is the failure this design exists to
 avoid.
-</details>
 
 ## Solution
 

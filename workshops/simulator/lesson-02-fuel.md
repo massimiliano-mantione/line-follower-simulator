@@ -74,25 +74,20 @@ measured.
 
 ## Hints
 
-<details>
-<summary>Hint 1 — I am trying to accumulate elapsed time and it keeps going wrong</summary>
+### Hint 1 — I am trying to accumulate elapsed time and it keeps going wrong
 
 That is a natural first approach, and seeing why it does not work is useful.
 
 You cannot accumulate: nobody tells you how much time passed, only how much budget is
 *left*. Go the other way round — the clock is the total race length minus whatever the
 unspent budget is worth. The clock effectively runs backwards out of a budget.
-</details>
 
-<details>
-<summary>Hint 2 — what exactly counts as "unspent"?</summary>
+### Hint 2 — what exactly counts as "unspent"?
 
 Not just `current_fuel`. The host has already committed some of it on the robot's
 behalf, and that portion is gone even though Wasmtime still thinks it is available.
-</details>
 
-<details>
-<summary>Hint 3 — `set_current_time` (2.8)</summary>
+### Hint 3 — `set_current_time` (2.8)
 
 Write down the relation that `current_time` implements:
 
@@ -102,7 +97,6 @@ remaining_fuel == current_fuel - skipped_fuel
 
 You know what `remaining_fuel` must be for the clock to read `time`, and you know
 `current_fuel`. Solve for the third one.
-</details>
 
 ## Solution
 
