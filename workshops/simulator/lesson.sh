@@ -6,6 +6,7 @@
 #   ./workshops/simulator/lesson.sh 02           open a lesson (02, 02-fuel or fuel)
 #   ./workshops/simulator/lesson.sh --reset      start the current lesson over
 #   ./workshops/simulator/lesson.sh --solution   back to main, the full application
+#   ./workshops/simulator/lesson.sh --clean      delete every branch this script made
 #
 # main is the complete working simulator and the reference solution for every
 # lesson. Each lesson branch ws/simulator/NN is main minus one feature, in two
@@ -15,6 +16,11 @@
 # hint comments applied as uncommitted changes - so your IDE highlights every
 # place you need to write code. Commit whenever you like; your commits stay on
 # my/NN. --reset keeps a copy of your work in my/NN-before-reset-<time>.
+#
+# --clean goes back to main and deletes everything this script created: every
+# my/* branch (your work included, after asking) and the local ws/simulator/NN
+# copies it made from the remote. Lesson branches it did not create are kept.
+# --clean --yes skips the question.
 #
 # Lesson 01 is a live demo, and its two commits are the other way round: the
 # comments come first, and the uncommitted changes are the code deletions. The
@@ -221,21 +227,73 @@ show_list() {
   printf '  %sbriefs and notes: %s/%s\n' "$DIM" "$DOCS_DIR" "$N"
 }
 
+# Delete every branch this script created, after showing them and asking.
+clean_all() {
+  local b work=() mirrors=()
+  # Staying on main leaves the working tree alone; anywhere else, nothing may be lost.
+  [ "$(current)" = "$BASE_BRANCH" ] || leave_current
+  for b in $(git for-each-ref --format='%(refname:short)' "refs/heads/$WORK_PREFIX"); do
+    work+=("$b")
+  done
+  for b in $(git for-each-ref --format='%(refname:short)' "refs/heads/$BRANCH_PREFIX"); do
+    [ "$(git config --get "branch.$b.lessonMirror" || true)" = true ] && mirrors+=("$b")
+  done
+  if [ ${#work[@]} -eq 0 ] && [ ${#mirrors[@]} -eq 0 ]; then
+    printf 'Nothing to clean: no branch here was made by this script.\n'
+    [ "$(current)" = "$BASE_BRANCH" ] || git switch -q "$BASE_BRANCH"
+    return 0
+  fi
+  printf '%sThis deletes:%s\n\n' "$B" "$N"
+  for b in ${work[@]+"${work[@]}"}; do
+    case "$b" in
+      *-before-reset-*) printf '  %s  %s(work saved by --reset)%s\n' "$b" "$Y" "$N" ;;
+      *) if known_slug "${b#"$WORK_PREFIX"}" && work_untouched "${b#"$WORK_PREFIX"}"; then
+           printf '  %s  %s(untouched)%s\n' "$b" "$DIM" "$N"
+         else
+           printf '  %s  %s(your work)%s\n' "$b" "$Y" "$N"
+         fi ;;
+    esac
+  done
+  for b in ${mirrors[@]+"${mirrors[@]}"}; do
+    printf '  %s  %s(copy of %s/%s)%s\n' "$b" "$DIM" "$REMOTE" "$b" "$N"
+  done
+  if [ -z "$YES" ]; then
+    [ -t 0 ] || die "not a terminal: rerun with --clean --yes to confirm"
+    printf '\nDelete them all? [y/N] '
+    local answer
+    read -r answer
+    case "$answer" in y|Y|yes|YES) ;; *) printf 'Nothing deleted.\n'; return 0 ;; esac
+  fi
+  [ "$(current)" = "$BASE_BRANCH" ] || git switch -q "$BASE_BRANCH"
+  # git branch -D also drops each branch's lessonBase / lessonMirror config.
+  git branch -q -D ${work[@]+"${work[@]}"} ${mirrors[@]+"${mirrors[@]}"}
+  printf '%sNow on %s%s; every branch made by this script is gone.\n' "$B" "$BASE_BRANCH" "$N"
+}
+
 ACTION="switch"
 TARGET=""
 FRESH=""
+YES=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --solution|--main) TARGET="$BASE_BRANCH" ;;
     --reset)           ACTION="reset" ;;
+    --clean)           ACTION="clean" ;;
+    --yes|-y)          YES=1 ;;
     --list)            show_list; exit 0 ;;
-    -h|--help)         sed -n '2,21p' "$SELF" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)         awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$SELF"; exit 0 ;;
     -*)                die "unknown option: $1 (try --help)" ;;
     *)                 TARGET="$1" ;;
   esac
   shift
 done
+
+if [ "$ACTION" = "clean" ]; then
+  [ -z "$TARGET" ] || die "--clean takes no lesson: it cleans them all"
+  clean_all
+  exit 0
+fi
 
 if [ "$ACTION" = "switch" ] && [ -z "$TARGET" ]; then
   show_list

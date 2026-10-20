@@ -66,6 +66,7 @@ One checkout, one branch per lesson. Switch with the helper:
 ./workshops/simulator/lesson.sh 02           # open a lesson (or: 2, 02-fuel, fuel)
 ./workshops/simulator/lesson.sh --reset      # start the current lesson over
 ./workshops/simulator/lesson.sh --solution   # back to main, the full application
+./workshops/simulator/lesson.sh --clean      # delete every branch the helper made
 ```
 
 Keep your IDE open on **this one directory** the whole day; the files change under it

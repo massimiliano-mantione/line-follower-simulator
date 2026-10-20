@@ -468,6 +468,7 @@ pure function instead, so the suite does not depend on either choice.
 ./workshops/simulator/lesson.sh 02-fuel         # open (accepts 2, 02, 02-fuel, fuel)
 ./workshops/simulator/lesson.sh --reset         # start the current lesson over
 ./workshops/simulator/lesson.sh --solution      # back to main
+./workshops/simulator/lesson.sh --clean         # delete every branch lesson.sh made
 ```
 
 One checkout, one target directory. Switching lesson touches only the three workshop
@@ -489,6 +490,12 @@ recorded in `branch.my/NN.lessonBase`:
   committed first (`git commit -am wip`).
 - `--reset` commits any uncommitted work, keeps the old branch as
   `my/NN-before-reset-<time>`, and starts over.
+- `--clean` undoes all of it, as if `lesson.sh` had never run: it switches to `main`
+  and deletes every `my/*` branch (the `--reset` copies included) and every
+  `ws/simulator/NN` marked as a mirror (see below), together with their config.
+  It lists what it will delete and asks first (`--clean --yes` skips the
+  question). Unmarked lesson branches, i.e. your own originals, are never touched,
+  so it is safe to run in the maintainer clone after trying the workshop out.
 
 **A fresh clone has no local `ws/simulator/*` branches,** only
 `origin/ws/simulator/*`. `lesson.sh` creates the local branch from the remote on
