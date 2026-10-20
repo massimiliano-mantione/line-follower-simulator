@@ -1,6 +1,6 @@
 # Lesson 10 — Declarative track segments
 
-> **Optional.** Quietly excellent, with the funniest failure modes in the workshop.
+> **Optional.** Quietly excellent, and when something is off you see it immediately.
 > Good if you prefer geometry to systems.
 
 > **Goal.** Turn a flat list of segment descriptions into a connected track — and see
@@ -64,9 +64,9 @@ cargo run --release -p sim -- -t race test       # 15 segments: the real test
 Work up in that order. Any sign error compounds over `race`'s fifteen segments into
 something spectacular.
 
-Enable the Rapier debug renderer to see colliders against meshes — a common outcome
-is a visually perfect line whose collider is rotated 90°, which the robot then drives
-straight off.
+Enable the Rapier debug renderer to see colliders against meshes: a line can look
+perfect while its collider is rotated 90°, and then the robot drives straight off
+it.
 
 ## Hints
 
@@ -101,9 +101,9 @@ it. That is the contract `line_sensors.rs` relies on when it computes
 <details>
 <summary>Hint 4 — the track spirals or folds through itself</summary>
 
-Almost always a `side.sign()` sitting on the wrong term, or a rotation applied before
-a translation instead of after. Try `-t angle` first: with two corners, the error is
-obvious.
+Usually a `side.sign()` sitting on the wrong term, or a rotation applied before
+a translation instead of after. Try `-t angle` first: with two corners, an error is
+easy to see.
 </details>
 
 ## Extension

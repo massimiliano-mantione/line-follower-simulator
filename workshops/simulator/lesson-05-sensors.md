@@ -13,8 +13,8 @@ Self-contained, mathematical, and you can watch it work in real time.
 
 **The sensor is a device, not a point sampler.** An IR LED next to a
 phototransistor: it shines light down and measures how much comes back. Black paint
-returns little, white card returns a lot. Two consequences that the naive model
-misses, and they are the content of this lesson:
+returns little, white card returns a lot. Two consequences that a simple point-sample
+model misses, and they are the content of this lesson:
 
 1. It illuminates a **cone**, so it averages over a disc on the floor. As the disc
    crosses the line's edge, the reading slides *continuously* from black to white.
@@ -88,8 +88,8 @@ for this `z`, then place `value` proportionally between them.
 
 You are using the sensor's **world** X coordinate instead of its position in the
 *segment's* local frame. `point_to_new_origin(point, transform)` is provided for
-exactly this. (This is the single most common bug in this lesson, and a good one to
-have hit.)
+exactly this. (The two frames are easy to mix up, and seeing the difference once
+makes it stick.)
 </details>
 
 <details>

@@ -115,9 +115,9 @@ update exactly once.
 <details>
 <summary>Hint 5 — 8.8, a consumer task misses updates</summary>
 
-Your comparison is probably `==`. If the channel advanced twice while this task was
-not polled, the counter has already gone past the value being waited for — and it
-must still be considered ready.
+Check your comparison. If the channel advanced twice while this task was not polled,
+the counter has already gone past the value being waited for — and it must still be
+considered ready, which `==` does not do.
 </details>
 
 ## Solution

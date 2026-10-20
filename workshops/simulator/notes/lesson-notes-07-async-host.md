@@ -2,10 +2,13 @@
 
 **Branch** `ws/simulator/07-async-host` · **Optional pool — deep end** · ~45 min
 
-The cleverest code in the repository. Offer it to anyone who finished a slot early
-and looked bored, and pair it with Lesson 08 if someone wants the full picture.
+This is the cleverest code in the repository. It is here for you if you finish a
+slot early and want something deeper; pair it with Lesson 08 if you want the full
+picture.
 
-**Goal.** Let the robot have many device operations in flight at once, and let the
+*(Mention it to anyone who finishes a slot early.)*
+
+**Goal.** You let the robot have many device operations in flight at once, and let the
 host recognise "this guest has finished a polling round and nothing is ready" so it
 can fast-forward simulated time instead of letting the robot burn fuel spinning.
 
@@ -18,19 +21,20 @@ can fast-forward simulated time instead of letting the robot burn fuel spinning.
 - `device_operation_async`, `device_poll`, `poll_loop`, `forget_handle`, `update_futures`
 - `WakeupPoint::{set_time, disable, clear}`, `FutureReadyCondition::wakeup_point`
 
-Kept: `FutureValueRequest`, `FutureValueReadyTime` with its hand-written `Ord`, the
+I kept `FutureValueRequest`, `FutureValueReadyTime` with its hand-written `Ord`, the
 three indices, the `WakeupPoint` enum, `FutureOperation::compute_value`.
 
 ## Framing (8 min)
 
-Start from the robot's problem. It wants to read the left and right sensor banks
+Let's start from the robot's problem. It wants to read the left and right sensor banks
 concurrently (`async_api::get_line_sensors` does exactly this with `zip!`). With
 blocking calls, reading both costs two waits. With futures, one.
 
 So the guest gets four host functions: start an operation and get a handle, poll a
 handle, forget a handle, and — the odd one out — `poll_loop(start: bool)`.
 
-Ask what `poll_loop` could possibly be for. Nobody guesses it, and that is the point.
+What could `poll_loop` possibly be for? *(Ask the room.)* It is genuinely hard to
+guess, and that is the point.
 
 Here is the problem it solves. The guest's executor is a plain `loop { poll all
 tasks }` with no waker (Lesson 08). So when nothing is ready, it spins. Each spin
@@ -62,8 +66,9 @@ progress, so there must be no fast-forward — the robot has real work to do and
 be allowed to do it. `WakeupPoint::Disabled` is sticky; `set_time` on a disabled
 point does nothing.
 
-That three-state enum (`AtTime` / `Missing` / `Disabled`) is the whole algorithm, and
-it is worth putting on the board as a state machine.
+That three-state enum (`AtTime` / `Missing` / `Disabled`) is the whole algorithm.
+
+*(Draw it on the board as a state machine.)*
 
 ## The pieces
 
@@ -75,8 +80,8 @@ it is worth putting on the board as a state machine.
 Two indices because there are two kinds of waiting: `futures_by_ready_time` is a
 `BTreeSet` ordered by `(ready_at, id)` so the host can `take_while(ready_at <= now)`
 and touch only the futures that have matured; `futures_by_activity` holds the ones
-waiting on the enable signal, which has no deadline. Ask why the hand-written `Ord`
-includes the id: because two futures can mature on the same tick, and a `BTreeSet`
+waiting on the enable signal, which has no deadline. Why does the hand-written `Ord`
+include the id? *(Ask the room.)* Because two futures can mature on the same tick, and a `BTreeSet`
 would silently collapse them into one.
 
 **`device_poll`** — three states. `Pending` records the wakeup point; `Ready` returns
@@ -93,7 +98,8 @@ let value = f.operation.compute_value(&self.stepper, &self.stepped_data, ready_t
 The sample is taken when the device would have sampled it, not when the robot got
 around to collecting it. A robot that polls late gets stale data, exactly as it would
 on hardware. This is the detail that makes the async path honest rather than a
-shortcut, and it is easy to get wrong in a way no test would catch.
+shortcut, and it is easy to get wrong in a way no test would catch, so it is worth
+double-checking.
 
 **`forget_handle`** — removes from all three indices. Called from `FutureValue::drop`
 on the guest side, so dropping a future in Rust cancels the operation in the host.
@@ -115,9 +121,10 @@ in cost.
 
 ## Notes to self
 
-- This lesson needs Lesson 08's half of the handshake to make sense. If someone does
-  only one, steer them here first; the host side is where the reasoning lives.
-- If asked why not use real wakers: because a waker would have to be able to *wake*
+- This lesson needs Lesson 08's half of the handshake to make sense. If someone has
+  time for only one of the two, I suggest this one first; the host side is where the
+  reasoning lives.
+- If someone asks why we do not use real wakers: because a waker would have to be able to *wake*
   the guest, and the guest is a synchronous WASM call stack the host cannot re-enter.
   The `poll_loop` bracket is a waker turned inside out — instead of the future waking
   the executor, the executor tells the host it is about to wait.

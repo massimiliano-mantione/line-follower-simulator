@@ -92,7 +92,7 @@ cargo run --release -p sim -- -p 200  run --cli -i bots/bot.wasm
 <details>
 <summary>Hint 1 — 3.6, the stepping loop</summary>
 
-One `while` loop over one condition. The trap is comparing the *current* stepper time
+One `while` loop over one condition. The subtle point is comparing the *current* stepper time
 against the target; you want the time it *would* reach by stepping once more, so that
 you never overshoot. `SimulationStepper` has a method for exactly that.
 </details>

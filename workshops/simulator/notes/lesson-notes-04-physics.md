@@ -2,15 +2,15 @@
 
 **Branch** `ws/simulator/04-physics` · **Slot 3**, 2:40–3:30 (50 min) · ~30 min hands-on
 
-The most immediately satisfying lesson: at the end they drive their own robot around
-with the arrow keys. It is also the one where wrong answers are funniest, so leave
-time to enjoy them.
+This is the most immediately satisfying lesson: by the end of it you drive your own
+robot around with the arrow keys. It is also the lesson where a small mistake gives
+the most spectacular result, and those results are worth looking at together.
 
-**Goal.** Build the robot's physical model from the configuration the WASM component
-declared, and turn PWM duty cycles into wheel torque.
+**Goal.** You build the robot's physical model from the configuration the WASM
+component declared, and you turn PWM duty cycles into wheel torque.
 
-This branch ships with `RapierDebugRenderPlugin` **enabled**, so colliders are
-visible. Point that out first — it is the difference between debugging and guessing.
+This branch ships with `RapierDebugRenderPlugin` **enabled**, so you can see every
+collider. Keep an eye on it: it is the difference between debugging and guessing.
 
 ---
 
@@ -24,64 +24,69 @@ the revolute `ImpulseJoint` per wheel.
 
 `sim/sim/src/app_builder.rs` — body of `RapierPhysicsSetupPlugin::build`.
 
-The chassis and wheel removal sites are inside `bsn!` blocks, which may be the first
-time some participants see Bevy 0.19's scene macro. The brief and the exercise
-comments give the two rules they need (`template_value(...)` for function-built and
-enum values, `template(...)` for `ImpulseJoint`); if someone is fighting the macro,
-tell them a plain `.insert((...))` is fine, and move on — this slot is about physics.
+The chassis and wheel code sits inside `bsn!` blocks, and this may be the first time
+you meet Bevy 0.19's scene macro. The brief and the exercise comments give you the
+two rules you need (`template_value(...)` for function-built and enum values,
+`template(...)` for `ImpulseJoint`). If the macro gets in your way, a plain
+`.insert((...))` is perfectly fine: this slot is about physics, not about macros.
 
-Kept: every geometry constant and every derived dimension (`body_world`,
-`bodypart_body`, bumper positions…). Deriving those from config is fiddly arithmetic
-that teaches nothing. Also kept: the `LineSensor` child-spawn loop (Lesson 05's
-territory), and `Transform` / `Motors` / `BotPositionDetector` / `Velocity` /
-`ExternalForce`.
+I kept every geometry constant and every derived dimension (`body_world`,
+`bodypart_body`, bumper positions…). Deriving those from the config is fiddly
+arithmetic that would not teach you anything. I also kept the `LineSensor`
+child-spawn loop (that is Lesson 05's territory), and `Transform` / `Motors` /
+`BotPositionDetector` / `Velocity` / `ExternalForce`.
 
-Why those last ones stay: removing `Velocity` makes `compute_imu_data` panic on an
-empty query, which sends the participant hunting through `sensors/imu.rs` for a bug
-that is really in `model.rs`. Declaring a component is not the physics lesson; the
+Why those last ones stay: without `Velocity`, `compute_imu_data` panics on an empty
+query, and you would end up hunting through `sensors/imu.rs` for a problem that is
+really in `model.rs`. Declaring a component is not the physics lesson; the
 colliders, bodies, joints, friction, mass and groups are.
 
 `pwm_to_torque` returns `0.0` and `apply_motors_pwm` is empty rather than `todo!()`,
-so the app runs and the symptom is a robot that does not move. Gravity defaults to
-Rapier's `-Y`, so it visibly falls sideways until 4.5 is done - lead with that.
+so the app runs and what you see is a robot that does not move. Gravity defaults to
+Rapier's `-Y`, so the robot visibly falls sideways until you do 4.5. That is a good
+place to start.
 
 ## Framing (5 min)
 
-Start from `setup()`. The WASM component declared its own body: axle width, front and
-back length, wheel diameter, ground clearance, sensor spacing and height. Our job is
-to turn that declaration into rigid bodies.
+Let's start from `setup()`. The WASM component declares its own body: axle width,
+front and back length, wheel diameter, ground clearance, sensor spacing and height.
+Our job is to turn that declaration into rigid bodies.
 
-Then the thing nobody expects, so say it before they hit it:
+Then one thing that surprises almost everybody, so I want to say it before you run
+into it:
 
 > **This world is Z-up.** Gravity is `Vec3::NEG_Z * 9.81`.
 
 Bevy's convention is Y-up. We use Z-up because that is what roboticists, CAD and ROS
 use, and because the track is naturally an XY plane. Every `Vec3` in the codebase
-follows it: X is left/right across the axle, Y is forward, Z is height. Half the
-confusion in this slot comes from this one line, so put it on the board.
+follows it: X is left/right across the axle, Y is forward, Z is height. If something
+looks strange in this lesson, this is the first thing to check.
 
-Second framing point — `RapierConfiguration::new(0.001)`:
+*(Write it on the board.)*
+
+The second thing: `RapierConfiguration::new(0.001)`.
 
 Our robot is 10 cm long and its wheels are 25 mm across. Rapier's default tolerances
-assume human-scale objects, and at our scale those tolerances are enormous relative
-to the parts — bodies jitter, contacts get resolved wrongly, joints look springy.
-The length-unit argument scales Rapier's internal tolerances to our world. Worth
-saying out loud: *this is the single setting that separates a simulator that works
-from one that visibly trembles*, and it is one number.
+assume human-sized objects, and at our scale those tolerances are enormous compared
+to the parts: bodies jitter, contacts get resolved wrongly, joints look springy.
+The length-unit argument scales Rapier's internal tolerances to our world. *This is
+the single setting that separates a simulator that works from one that visibly
+trembles*, and it is one number.
 
 ## The pieces
 
 **The compound collider.** Four parts: the main body cuboid, a shorter front cuboid,
-and two `capsule_x` bumpers front and back. All positions are expressed relative to
-`body_world` (the body's own origin, at wheel-axle height), hence the `- body_world`
-on every part. Do not let them redesign this; the provided constants give the shape.
+and two `capsule_x` bumpers front and back. All positions are relative to
+`body_world` (the body's own origin, at wheel-axle height), which is why every part
+has a `- body_world`. The provided constants already give the shape, so you do not
+need to redesign it.
 
-**Wheels are spheres.** `Collider::ball(wheel_diameter / 2.0)`. Somebody will ask.
-The honest answer: a cylinder contacting a plane along an edge is numerically nasty —
-contact points flicker between the rim and the face and the robot jitters. A sphere
-touches at exactly one point, always, which is also a decent model of a real
-line-follower tyre's contact patch. It is a *modelling* decision, not laziness, and
-it is the kind of tradeoff simulator authors make constantly.
+**Wheels are spheres.** `Collider::ball(wheel_diameter / 2.0)`. You may be wondering
+why. A cylinder touching a plane along an edge is numerically nasty: the contact
+points flicker between the rim and the face, and the robot jitters. A sphere touches
+at exactly one point, always, which is also a decent model of a real line-follower
+tyre's contact patch. It is a *modelling* decision, not laziness, and it is the kind
+of tradeoff you make all the time when you write a simulator.
 
 **The revolute joint** is the core of the exercise:
 
@@ -94,14 +99,16 @@ ImpulseJoint::new(body, TypedJoint::RevoluteJoint(
 ```
 
 One rotational degree of freedom about the axle (X). Anchor 1 is where the axle sits
-in the *body's* frame; anchor 2 is the wheel's centre in its *own* frame. Getting
-these two frames mixed up is the classic mistake and it is very visible — the wheel
+in the *body's* frame; anchor 2 is the wheel's centre in its *own* frame. These two
+frames are easy to mix up, and when it happens you see it immediately: the wheel
 orbits the robot instead of spinning on it.
 
 **Collision groups.** `CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP)`
 on every bot part: "I am in group 1, and I collide with everything *except* group 1."
 Without it the wheels collide with the body they are joined to, and the robot
-explodes on spawn. Worth demonstrating — delete the line live, it is spectacular.
+explodes on spawn.
+
+*(Delete the line live and show it: it is spectacular.)*
 
 **Friction is where the robot's character lives.** Four different values, all
 deliberate:
@@ -114,14 +121,14 @@ deliberate:
 | floor | 0.5 | — | the surface the wheels actually grip |
 
 The combine rule matters as much as the number: `Max` on the wheels means the pair
-takes the higher of the two coefficients, so the wheel grips regardless of what it is
-touching; `Min` on the body means it slides regardless. Ask what happens if the track
-segments had friction — the robot would feel the painted line, which is absurd, but
-it is exactly the sort of bug that produces "my robot mysteriously slows in corners".
+takes the higher of the two coefficients, so the wheel grips whatever it is touching;
+`Min` on the body means it slides whatever it is touching. What would happen if the
+track segments had friction? *(Ask the room.)* The robot would feel the painted line,
+which is absurd, but it is exactly the sort of bug that shows up as "my robot
+mysteriously slows down in corners".
 
 **Masses.** Body 0.1 kg; wheel `20.0 * d²`, so a 25 mm wheel is 12.5 g. Plausible for
-a small robot, and the ratio is what determines whether it wheelies under
-acceleration.
+a small robot, and the ratio decides whether it wheelies under acceleration.
 
 **`pwm_to_torque`** — the DC motor model. A brushed motor's torque falls linearly
 from stall torque at zero speed to zero at no-load speed:
@@ -132,16 +139,16 @@ T = T_stall · |pwm| · (1 − |ω_motor| / (ω_noload · |pwm|))
 
 Then gearing: `motor_omega = ang_vel / gear_ratio` and
 `wheel_torque = motor_torque / gear_ratio`, with `gear_ratio = num/den` (default
-1/20). **Point out the comment/code mismatch**: the comment says "torque amplified by
-gearbox … motor torque * gear_ratio" while the code divides. Both are right given
-what `gear_ratio` means here (wheel revolutions per motor revolution = 0.05, so
-dividing amplifies by 20) — but it is a genuinely confusing name, and it is a nice
-30-second lesson on why physical quantities deserve unambiguous names.
+1/20). **Look at the comment and the code together**: the comment says "torque
+amplified by gearbox … motor torque * gear_ratio" while the code divides. Both are
+right given what `gear_ratio` means here (wheel revolutions per motor revolution =
+0.05, so dividing amplifies by 20), but it is a genuinely confusing name. It is a
+nice 30-second lesson on why physical quantities deserve unambiguous names.
 
-This function is the **bonus** for fast finishers. Ship it as `todo!()` returning 0.0
-so the robot simply does not move, and let the ones who finish early implement the
-curve. A linear `torque = k * pwm` also works and is a good first approximation —
-have them compare top speed and acceleration.
+This function is the **bonus** if you finish early. It ships returning 0.0, so the
+robot simply does not move until you write it. A linear `torque = k * pwm` also
+works and is a good first approximation: if you have time, try both and compare top
+speed and acceleration.
 
 **`apply_motors_pwm`** — two subtleties:
 
@@ -149,8 +156,8 @@ have them compare top speed and acceleration.
 if !data.activity_data.is_active_now() { return; }
 ```
 
-Dead motors before the start signal and after the race ends. Without this, robots
-crawl away during the 1-second countdown.
+The motors are dead before the start signal and after the race ends. Without this,
+robots crawl away during the 1-second countdown.
 
 And Newton's third law, which is easy to miss and physically important:
 
@@ -159,9 +166,9 @@ ext_impulse.torque = torque_vec;     // on the wheel
 body_torque -= torque_vec;           // reaction on the chassis
 ```
 
-The motor pushes against its own mount. Omit the reaction and the robot never
-squats under acceleration — which also means the sensor bar never lifts, which
-means Lesson 05's height-attenuation model never triggers. The lessons are connected.
+The motor pushes against its own mount. Leave out the reaction and the robot never
+squats under acceleration, which also means the sensor bar never lifts, which means
+Lesson 05's height-attenuation model never kicks in. The lessons are connected.
 
 Finally, the schedule slot: `RunFixedMainLoopSystems::BeforeFixedMainLoop`. Forces
 must be applied *before* Rapier integrates, not after.
@@ -173,16 +180,16 @@ cd sim && cargo run --release -p sim -- test
 ```
 
 Arrow keys or WASD to drive; the PWM sliders on the right set the forward and
-differential magnitudes. Success is a robot that drives straight, turns, and sits
+differential magnitudes. You are done when the robot drives straight, turns, and sits
 still on its wheels without sinking, jittering or launching itself.
 
-The debug renderer shows every collider — if the wheels orbit the chassis, the joint
+The debug renderer shows every collider: if the wheels orbit the chassis, the joint
 anchors are in the wrong frames.
 
 ## Walkthrough (15 min)
 
-Drive the reference robot, then break it live, one line at a time — it is the best
-teaching tool in this lesson:
+Let me drive the reference robot, and then break it live, one line at a time. Each
+of these is worth seeing once:
 
 - drop `CollisionGroups` → the robot self-destructs on spawn;
 - give the track segments friction 0.8 → it stumbles over the line;
@@ -191,14 +198,14 @@ teaching tool in this lesson:
 
 ### Aside: how fragile determinism is (3 min)
 
-Worth a few minutes after the break-it-live list, because it is the opposite kind of
-change: not a physics bug, just a *different but equivalent* way to spawn entities.
-We spent Slots 1 and 2 making the simulation deterministic to the instruction, and
-it is: the same binary gives bit-identical results, run after run. But "the same
-binary" is doing a lot of work in that sentence.
+This one is the opposite kind of change: not a physics bug, just a *different but
+equivalent* way to spawn entities. We spent Slots 1 and 2 making the simulation
+deterministic to the instruction, and it is: the same binary gives bit-identical
+results, run after run. But "the same binary" is doing a lot of work in that
+sentence.
 
-Look at the `LineSensor` loop at the end of `setup_bot_model` (still present on this
-branch; it is Lesson 05's territory). It parents each sensor with `ChildOf` at spawn
+Look at the `LineSensor` loop at the end of `setup_bot_model` (it is still there on
+this branch; it belongs to Lesson 05). It parents each sensor with `ChildOf` at spawn
 time:
 
 ```rust
@@ -227,12 +234,14 @@ add `-t race` for the second row):
 | `race` | 49.2115 s, 100423 frames | 49.2205 s, 100441 frames |
 
 The robot finishes both races either way. Each variant repeats exactly; only the
-switch between them changes the result. The robot does not get "faster" with one of
-them: on the `simple` track `add_child` wins by 129 ms, and on the `race` track it
-loses by 9 ms. That is chaos, not a bias. The frame count printed by `--cli` is
-enough to show the difference live: swap the two snippets, re-run, compare.
+switch between them changes the result. And the robot does not get "faster" with one
+of them: on the `simple` track `add_child` wins by 129 ms, and on the `race` track it
+loses by 9 ms. That is chaos, not a bias.
 
-The mechanism, verified by printing the Rapier handles in both variants:
+*(The frame count printed by `--cli` is enough to show this live: swap the two
+snippets, re-run, compare.)*
+
+Here is the mechanism; I verified it by printing the Rapier handles in both variants:
 
 1. Bevy stores entities by *archetype* (their exact set of components), and a query
    iterates archetypes in the order they were created.
@@ -248,25 +257,27 @@ The mechanism, verified by printing the Rapier handles in both variants:
    second physics step, while the robot is still waiting for the start signal. A
    line follower is a feedback loop, so one bit grows into 129 ms by the finish line.
 
-The takeaway for the room: **determinism is a property of the whole program, not of
-the physics engine.** Rapier is deterministic for the same inputs in the same order,
-and that order can come from code that has nothing to do with physics. That is why
-our guarantee is "same binary, same result", why replay (Lesson 06) stores
-trajectories instead of re-simulating, and why a simulator update can legitimately
-change a recorded race time.
+What I would like you to take away from this: **determinism is a property of the
+whole program, not of the physics engine.** Rapier is deterministic for the same
+inputs in the same order, and that order can come from code that has nothing to do
+with physics. That is why our guarantee is "same binary, same result", why replay
+(Lesson 06) stores trajectories instead of re-simulating, and why a simulator update
+can legitimately change a recorded race time.
 
-If you swap the prebuilt robot (`sim/bots/bot.wasm`), re-measure the table; the
-numbers belong to the current robot and code.
+*(If the prebuilt robot `sim/bots/bot.wasm` changes, re-measure the table: the
+numbers belong to the current robot and code.)*
 
-Hook for Slot 4: "it drives, but it is blind. Next we give it eyes."
+Next: "it drives, but it is blind. In the next slot we give it eyes."
 
 ---
 
-## Common wrong turns
+## If something goes wrong
 
-- Y-up thinking. Everything falls sideways. Cheap to diagnose: look at gravity.
-- Joint anchors swapped or expressed in the wrong frame — wheels orbit the body.
-- Forgetting `RigidBody::Dynamic` on the wheels — they hang in the air, jointed to a
-  body that falls away.
-- Applying torque in *world* axes instead of `transform.rotation * wheel.axle`. Drives
-  correctly in a straight line and then diverges hilariously in turns.
+- **Everything falls sideways.** That is Y-up gravity: look at the gravity vector
+  in 4.5.
+- **The wheels orbit the body.** The joint anchors are swapped, or expressed in the
+  wrong frame.
+- **The wheels hang in the air while the body falls away.** The wheels need
+  `RigidBody::Dynamic` too.
+- **It drives straight but goes wrong in turns.** The torque is applied along a
+  *world* axis instead of `transform.rotation * wheel.axle`.

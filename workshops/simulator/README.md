@@ -85,7 +85,7 @@ In each lesson:
   it when you are stuck; you learn more from reading the answer at minute 25 than
   from staring at minute 29.
 
-Lessons are **independent**. If one defeats you, the next still works.
+Lessons are **independent**. If one does not work out, the next still works.
 
 ---
 
@@ -192,10 +192,10 @@ The one idea the whole day hangs off:
 ## Speaker notes
 
 `workshops/simulator/notes/` holds the speaker's script for every lesson — the
-framing, the beats, the things to break on purpose, the common wrong turns.
+framing, the beats, the things to break on purpose, what to do if something goes wrong.
 
 They are not hidden from you, and they are not meant to be read ahead of a slot: the
-lessons work because you hit the problems yourself. But if you miss ten minutes, or
+lessons work best when you meet the problems yourself. But if you miss ten minutes, or
 want the reasoning behind a design after the fact, they are right there.
 
 ---

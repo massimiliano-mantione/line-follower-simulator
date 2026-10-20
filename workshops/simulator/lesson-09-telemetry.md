@@ -47,9 +47,9 @@ All in `bot/src/examples/telemetry_test.rs`:
 `csv::transmute_buf` is provided (and `unsafe`). The whole `Pid` and the host-side
 CSV writer are untouched — the API is given; the *schema design* is the exercise.
 
-**The trap** is alignment padding. The host walks your bytes using only the spec, so
+**The subtle part** is alignment padding. The host walks your bytes using only the spec, so
 the spec must account for every byte the compiler inserted, including tail padding.
-That is what `csv::PAD_8` / `PAD_16` are for. Get it wrong and the CSV shears: every
+That is what `csv::PAD_8` / `PAD_16` are for. If the spec is off, the CSV shears: every
 row offset by a couple of bytes, every column full of plausible nonsense.
 
 ## How to verify
@@ -97,7 +97,7 @@ name it.
 <details>
 <summary>Hint 2 — the first few columns are right and the rest are garbage</summary>
 
-Classic shear. One column's declared width does not match its field's actual width,
+That is a shear: one column's declared width does not match its field's actual width,
 so everything after it is offset. Check each `C_*` constant against its field type.
 </details>
 

@@ -77,7 +77,7 @@ measured.
 <details>
 <summary>Hint 1 — I am trying to accumulate elapsed time and it keeps going wrong</summary>
 
-Good. That is the productive mistake.
+That is a natural first approach, and seeing why it does not work is useful.
 
 You cannot accumulate: nobody tells you how much time passed, only how much budget is
 *left*. Go the other way round — the clock is the total race length minus whatever the

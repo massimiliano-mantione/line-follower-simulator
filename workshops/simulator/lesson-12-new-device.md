@@ -51,7 +51,7 @@ A wall of errors is the *plan*, not a setback.
 | 12.7 | `bot/src/{blocking,async}_api.rs` | the robot-facing API |
 | 12.8 | `sim/src/bot/sensors/imu.rs` | the Bevy system, plus its place in the chain |
 
-Step 12.2 is the one nobody expects to be manual:
+Step 12.2 is a manual step, which may come as a surprise:
 
 ```bash
 cd bot
@@ -101,7 +101,7 @@ the sensor the advanced control strategy needs.
 <details>
 <summary>Hint 1 — the component fails to instantiate after I edit the WIT</summary>
 
-You skipped 12.2, or ran it and did not move the output over
+Check that 12.2 was run and that its output was moved over
 `bot/src/wasm_bindings.rs`. Guest and host must be generated from the same contract:
 the variant encoding is positional.
 </details>

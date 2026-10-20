@@ -9,7 +9,7 @@ At the end of this one you drive your own robot around with the arrow keys.
 
 **It is Z-up.** X is across the axle, Y is forward, **Z is height**. Bevy's
 convention is Y-up; we use Z-up because that is what CAD, robotics and the track
-plane all use. Half the confusion in this lesson comes from this one fact.
+plane all use. If something looks strange in this lesson, check this first.
 
 **The robot describes its own body.** `setup()` in the WASM component returns axle
 width, front and back length, wheel diameter, ground clearance and sensor geometry.
