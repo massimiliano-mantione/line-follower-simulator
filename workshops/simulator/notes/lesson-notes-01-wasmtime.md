@@ -112,7 +112,7 @@ What breaks? *(Ask the room.)* Two things, and both are instructive:
    or the robot's constructor and memory setup silently eat into its 60 seconds of
    simulated race time.
 
-The correct shape, which is what is on `00-base`:
+The correct shape, which is what is on `main`:
 
 ```rust
 store.set_fuel(fuel_for_time_us(total_simulation_time))?;
@@ -141,7 +141,7 @@ pub fn time_us_for_fuel(fuel: u64) -> TimeUs
 ```
 
 "We have a budget denominated in instructions, and a robot that spends it. In the
-next 45 minutes you are going to turn that into a clock. Open `lessons/02-fuel`."
+next 45 minutes you are going to turn that into a clock. Run `./workshops/simulator/lesson.sh 02`."
 
 ---
 

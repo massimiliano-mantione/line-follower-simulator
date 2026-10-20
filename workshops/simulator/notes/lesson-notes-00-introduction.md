@@ -148,15 +148,18 @@ end of the day you will have written the part that makes it one."
 
 ## 5. How the day works (2 min)
 
-- One lesson per git worktree under `lessons/`, already created by
-  `create-worktrees.sh`. Open your IDE with `lessons/02-fuel` as the project root.
+- One checkout, one branch per lesson. `./workshops/simulator/lesson.sh 02` switches
+  you to Lesson 02, and `lesson.sh` alone shows the list and where you are. Keep your
+  IDE open on the repository the whole day: the files change under it as you switch,
+  and only the three workshop crates recompile.
 - Each lesson is **the complete working simulator with exactly one feature removed.**
-  Lessons are independent: if one gets stuck, the next one still works.
-- Every removal site is marked `// EXERCISE n.m:` and every lesson has an
-  `workshops/simulator/lesson-00-introduction.md` with hints and the verification command.
-- **The solution to every lesson is the `00-base` branch**, and `workshops/simulator/lesson-00-introduction.md` gives
-  you the exact `git diff` command. Use it whenever you want: reading the answer at
-  minute 25 teaches you more than staring at the problem until minute 29.
+  Lessons are independent: if one does not work out, the next one still works.
+- Every place you need to write code is marked `// EXERCISE n.m:`, and those comments
+  are uncommitted changes, so your IDE highlights them. Every lesson has a brief,
+  `workshops/simulator/lesson-NN-slug.md`, with hints and the verification command.
+- **The solution to every lesson is `main`**, and each brief gives you the exact
+  `git diff` command. Use it whenever you want: reading the answer at minute 25
+  teaches you more than staring at the problem until minute 29.
 - Five slots. If you finish early there is an optional pool: host-side futures, the
   robot's async runtime, telemetry, track geometry, the UI.
 
@@ -178,7 +181,7 @@ Let's check that everything is ready:
 
 - `cargo build --release -p sim` completed (it was homework; if your build is not
   done yet, pair up with a neighbour now rather than at minute 45);
-- `./create-worktrees.sh --list` shows all lessons present;
+- `./workshops/simulator/lesson.sh` shows all the lessons;
 - `rustup target add wasm32-wasip2` for the bot-side lessons.
 
 ---

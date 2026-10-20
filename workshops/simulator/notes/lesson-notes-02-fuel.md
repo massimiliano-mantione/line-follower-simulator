@@ -73,7 +73,7 @@ charge for it. Lesson 09 is built on this.
 **3. Setting the clock forward is solving for `skipped_fuel`.**
 
 `set_current_time(t)` is the inverse: compute the fuel that *should* remain to make
-the clock read `t`, then set `skipped_fuel` so it does. The comment on `00-base`
+the clock read `t`, then set `skipped_fuel` so it does. The comment on `main`
 shows the two-line derivation; it is worth reading it rather than guessing.
 
 ```rust
@@ -161,6 +161,6 @@ not ticked once. Who decides when it ticks?"
   million). Look at `fuel_for_time_us`: it is `time_us * 1000 / FUEL_UNIT_NS`
   (µs → ns → fuel units), a multiplication, not a division.
 - **A subtraction underflows in `set_current_time`.** That happens if it is asked to
-  move *backwards*. On `00-base` both guards return an error. Why an error and not a
+  move *backwards*. On `main` both guards return an error. Why an error and not a
   clamp? *(Ask the room.)* Because a backwards clock is a bug in the host, not a
   condition to tolerate.

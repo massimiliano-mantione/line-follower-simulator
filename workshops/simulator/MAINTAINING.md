@@ -39,7 +39,7 @@ teaching futures from zero.
 
 | Time | Block | Branch |
 |---|---|---|
-| 0:00–0:30 | Intro + architecture walkthrough | `00-base` |
+| 0:00–0:30 | Intro + architecture walkthrough | `main` |
 | 0:30–0:50 | **Live demo**: embedding Wasmtime, sandboxing | `01-wasmtime` |
 | 0:50–1:35 | **Slot 1** — fuel is the clock | `02-fuel` |
 | 1:35–1:50 | *break* | |
