@@ -38,6 +38,23 @@ command help.
 **20 GB of free disk** for the build cache. All lessons share one cache, so switching
 lesson does not rebuild Bevy.
 
+Bevy is configured to be linked dynamically, but I have seen this failing on Windows in
+previous workshops.
+
+If you are on Windows, consider investing some time on making this work. Bevy is huge,
+and linking it into the simulator executable takes a lot of time. You will be
+developing and rebuilding the simulator all the time, so long builds will get in your
+way. What usually makes it work:
+
+- **always build with `--release`**, as every command in this README does. On Windows
+  a DLL can export at most 65535 symbols, and an unoptimized Bevy exceeds that: a plain
+  `cargo build` fails with a "too many exported symbols" (or `LNK1189`) error;
+- **use the default MSVC toolchain** (`x86_64-pc-windows-msvc`) and its default linker,
+  not the GNU toolchain or an alternative linker like mold.
+
+If linking still fails, remove `"dynamic_linking"` from the `bevy` features in
+`sim/Cargo.toml`. Builds get slower, but they work.
+
 ---
 
 ## How the lessons work
