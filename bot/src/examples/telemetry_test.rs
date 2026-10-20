@@ -163,6 +163,15 @@ impl Pid {
 
 #[allow(unused_variables)]
 pub async fn run(sensor_spacing_mm: f32) {
+    // EXERCISE 9.2: allocate the sample buffer here, before the race starts.
+    //
+    // Use `Vec::with_capacity(TEL_CAPACITY)` and never let it grow mid-race: an
+    // allocation in a control loop is an unbounded latency spike. Make it a ring
+    // buffer: once it is full, each new sample overwrites the oldest one, so you keep
+    // the last seconds of the race, which are the ones you want when the robot leaves
+    // the track. That takes an index of the oldest sample, too.
+    //
+    // Get the column spec once, here, too.
 
     wait_remote_enabled().await;
 
@@ -184,6 +193,14 @@ pub async fn run(sensor_spacing_mm: f32) {
         let dir = pid.dir();
         let out = pid.out();
 
+        // EXERCISE 9.3: record one sample.
+        //
+        // Everything worth recording is already in scope: `time`, `steps`, the 16
+        // sensor values in `vals`, the wheel angles `wl`/`wr`, the outputs `pwm_l`/
+        // `pwm_r`, the line error `err` and its derivative `der`, and what the robot
+        // concluded about the track: `dir` (0 left, 1 right) and `out` (1 when the
+        // line is lost). Build a `TelBlock`, push it while the buffer has room, and
+        // overwrite the oldest sample once it is full.
 
         //console_log(&format!("LINE {:?}", vals));
         //pid.log_vars();
@@ -197,8 +214,55 @@ pub async fn run(sensor_spacing_mm: f32) {
         }
     }
 
+    // EXERCISE 9.4: flush the buffer, now that the race is over.
+    //
+    // If the buffer wrapped around, its oldest sample is not at the start:
+    // `rotate_left` puts it there, so the CSV comes out in time order.
+    //
+    // `write_csv_file(name, bytes, spec)` takes the raw bytes plus the column spec,
+    // and the host writes both a .bin and a .csv. `csv::transmute_buf` (provided)
+    // reinterprets your `Vec<TelBlock>` as bytes.
+    //
+    // Note *where* this happens: after the loop. The host charges 10 us per byte, so
+    // flushing 800 KB costs 8 s of simulated time - but it happens once the race has
+    // ended, where it cannot hurt. That cost is also what limits the buffer size: the
+    // whole run has a 60 s budget, flush included. Doing it inside the loop is what
+    // this whole design exists to avoid.
 }
 
+// EXERCISE 9.1: design the telemetry sample.
+//
+// We want to see *every decision the robot took*: a timestamp, the step count, all
+// 16 sensor values, both wheel angles, both PWM outputs, the line error and its
+// derivative, and what the robot concluded about the track: `dir` and `out`, one
+// byte each. About 40 bytes.
+//
+// Streaming that live is not an option. 40 bytes at 2 kHz is 80 KB/s over a
+// Bluetooth serial link - and remember lesson 02: transmitting *costs simulated
+// time*. `write_line` charges 100 us per character, so a 60-character log line is 6
+// ms, which at 2 kHz is twelve missed control cycles. Logging inside the control loop
+// destroys the thing you are trying to measure. So we buffer in RAM and flush once.
+//
+// Two things to write:
+//
+//  - the packed sample. `#[repr(C)]`, fixed size. Give it a field per quantity
+//    above.
+//
+//  - `csv_spec()`, a parallel array describing the byte layout, built with
+//    `csv::col(name, kind)` and the `csv::C_U32` / `C_U16` / `C_I16` / `C_U8`
+//    constants. For `dir` and `out`, `csv::named` maps each byte value to a name,
+//    so the CSV says `left`/`right` and `in`/`out` rather than `0`/`1`.
+//
+// The subtle part, and the instructive one: the host walks your bytes using *only*
+// the spec, so **the spec must account for every byte the compiler inserted**,
+// including padding added for alignment. That is what `csv::PAD_8` / `PAD_16` are
+// for - and an explicit padding field in the struct makes it visible rather than
+// implicit. If the spec is off, the CSV shears: every row offset by a couple of
+// bytes, every column full of plausible nonsense.
+//
+// Two arrays that must agree and that the compiler cannot check for you. Worth
+// asking yourself how you would make that safe - a derive macro, or a const
+// assertion on `size_of::<TelBlock>()`.
 #[repr(C)]
 #[allow(dead_code)]
 struct TelBlock {
