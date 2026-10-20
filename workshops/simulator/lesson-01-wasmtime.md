@@ -23,8 +23,12 @@ simulated robot time.
 | 1.1 | `get_robot_configuration` | instantiates the component and calls `setup()`, against a `MockStepper`, on a 1 ms budget |
 | 1.2 | `run_robot_simulation` | wires in the host functions and calls `run()`, against the real Bevy simulator, on the whole race budget |
 
-(Both sites are marked `// EXERCISE 1.x` in the code, like every other lesson — but
-you are not expected to fill them in.)
+Both sites are marked `// EXERCISE 1.x` in the code, like every other lesson, but you
+are not expected to fill them in. This lesson is also set up the other way round: the
+comments are committed, and the uncommitted changes are the deleted code, one change
+per step. That is how the demo brings the code back one step at a time, and you can
+do the same afterwards: discard the changes one hunk at a time, from your IDE or with
+`lazygit`, and watch the functions take shape.
 
 ## Things to watch for in the demo
 

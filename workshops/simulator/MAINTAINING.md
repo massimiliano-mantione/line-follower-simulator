@@ -80,7 +80,8 @@ first removes the feature (with its `todo!()`s, degraded return values and
 `#[allow]`s); the second adds nothing but the `// EXERCISE n.m` hint comments. The
 split exists for the participant's IDE: `lesson.sh` puts them on `my/NN` at the
 first commit and applies the second as uncommitted changes, so every hint shows up
-as a change marker (§6). The briefs
+as a change marker (§6). **Lesson 01 is the exception**: its two commits are
+reversed (see below). The briefs
 and the speaker notes are ordinary files on `main`, so editing them is a normal
 commit with no rebase at all. Because every lesson branch sits on top of `main`, all
 of them are present in the working tree on every branch — you can read lesson 9's
@@ -105,7 +106,7 @@ brief while sitting on lesson 2.
    `// EXERCISE n.m`, and every exercise number on the branch appears in it. The
    comments that justify an `#[allow]` ("Used by EXERCISE 4.3 once implemented")
    are *not* hints: they belong with their attribute, in the removal commit. §9
-   checks all of this.
+   checks all of this. Lesson 01 is exempt, because its commits are reversed.
 
 ## 4. What the workshop adds to the project
 
@@ -164,7 +165,23 @@ never the answer.
 - bodies of `get_robot_configuration` and `run_robot_simulation`
 - = the `bindgen!` invocation in `wasm_host.rs` (everything depends on its types)
 
-Live-coded by you. The beats: `Config::consume_fuel(true)` → `Engine` → `Store`
+**The two commits are reversed**, because this lesson is a live demo and the code is
+revealed rather than typed:
+
+1. *Lesson 01: add the demo comments* — `main` plus comments only: the two
+   `// EXERCISE 1.x` blocks, and a short comment before every step of both bodies.
+2. *Lesson 01: remove the Wasmtime embedding* — deletes every code line in the two
+   bodies, keeping the comments and blank lines, puts a `todo!()` where the final
+   `Ok(...)` was, and adds `#![allow(unused_imports, unused_variables)]` at the top.
+
+`lesson.sh 01` therefore starts at the commented solution and applies the deletions
+as uncommitted changes. Because a comment separates every step, each step is its own
+hunk (with zero diff context, 19 of them), and discarding the hunks one at a time
+rebuilds the solution step by step; after the last one the tree is exactly the first
+commit. Intermediate states need not compile. `lesson.sh` prints a different message
+for this lesson (`REVEAL_LESSON`).
+
+The beats: `Config::consume_fuel(true)` → `Engine` → `Store`
 carrying `BotHost` → `Component::new` → `Linker` →
 `define_unknown_imports_as_traps` (the sandbox story) →
 `add_to_linker::<_, HasSelf<_>>` → the subtle bit: **instantiation itself consumes
@@ -459,7 +476,9 @@ and a switch costs about seven seconds in release instead of a Bevy rebuild.
 
 **Participants never work on `ws/simulator/NN`.** Opening a lesson creates
 `my/NN` at `ws/simulator/NN^` (the removal commit) and restores the hinted files
-from the lesson tip into the working tree, unstaged. The starting commit is
+from the lesson tip into the working tree, unstaged. (For lesson 01, `NN^` is the
+commented solution, and what gets restored is the deletions; the mechanism is the
+same.) The starting commit is
 recorded in `branch.my/NN.lessonBase`:
 
 - `my/NN` still at its base means "untouched": opening the lesson rebuilds it from
@@ -554,6 +573,12 @@ under it. Name the old base explicitly; every branch's parent is the same commit
 OLD=$(git rev-parse ws/simulator/01-wasmtime^)   # check it is the same for all twelve
 for b in ...; do git rebase --onto main "$OLD" "ws/simulator/$b" || break; done
 ```
+
+**Editing lesson 01** is by hand, since `split-hints.py` does not apply to it. Edit
+the comments in the first commit (rebuild it from `main`), then redo the second as
+described in §5: delete every code line in the two bodies, keep comments and blank
+lines, `todo!()` in place of the final `Ok(...)`, and the `#![allow]` at the top.
+Check the result with the lesson 01 check in §9.
 
 **Editing one lesson's hint comments** (the top commit):
 
@@ -682,7 +707,7 @@ kept; the removal commit must not keep any hint; and no exercise may be missing 
 the hints:
 
 ```bash
-for L in $SLUGS; do
+for L in ${SLUGS#01-wasmtime }; do   # lesson 01 is reversed, checked below
   B="ws/simulator/$L"
   NONC=$(git diff -U0 "$B^" "$B" | grep -E '^[-+]' | grep -vE '^(\+\+\+|---) ' \
          | grep -vE '^\+\s*//' | grep -c .)
@@ -705,3 +730,21 @@ A non-zero `continues-comment` means the tail of a wrapped justification comment
 for a hint, because that second line happens to start with `EXERCISE n.m`.
 `split-hints.py` only starts a hint at the beginning of a comment run for exactly
 this reason; if it fires, check that rule, then re-split the branch (§7).
+
+### Lesson 01 (reversed commits)
+
+The first commit must add only comment and blank lines to `main`, and the second may add only
+the `#![allow]` line, blank lines and the two `todo!()`s, deleting everything else:
+
+```bash
+B=ws/simulator/01-wasmtime
+NONC=$(git diff -U0 main "$B^" | grep -E '^[-+]' | grep -vE '^(\+\+\+|---) ' \
+       | grep -vE '^\+\s*(//.*)?$' | grep -c .)
+ADDS=$(git diff -U0 "$B^" "$B" | grep -E '^\+' | grep -v '^+++' \
+       | grep -vE '^\+(#!\[allow\(.*\)\]|\s*todo!\(.*\))?$' | grep -c .)
+DCOM=$(git diff -U0 "$B^" "$B" | grep -cE '^-\s*//')
+printf "01 comments-commit code:%s  removal adds:%s  removal deletes comments:%s\n" \
+       $NONC $ADDS $DCOM
+```
+
+Expected: all three zero.

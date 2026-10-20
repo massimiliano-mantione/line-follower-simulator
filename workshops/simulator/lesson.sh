@@ -16,6 +16,10 @@
 # place you need to write code. Commit whenever you like; your commits stay on
 # my/NN. --reset keeps a copy of your work in my/NN-before-reset-<time>.
 #
+# Lesson 01 is a live demo, and its two commits are the other way round: the
+# comments come first, and the uncommitted changes are the code deletions. The
+# speaker restores them one hunk at a time instead of typing.
+#
 # One checkout, one build cache: switching lesson recompiles only the three
 # workshop crates, never Bevy, Rapier or Wasmtime.
 
@@ -36,6 +40,9 @@ LESSONS=(
   "11-ui:optional - the record-player UI"
   "12-new-device:capstone - add a device end to end"
 )
+
+# The demo lesson whose commits are reversed (see above).
+REVEAL_LESSON="01-wasmtime"
 
 BRANCH_PREFIX="ws/simulator/"
 WORK_PREFIX="my/"
@@ -289,7 +296,14 @@ fi
 
 printf '\n%sNow on %s%s (lesson %s)\n' "$B" "$WORK" "$N" "$SLUG"
 printf '  brief: %s%s/lesson-%s.md%s\n' "$B" "$DOCS_DIR" "$SLUG" "$N"
-if [ -n "$FRESH" ]; then
+if [ -n "$FRESH" ] && [ "$SLUG" = "$REVEAL_LESSON" ]; then
+  cat <<REVEAL
+
+  This is the live demo. The comments are committed and the code is deleted as
+  uncommitted changes: discard a change (one hunk at a time, from your IDE or
+  ${DIM}lazygit${N}) to bring that step of the code back.
+REVEAL
+elif [ -n "$FRESH" ]; then
   cat <<HINTS
 
   The ${B}// EXERCISE${N} comments are uncommitted changes: your IDE marks every

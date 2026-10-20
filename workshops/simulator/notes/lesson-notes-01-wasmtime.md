@@ -5,14 +5,24 @@
 This one is a demo, not an exercise. Engine/store/linker plumbing is API discovery,
 not understanding: it would be forty minutes of doc-hunting for a result that is hard
 to reason about. But it is only 99 lines, it contains one genuinely surprising trap,
-and it is where the *sandboxing* story lives. So I type it, live, and you watch.
+and it is where the *sandboxing* story lives. So I write it live, and you watch.
 
 Removed on this branch: the bodies of `get_robot_configuration` and
 `run_robot_simulation` in `sim/executor/src/wasm_executor.rs`. The `bindgen!`
 invocation stays, because everything in the crate depends on its generated types.
 
-*(Have `main` open in a second window. This is a performance, not a puzzle: if I
-stall, I paste.)*
+This branch is built the other way round from every other lesson. The first commit is
+`main` plus the comments; the second deletes the code and nothing else. So after
+`lesson.sh 01`, every comment is in the file, and each step's code is one uncommitted
+hunk. Discarding a hunk brings that step back: the code appears one step at a time,
+in the order of the comments, and nothing has to be typed.
+
+*(Before starting: `lesson.sh 01`, and lazygit in a second terminal. In the Files
+panel, Enter on `wasm_executor.rs`, then `d` discards the selected hunk. Set the diff
+context to 0 with `{`, or neighbouring steps merge into one hunk. Zed's per-hunk
+restore works too. Restore the `#![allow(...)]` and `todo!()` hunks last. Between
+steps the file may not compile; only the start and the end are guaranteed to build.
+If anything goes wrong, `lesson.sh --reset` starts over.)*
 
 ---
 
@@ -46,9 +56,9 @@ and checked in (see the commented-out lines at the top of `bot/build.sh`). That 
 why we are *not* editing the WIT today, except in the optional capstone, Lesson 12,
 where adding a device end to end is the whole point.
 
-## 2. Now let's type it (12 min)
+## 2. Now let's write it (12 min)
 
-I build `run_robot_simulation` from nothing, one line at a time. The order matters:
+I build `run_robot_simulation` from nothing, one step at a time. The order matters:
 each step motivates the next.
 
 ```rust
@@ -96,7 +106,8 @@ LineFollowerRobot::add_to_linker::<_, HasSelf<_>>(&mut linker, |host| host)?;
 This wires our host implementations in. `HasSelf` says "the host state *is*
 `BotHost`".
 
-Now the trap. I am going to write it wrong first, on purpose:
+Now the trap. Before I bring back the next step, look at this version, which is
+wrong on purpose:
 
 ```rust
 let robot = LineFollowerRobot::instantiate(&mut store, &component, &linker)?;
