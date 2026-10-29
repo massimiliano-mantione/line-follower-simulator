@@ -1,0 +1,1163 @@
+---
+title: Accurate Robot Simulations with Bevy and WASM
+event: RustLab 2026
+location: Bologna
+date: November 1 2026
+authors:
+  -  Massimiliano Mantione
+theme:
+  path: style.yaml
+options:
+  end_slide_shorthand: true
+---
+
+Who am I?
+---
+
+*things I worked on*
+
+telecom switching stations\
+JIT compilers\
+(Mono project, then V8 in Google)\
+gaming engines (Unity 3D)\
+interactive, collaborative VR
+
+🦀 distributed systems and blockchains 🦀\
+🦀 operational research (vehicle routing) 🦀
+
+---
+
+🤖 Robotic Competitions as a Hobby 🎉
+---
+
+![image:width:90%](img/itlug-team.jpg)
+
+ItLUG Robotics Team
+
+---
+
+About this Workshop
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+last time: *program* a **line follower**
+
+<!-- pause -->
+today: **build** the *simulator*\
+*that ran it*
+
+<!-- pause -->
+a line follower: *simple* robot\
+**hard** *control loop*
+
+<!-- pause -->
+**2㎳** late ➡ **4㎜** wrong
+
+<!-- pause -->
+🎯 *see* what the robot **decided**, and **why** 🎯
+
+---
+
+🤔 Simulating a Robot 🤔
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+a robot has a **CPU**
+
+<!-- pause -->
+its *loop* **latency** *is* **behaviour**
+
+<!-- pause -->
+how do we *simulate* it **honestly**?
+
+<!-- pause -->
+⛔ *wall clock* ⛔\
+**not** reproducible
+
+<!-- pause -->
+⛔ *instantaneous loop* ⛔\
+**no** latency at all
+
+<!-- pause -->
+⛔ *declared period* ⛔\
+a **lie** you maintain *by hand*
+
+---
+
+What We Want
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+a *clock* that is...
+
+<!-- pause -->
+**deterministic**
+
+<!-- pause -->
+*independent* of the **host**
+
+<!-- pause -->
+*charged* for the **work done**
+
+---
+
+💡 WASM Fuel 💡
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+one **instruction** ➡ one *fuel unit*
+
+<!-- pause -->
+a **20㎒** CPU ➡ *50ns* per instruction
+
+<!-- pause -->
+fuel *consumed* **is** *elapsed* **time**
+
+<!-- pause -->
+the robot's **fuel** *is* the **clock**
+
+<!-- pause -->
+*physics* only **ticks**\
+when the **robot** *asks*
+
+---
+
+Architecture
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+```
+          ┌─────────────────────────────────────────┐
+  bot/    │  robot logic (PID, async tasks)         │   wasm32-wasip2
+          └──────────────────┬──────────────────────┘
+  wit/    ═══════════  world.wit  ═══════════════════   the contract
+          ┌──────────────────┴──────────────────────┐
+ executor │  BotHost<S>   engine, store, linker     │   fuel -> time
+          └──────────────────┬──────────────────────┘
+          ═══════  trait SimulationStepper  ═════════   the seam
+          ┌──────────────────┴──────────────────────┐
+  sim/    │  RunnerStepper -> AppWrapper -> Bevy App│   physics
+          │  recording -> ExecutionData -> replay UI│   replay
+          └─────────────────────────────────────────┘
+```
+
+---
+
+Four Ideas
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+the robot is a *sandboxed*\
+**WASM component**
+
+<!-- pause -->
+`SimulationStepper` is the **seam**\
+*(no Bevy behind it in the tests)*
+
+<!-- pause -->
+**no** *game loop*\
+*the robot drives the schedules*
+
+<!-- pause -->
+*simulation* and *visualization*\
+two **worlds**, bridged by **data**
+
+---
+
+Five Bevy Words
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+a *database* + a *scheduler*
+
+<!-- pause -->
+**entity** ➡ *row id*
+
+<!-- pause -->
+**component** ➡ *column*
+
+<!-- pause -->
+**resource** ➡ *one-row table*
+
+<!-- pause -->
+**system** ➡ *function* over **columns**
+
+<!-- pause -->
+**schedule** ➡ *ordered* set of **systems**
+
+---
+
+🎲 Determinism 🎲
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+time comes from **fuel**
+
+<!-- pause -->
+*fixed* physics **step**\
+*1㎑ to 10㎑, default 500µs*
+
+<!-- pause -->
+*seeded* sensor **noise**
+
+<!-- pause -->
+replay reads a **recording**\
+*it does not re-simulate*
+
+<!-- pause -->
+✅ a **bug** is **reproducible** ✅
+
+---
+
+Let's See
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+```bash
+cd sim
+cargo run --release -p sim -- test
+cargo run --release -p sim -- -t race run -i bots/bot.wasm
+```
+
+<!-- pause -->
+`test`: *drive* with **WASD**
+
+<!-- pause -->
+`run`: a **recording**\
+*play*, *scrub*, *step one tick*
+
+---
+
+How the Day Works
+---
+
+<!-- alignment: right -->
+<span class="time">09:30 – 10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+one **branch** per *lesson*
+
+<!-- pause -->
+`./workshops/simulator/lesson.sh 02`
+
+<!-- pause -->
+the *complete* simulator\
+with **one** feature *removed*
+
+<!-- pause -->
+look for `// EXERCISE n.m:`
+
+<!-- pause -->
+the **solution** is `main`\
+*peek whenever you want*
+
+---
+
+The Day
+---
+
+| Time | Lesson |
+|---|---|
+| 09:30 – 10:00 | *introduction* |
+| 10:00 – 10:20 | **demo**: embedding Wasmtime |
+| 10:20 – 11:00 | **slot 1**: fuel is the clock |
+| 11:30 – 12:15 | **slot 2**: on-demand physics ticks |
+| 12:15 – 13:00 | **slot 3**: bodies, joints, motors |
+| 14:30 – 15:15 | **slot 4**: light sensors |
+| 15:15 – 16:00 | **slot 5**: record and replay |
+| 16:30 – 17:50 | *open lab* |
+| 17:50 – 18:00 | *wrap-up* |
+
+---
+
+📜 The Contract 📜
+---
+
+<!-- alignment: right -->
+<span class="time">10:00 – 10:20</span>
+
+<!-- alignment: center -->
+
+`wit/world.wit`
+
+<!-- pause -->
+`import devices`\
+`import diagnostics`\
+`export robot`
+
+<!-- pause -->
+`device-value`: **8** *raw* **bytes**\
+*like a device register*
+
+<!-- pause -->
+**one** `device-operation`\
+*one* **choke point** for time
+
+<!-- pause -->
+`setup()`: the robot *describes*\
+its own **body**
+
+---
+
+🔒 The Sandbox 🔒
+---
+
+<!-- alignment: right -->
+<span class="time">10:00 – 10:20</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+`consume_fuel(true)`\
+*the whole workshop is here*
+
+<!-- pause -->
+`Store` holds `BotHost<S>`\
+*generic* over the **stepper**
+
+<!-- pause -->
+**no** WASI, *files*, *clock*, *network*
+
+<!-- pause -->
+*unknown* imports ➡ **traps**
+
+<!-- pause -->
+a *runaway* robot\
+**runs out of fuel**
+
+---
+
+⚠️ The Trap ⚠️
+---
+
+<!-- alignment: right -->
+<span class="time">10:00 – 10:20</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*instantiation* **burns fuel**
+
+<!-- pause -->
+set the fuel **before** `instantiate`
+
+<!-- pause -->
+**reset** it *after*
+
+<!-- pause -->
+`setup()` runs on a **mock**\
+`run()` runs on **Bevy**
+
+---
+
+⛽ Fuel is the Clock ⛽
+---
+
+<!-- alignment: right -->
+<span class="time">10:20 – 11:00</span>
+
+<!-- alignment: center -->
+
+`total_simulation_time`\
+`current_fuel`\
+`skipped_fuel`
+
+<!-- pause -->
+the clock runs **backwards**\
+*total* − *unspent*
+
+<!-- pause -->
+`skipped_fuel`: a **debit** *account*
+
+<!-- pause -->
+*host* work **costs** *time*\
+*logging is **not** free*
+
+<!-- pause -->
+*setting* the clock ➡\
+**solving** for `skipped_fuel`
+
+<!-- pause -->
+read the fuel at the **top**\
+of *every* **host call**
+
+<!-- pause -->
+*out of fuel* ➡ **trap** ➡ race **ends**
+
+---
+
+Your Turn: Fuel
+---
+
+<!-- alignment: right -->
+<span class="time">10:20 – 11:00</span>
+
+<!-- alignment: center -->
+
+```bash
+./workshops/simulator/lesson.sh 02
+cd sim && cargo test -p executor
+```
+
+<!-- pause -->
+`sim/executor/src/wasm_host.rs`
+
+<!-- pause -->
+*the* **smallest** lesson\
+*the* **most important** one
+
+---
+
+☕ Break ☕
+---
+
+<!-- alignment: right -->
+<span class="time">11:00 – 11:30</span>
+
+<!-- alignment: center -->
+
+back at **11:30**
+
+---
+
+⏱️ On-Demand Physics ⏱️
+---
+
+<!-- alignment: right -->
+<span class="time">11:30 – 12:15</span>
+
+<!-- alignment: center -->
+
+the robot's **calls**\
+*advance* the **world**
+
+<!-- pause -->
+`sleep_for(1000)` at **1300µs**
+
+<!-- pause -->
+read the **fuel**\
+*when* is it **ready**?\
+**step** the physics up to it\
+*move* the **clock**
+
+<!-- pause -->
+**no** *frame* rendered
+
+<!-- pause -->
+Bevy is a **subroutine**\
+*of the robot*
+
+---
+
+📡 Sampling 📡
+---
+
+<!-- alignment: right -->
+<span class="time">11:30 – 12:15</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+sensors sample on a *fixed* **schedule**
+
+<!-- pause -->
+asking *between* samples\
+**costs** time
+
+<!-- pause -->
+polling *faster* **gains nothing**
+
+<!-- pause -->
+*latched* values\
+*gyro* every **2** steps, *IMU* every **10**
+
+<!-- pause -->
+`WaitEnabled`: a **condition**\
+*not a deadline*
+
+---
+
+Order Matters
+---
+
+<!-- alignment: right -->
+<span class="time">11:30 – 12:15</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+step while the *next* tick\
+**does not** *overshoot*
+
+<!-- pause -->
+the robot's clock takes the **later** time\
+*no free physics*
+
+<!-- pause -->
+**step** *first*\
+*then* apply the **motors**
+
+<!-- pause -->
+the other way round:\
+a *clairvoyant* robot 🔮
+
+<!-- pause -->
+`Time<Virtual>` **paused**\
+*a game loop becomes a* **subroutine**
+
+---
+
+Your Turn: Stepping
+---
+
+<!-- alignment: right -->
+<span class="time">11:30 – 12:15</span>
+
+<!-- alignment: center -->
+
+```bash
+./workshops/simulator/lesson.sh 03
+cd sim && cargo test -p executor
+cargo run --release -p sim -- run --cli -i bots/bot.wasm
+```
+
+<!-- pause -->
+`sim/executor/src/wasm_host.rs`\
+`sim/sim/src/app_builder.rs`
+
+<!-- pause -->
+*the* **hardest** lesson
+
+---
+
+🗄️ How Bevy Holds the World 🗄️
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+**entity** ➡ *row id*\
+*our robot: three of them*
+
+<!-- pause -->
+**component** ➡ *column*\
+*a plain struct*
+
+<!-- pause -->
+**archetype** ➡ *table*\
+*same component* **set**, *same* **table**
+
+<!-- pause -->
+*one* **contiguous** *array* per component
+
+<!-- pause -->
+add a component ➡ the entity **moves**
+
+---
+
+Systems are Queries
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+```rust
+fn apply_motors_pwm(
+    pwm: Res<MotorDriversDutyCycles>,
+    data: Res<ExecutionData>,
+    mut wheels_query: Query<
+        (&Wheel, &Transform, &Velocity, &mut ExternalForce),
+        Without<Motors>>,
+    mut motors_query: Query<
+        (&Motors, &mut ExternalForce), Without<Wheel>>,
+)
+```
+
+<!-- pause -->
+read it as **SQL**
+
+<!-- pause -->
+`Without<…>`: the queries are **disjoint**
+
+<!-- pause -->
+the *borrow checker*\
+at **app startup**
+
+<!-- pause -->
+*declared* access ➡ **parallel** systems
+
+---
+
+🤔 Why ECS? 🤔
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*contiguous* **arrays**\
+➡ **cache** *friendly*
+
+<!-- pause -->
+*objects* on the heap\
+➡ **cache misses**
+
+<!-- pause -->
+*for us*: **3** bodies, *16* sensors\
+➡ **irrelevant**
+
+<!-- pause -->
+what *matters* here: **composition**
+
+<!-- pause -->
+**no** *class hierarchy*\
+a robot = *columns* + **systems**
+
+---
+
+🧭 This World 🧭
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+**Z-up**\
+`Vec3::NEG_Z * 9.81`
+
+<!-- pause -->
+`RapierConfiguration::new(0.001)`\
+*tolerances* at **our** *scale*
+
+<!-- pause -->
+*wheels* are **spheres**\
+*one contact point, always*
+
+<!-- pause -->
+a *revolute* **joint**\
+*anchors in* **two** *frames*
+
+<!-- pause -->
+**collision groups**\
+*no self-collision*
+
+---
+
+⚙️ Friction and Motors ⚙️
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*wheels* **grip** · *body* **slides**\
+*the line is* **not** *a speed bump*
+
+<!-- pause -->
+a *DC motor*: torque **falls** with *speed*
+
+<!-- pause -->
+**gearbox**: *less speed*, **more torque**
+
+<!-- pause -->
+*Newton's* **third** law\
+*reaction torque on the chassis*
+
+<!-- pause -->
+*forces* **before** *integration*
+
+---
+
+Your Turn: Physics
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+```bash
+./workshops/simulator/lesson.sh 04
+cd sim && cargo run --release -p sim -- test
+```
+
+<!-- pause -->
+`sim/sim/src/bot/model.rs`\
+`sim/sim/src/bot/motors.rs`\
+`sim/sim/src/app_builder.rs`
+
+<!-- pause -->
+*drive* with **WASD**
+
+<!-- pause -->
+the *debug renderer* shows **every** collider
+
+---
+
+🦋 Determinism is Fragile 🦋
+---
+
+<!-- alignment: right -->
+<span class="time">12:15 – 13:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+`ChildOf` *at spawn*\
+*vs*\
+`add_child` *afterwards*
+
+<!-- pause -->
+a different **archetype** *history*
+
+<!-- pause -->
+different **collider** *handles*
+
+<!-- pause -->
+float addition is **not** *associative*
+
+<!-- pause -->
+**1** *bit* ➡ **129㎳**
+
+<!-- pause -->
+determinism belongs to\
+the **whole program**
+
+---
+
+🍝 Lunch 🍝
+---
+
+<!-- alignment: right -->
+<span class="time">13:00 – 14:30</span>
+
+<!-- alignment: center -->
+
+back at **14:30**
+
+---
+
+👀 Seeing the Line 👀
+---
+
+<!-- alignment: right -->
+<span class="time">14:30 – 15:15</span>
+
+<!-- alignment: center -->
+
+*IR LED* + *phototransistor*
+
+<!-- pause -->
+a *finite* **spot**\
+➡ a **smooth** *edge*
+
+<!-- pause -->
+*45° cone*\
+*transition width* = sensor **height**
+
+<!-- pause -->
+a *lifted* sensor\
+➡ **contrast** *collapses*
+
+<!-- pause -->
+at **20㎜**: *blind*
+
+---
+
+Physics or Geometry?
+---
+
+<!-- alignment: right -->
+<span class="time">14:30 – 15:15</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+the *line* has **no collider**
+
+<!-- pause -->
+the *ray-cast* finds the **segment**
+
+<!-- pause -->
+*geometry* gives the **distance**
+
+<!-- pause -->
+*physics*: what am I **over**?\
+*math*: where **exactly**?
+
+<!-- pause -->
+*seeded* **noise**\
+*or* `KD` *explodes on real hardware*
+
+---
+
+Your Turn: Sensors
+---
+
+<!-- alignment: right -->
+<span class="time">14:30 – 15:15</span>
+
+<!-- alignment: center -->
+
+```bash
+./workshops/simulator/lesson.sh 05
+cd sim && cargo test -p sim
+cargo run --release -p sim -- test
+```
+
+<!-- pause -->
+`sim/sim/src/bot/sensors/line_sensors.rs`
+
+<!-- pause -->
+*worked example*: `compute_bot_position`
+
+<!-- pause -->
+**ray-cast** ➡ **distance** ➡ **perception**
+
+---
+
+📼 Record, then Replay 📼
+---
+
+<!-- alignment: right -->
+<span class="time">15:15 – 16:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*simulation*: a **batch** job\
+*visualizer*: **60** *fps*
+
+<!-- pause -->
+*drawing live* ➡ **costs** *the robot time*
+
+<!-- pause -->
+per tick: **one** `Transform`\
+and **two** *wheel angles*
+
+<!-- pause -->
+replay: *divide*, *clamp*, **index**
+
+<!-- pause -->
+scrubbing is **free**
+
+---
+
+Same Robot, Two Layouts
+---
+
+<!-- alignment: right -->
+<span class="time">15:15 – 16:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*simulation*: **flat**\
+*bodies held by* **joints**
+
+<!-- pause -->
+*replay*: a **tree**\
+*wheels are* **children**
+
+<!-- pause -->
+bridged by a **contract**\
+*not by entities*
+
+<!-- pause -->
+`EntityFeatures` *picks*\
+**components** and **systems**
+
+<!-- pause -->
+ranking: **category** *first*, then **time**
+
+<!-- pause -->
+the **leader** *floats* to the **top**
+
+---
+
+Your Turn: Replay
+---
+
+<!-- alignment: right -->
+<span class="time">15:15 – 16:00</span>
+
+<!-- alignment: center -->
+
+```bash
+./workshops/simulator/lesson.sh 06
+cd sim && cargo run --release -p sim -- run -i bots/bot.wasm
+```
+
+<!-- pause -->
+`sim/execution-data/src/lib.rs`\
+`sim/sim/src/data.rs`\
+`sim/sim/src/visualizer.rs`
+
+<!-- pause -->
+*the* **cheapest** *function of the day*
+
+---
+
+☕ Break ☕
+---
+
+<!-- alignment: right -->
+<span class="time">16:00 – 16:30</span>
+
+<!-- alignment: center -->
+
+back at **16:30**
+
+---
+
+🧪 Open Lab 🧪
+---
+
+<!-- alignment: right -->
+<span class="time">16:30 – 17:50</span>
+
+<!-- alignment: center -->
+
+*pick one*
+
+<!-- pause -->
+`07` host-side **futures**
+
+<!-- pause -->
+`08` an *executor* with **no waker**
+
+<!-- pause -->
+`09` **telemetry**
+
+<!-- pause -->
+`10` a *declarative* **track**
+
+<!-- pause -->
+`11` the *record-player* **UI**
+
+<!-- pause -->
+`12` *capstone*: a **new device**, *end to end*
+
+---
+
+What We Built
+---
+
+<!-- alignment: right -->
+<span class="time">17:50 – 18:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*fuel* ➡ a **clock**
+
+<!-- pause -->
+*the clock* ➡ the **physics**
+
+<!-- pause -->
+*the physics* ➡ a **body**
+
+<!-- pause -->
+*the body* ➡ **sensors**
+
+<!-- pause -->
+*the run* ➡ a **recording**
+
+---
+
+vs ROS 2 + Gazebo
+---
+
+<!-- alignment: right -->
+<span class="time">17:50 – 18:00</span>
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+<!-- alignment: center -->
+
+✅ **here** ✅
+
+<!-- pause -->
+**computation** *cost*\
+*is part of the model*
+
+<!-- pause -->
+**determinism**\
+*by construction*
+
+<!-- pause -->
+a **sandboxed** *robot*
+
+<!-- pause -->
+a path to **bare metal**
+
+<!-- column: 1 -->
+
+<!-- alignment: center -->
+
+<!-- pause -->
+✅ **ROS** ✅
+
+<!-- pause -->
+the **ecosystem**
+
+<!-- pause -->
+*bigger* **robots**
+
+<!-- pause -->
+**interoperability**
+
+<!-- pause -->
+**maturity**
+
+---
+
+The Honest Summary
+---
+
+<!-- alignment: right -->
+<span class="time">17:50 – 18:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+**ROS**:\
+*will my* **algorithms** *work?*
+
+<!-- pause -->
+**this**:\
+*will my* **code** *make its* **deadlines**?
+
+<!-- pause -->
+*metering* a **sandboxed** *guest*\
+as the **simulation clock**
+
+<!-- pause -->
+*trading* · *game AI* · *smart contracts*\
+*plugins with a* **latency budget**
+
+---
+
+🤖 The Physical Robot 🤖
+---
+
+<!-- alignment: right -->
+<span class="time">17:50 – 18:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+*spherical* wheels\
+*linear* attenuation\
+*hand-picked* friction\
+*linear* motor model
+
+<!-- pause -->
+*known* limits ➡ a **tool**
+
+<!-- pause -->
+*unknown* limits ➡ a **liability**
+
+---
+
+🚧 IMPORTANT NOTICE 🚧
+---
+
+<!-- pause -->
+no 🦀 crab 🦀 was *harmed*\
+in the *production* of this workshop
+
+<!-- pause -->
+but **several** were put to *good* **use**
+
+<!-- pause -->
+📰 Zed 📰\
+🎮 Bevy 🎮\
+💪 Rapier 💪\
+⚙️ Wasmtime ⚙️\
+📊 presenterm 📊\
+💻 **WEZ** terminal 💻\
+🌠 **Cosmic** desktop 🌠
+
+<!-- pause -->
+🙏 **thanks to the community** 🙏
+
+<!-- pause -->
+🦀 *the **Rust** ecosystem is **amazing*** 🦀
+
+---
+
+Finally...
+---
+
+```
+
+ ████████╗██╗  ██╗ █████╗ ███╗   ██╗██╗  ██╗███████╗██╗
+ ╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██║ ██╔╝██╔════╝██║
+    ██║   ███████║███████║██╔██╗ ██║█████╔╝ ███████╗██║
+    ██║   ██╔══██║██╔══██║██║╚██╗██║██╔═██╗ ╚════██║╚═╝
+    ██║   ██║  ██║██║  ██║██║ ╚████║██║  ██╗███████║██╗
+    ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝
+
+```
+
+![image:width:70%](img/repo-url-qr-code.png)
+
+https://github.com/massimiliano-mantione/line-follower-simulator
