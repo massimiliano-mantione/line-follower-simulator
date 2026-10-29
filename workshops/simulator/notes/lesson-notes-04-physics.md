@@ -46,7 +46,94 @@ so the app runs and what you see is a robot that does not move. Gravity defaults
 Rapier's `-Y`, so the robot visibly falls sideways until you do 4.5. That is a good
 place to start.
 
-## Framing (5 min)
+## Framing (11 min)
+
+### How Bevy holds the world (6 min)
+
+Until now you have used Bevy from the outside: in Slot 2 you ran its schedules by
+hand and paused one of its resources. Today you put things *inside* it, so let me
+spend a few minutes on how it is organised. It is not object-oriented, and if you
+read the code in this lesson expecting objects, it looks strange.
+
+Remember the picture from this morning: a database plus a scheduler.
+
+**An entity is a row id.** Our robot is three of them, and this is all of
+`setup_bot_entities`:
+
+```rust
+commands.spawn(BotBodyMarker);
+for side in [Side::Left, Side::Right] {
+    commands.spawn(Wheel::new(Vec3::NEG_X * side.sign(), side));
+}
+```
+
+Three rows, each with a single column filled in. Nothing about them says "rigid body"
+or "robot" yet.
+
+**A component is a column.** `Wheel`, `Motors`, `Transform`, `Velocity`,
+`ExternalForce`, `Collider` are plain structs. An entity "is a wheel" only in the sense
+that it has a value in the `Wheel` column. `setup_bot_model`, the function you complete
+today, queries those three rows and *adds* columns to them: `RigidBody`, `Collider`,
+`Friction`, the joint. That is the whole act of building the robot.
+
+**An archetype is a table.** Bevy groups the entities that have *exactly the same
+set* of component types into one table, with one contiguous array per component. The
+body and the wheels have different sets, so they sit in different tables; the 16 line
+sensors all share one. Add or remove a component and the entity moves to another
+table. Please keep that last sentence in mind: it comes back at the end of this slot.
+
+**A system is a query plus a loop.** Here is the signature of `apply_motors_pwm`,
+which you write today:
+
+```rust
+fn apply_motors_pwm(
+    pwm: Res<MotorDriversDutyCycles>,
+    data: Res<ExecutionData>,
+    mut wheels_query: Query<(&Wheel, &Transform, &Velocity, &mut ExternalForce), Without<Motors>>,
+    mut motors_query: Query<(&Motors, &mut ExternalForce), Without<Wheel>>,
+)
+```
+
+Read the first query as SQL: *select `Wheel`, `Transform`, `Velocity` and a writable
+`ExternalForce` from every entity that has all of them and has no `Motors`.* The two
+`Res` are resources, the one-row tables: `MotorDriversDutyCycles` is what the robot
+last asked for, and it is how the WASM host talks to the physics.
+
+Why the `Without<…>` filters? *(Ask the room.)* Both queries borrow
+`&mut ExternalForce`. An entity with both `Wheel` and `Motors` would match both, and the
+system would hold two mutable references to the same value. Bevy checks the declared
+access when it builds the system and refuses to run it unless it can prove the two
+queries are disjoint. It is the borrow checker, moved from compile time to app
+startup, and applied to queries. The same declarations let the scheduler run systems
+in parallel when they touch different columns.
+
+**Why build an engine this way?** Two reasons, and I want to be honest about which
+one matters to us.
+
+1. **Memory.** A query walks contiguous arrays: all the matching `Transform`s sit next
+   to each other, so every 64-byte cache line the CPU fetches is full of useful data,
+   and the prefetcher sees a linear scan. The object-oriented alternative is a list of
+   pointers to game objects scattered over the heap, and every entity costs a cache
+   miss. With a hundred thousand particles or units, that is a large factor in frame
+   time, and it is why the design exists.
+
+   In our world it buys us nothing measurable. We have three rigid bodies, 16 sensors
+   and a few dozen track segments. Rapier does not even keep its state in Bevy's
+   columns: bevy_rapier copies transforms and forces into Rapier's own structures each
+   step, and copies the results back.
+
+2. **Composition.** This is the one that matters here. No class hierarchy decides
+   what a robot is: a robot is whatever columns you attach, and its behaviour is
+   whatever systems you install. In Slot 5 you will see the same robot built two
+   different ways, flat for physics and as a tree for replay, with one enum,
+   `EntityFeatures`, choosing which components and systems go in. With a base class
+   you would be fighting the hierarchy; here you leave out a column.
+
+And because systems share columns rather than calling each other, `apply_motors_pwm`
+never calls Rapier, and Rapier never calls it. Their order is declared separately, and
+you will do that at the end of this lesson.
+
+### This world (5 min)
 
 Let's start from `setup()`. The WASM component declares its own body: axle width,
 front and back length, wheel diameter, ground clearance, sensor spacing and height.
@@ -243,8 +330,8 @@ snippets, re-run, compare.)*
 
 Here is the mechanism; I verified it by printing the Rapier handles in both variants:
 
-1. Bevy stores entities by *archetype* (their exact set of components), and a query
-   iterates archetypes in the order they were created.
+1. Remember the archetype tables from the framing: a query iterates them in the
+   order they were created.
 2. `spawn` + `add_child` moves each sensor through an extra archetype (without
    `ChildOf`) before its final one. `ChildOf` at spawn skips it. Different history,
    different archetype order.

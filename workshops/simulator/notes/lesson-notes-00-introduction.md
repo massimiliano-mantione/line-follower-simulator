@@ -117,6 +117,26 @@ Four things about it, no more:
    that recording, and the UI is a pure function of `play_time_sec`. That is why scrubbing is free and why you can stack five bots
    racing side by side.
 
+### Five Bevy words (2 min, inside the 12)
+
+I have just said "schedule", "entity", "component", and I will say "resource" in
+Slot 2, so here is the vocabulary. The explanation of *why* Bevy is shaped like this
+comes in Slot 3, when you first put things into the world.
+
+Think of a Bevy app as **a small in-memory database plus a scheduler**:
+
+- an **entity** is a row id, and nothing more: no type, no methods, no data;
+- a **component** is a column, an ordinary Rust struct with `#[derive(Component)]`;
+- a **resource** is a table with exactly one row: a global, but a typed one;
+- a **system** is an ordinary function whose parameters declare which columns and
+  resources it reads and writes;
+- a **schedule** is an ordered set of systems, run together: `FixedMain` is the
+  physics tick, `Main` is everything else.
+
+That is all you need for the next two slots. In Slot 2 you pause a resource,
+`Time<Virtual>`, and run schedules by hand; in Slot 3 you add the columns that turn
+three empty rows into a robot.
+
 ## 3. Determinism, and why we are strict about it (4 min)
 
 This is an advertised outcome of the workshop, so it deserves real airtime.
