@@ -40,7 +40,7 @@ About this Workshop
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -67,7 +67,7 @@ a line follower: *simple* robot\
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -98,7 +98,7 @@ What We Want
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -119,7 +119,7 @@ a *clock* that is...
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -145,7 +145,7 @@ Architecture
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -170,7 +170,7 @@ Four Ideas
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -196,7 +196,7 @@ Five Bevy Words
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -224,7 +224,7 @@ a *database* + a *scheduler*
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -251,7 +251,7 @@ Let's See
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -274,7 +274,7 @@ How the Day Works
 ---
 
 <!-- alignment: right -->
-<span class="time">09:30 – 10:00</span>
+<span class="time">[00] 09:30–10:00</span>
 
 <!-- alignment: center -->
 
@@ -302,15 +302,20 @@ The Day
 
 | Time | Lesson |
 |---|---|
-| 09:30 – 10:00 | *introduction* |
-| 10:00 – 10:20 | **demo**: embedding Wasmtime |
-| 10:20 – 11:00 | **slot 1**: fuel is the clock |
-| 11:30 – 12:15 | **slot 2**: on-demand physics ticks |
-| 12:15 – 13:00 | **slot 3**: bodies, joints, motors |
-| 14:30 – 15:15 | **slot 4**: light sensors |
-| 15:15 – 16:00 | **slot 5**: record and replay |
-| 16:30 – 17:50 | *open lab* |
-| 17:50 – 18:00 | *wrap-up* |
+| 09:30–10:00 | `00` *introduction* |
+| 10:00–10:15 | `01` **demo**: embedding Wasmtime |
+| 10:15–11:00 | `02` fuel is the clock |
+| 11:00–11:30 | ☕ *break* |
+| 11:30–12:20 | `03` on-demand physics ticks |
+| 12:20–13:00 | `04` bodies, joints, motors |
+| 13:00–14:30 | 🍝 *lunch* |
+| 14:30–14:46 | `04` *continued* |
+| 14:46–15:36 | `05` light sensors |
+| 15:36–16:00 | `06` record and replay |
+| 16:00–16:30 | ☕ *break* |
+| 16:30–16:51 | `06` *continued* |
+| 16:51–17:50 | *open lab* |
+| 17:50–18:00 | *wrap-up* |
 
 ---
 
@@ -318,7 +323,7 @@ The Day
 ---
 
 <!-- alignment: right -->
-<span class="time">10:00 – 10:20</span>
+<span class="time">[01] 10:00–10:15</span>
 
 <!-- alignment: center -->
 
@@ -343,11 +348,33 @@ its own **body**
 
 ---
 
+🎬 Live Demo 🎬
+---
+
+<!-- alignment: right -->
+<span class="time">[01] 10:00–10:15</span>
+
+<!-- alignment: center -->
+
+## 01-wasmtime
+
+live coding **10:04–10:13**
+
+```bash
+./workshops/simulator/lesson.sh 01
+```
+
+`sim/executor/src/wasm_executor.rs`
+
+*one* **hunk** *at a time*
+
+---
+
 🔒 The Sandbox 🔒
 ---
 
 <!-- alignment: right -->
-<span class="time">10:00 – 10:20</span>
+<span class="time">[01] 10:00–10:15</span>
 
 <!-- alignment: center -->
 
@@ -375,7 +402,7 @@ a *runaway* robot\
 ---
 
 <!-- alignment: right -->
-<span class="time">10:00 – 10:20</span>
+<span class="time">[01] 10:00–10:15</span>
 
 <!-- alignment: center -->
 
@@ -398,7 +425,7 @@ set the fuel **before** `instantiate`
 ---
 
 <!-- alignment: right -->
-<span class="time">10:20 – 11:00</span>
+<span class="time">[02] 10:15–11:00</span>
 
 <!-- alignment: center -->
 
@@ -430,23 +457,26 @@ of *every* **host call**
 
 ---
 
-Your Turn: Fuel
+⌨️ Now Coding ⌨️
 ---
 
 <!-- alignment: right -->
-<span class="time">10:20 – 11:00</span>
+<span class="time">[02] 10:15–11:00</span>
 
 <!-- alignment: center -->
+
+## 02-fuel
+
+coding **10:22–10:48**\
+➡ walkthrough at **10:48**
 
 ```bash
 ./workshops/simulator/lesson.sh 02
 cd sim && cargo test -p executor
 ```
 
-<!-- pause -->
 `sim/executor/src/wasm_host.rs`
 
-<!-- pause -->
 *the* **smallest** lesson\
 *the* **most important** one
 
@@ -456,7 +486,7 @@ cd sim && cargo test -p executor
 ---
 
 <!-- alignment: right -->
-<span class="time">11:00 – 11:30</span>
+<span class="time">11:00–11:30</span>
 
 <!-- alignment: center -->
 
@@ -468,7 +498,7 @@ back at **11:30**
 ---
 
 <!-- alignment: right -->
-<span class="time">11:30 – 12:15</span>
+<span class="time">[03] 11:30–12:20</span>
 
 <!-- alignment: center -->
 
@@ -497,7 +527,7 @@ Bevy is a **subroutine**\
 ---
 
 <!-- alignment: right -->
-<span class="time">11:30 – 12:15</span>
+<span class="time">[03] 11:30–12:20</span>
 
 <!-- alignment: center -->
 
@@ -525,7 +555,7 @@ Order Matters
 ---
 
 <!-- alignment: right -->
-<span class="time">11:30 – 12:15</span>
+<span class="time">[03] 11:30–12:20</span>
 
 <!-- alignment: center -->
 
@@ -551,13 +581,18 @@ a *clairvoyant* robot 🔮
 
 ---
 
-Your Turn: Stepping
+⌨️ Now Coding ⌨️
 ---
 
 <!-- alignment: right -->
-<span class="time">11:30 – 12:15</span>
+<span class="time">[03] 11:30–12:20</span>
 
 <!-- alignment: center -->
+
+## 03-stepping
+
+coding **11:35–12:05**\
+➡ walkthrough at **12:05**
 
 ```bash
 ./workshops/simulator/lesson.sh 03
@@ -565,11 +600,9 @@ cd sim && cargo test -p executor
 cargo run --release -p sim -- run --cli -i bots/bot.wasm
 ```
 
-<!-- pause -->
 `sim/executor/src/wasm_host.rs`\
 `sim/sim/src/app_builder.rs`
 
-<!-- pause -->
 *the* **hardest** lesson
 
 ---
@@ -578,7 +611,7 @@ cargo run --release -p sim -- run --cli -i bots/bot.wasm
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -606,7 +639,7 @@ Systems are Queries
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -641,7 +674,7 @@ at **app startup**
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -670,7 +703,7 @@ a robot = *columns* + **systems**
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -700,7 +733,7 @@ a *revolute* **joint**\
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -723,29 +756,42 @@ a *DC motor*: torque **falls** with *speed*
 
 ---
 
-Your Turn: Physics
+⌨️ Now Coding ⌨️
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
+
+## 04-physics
+
+coding **12:31–13:00**\
+➡ 🍝 lunch ➡ walkthrough at **14:30**
 
 ```bash
 ./workshops/simulator/lesson.sh 04
 cd sim && cargo run --release -p sim -- test
 ```
 
-<!-- pause -->
 `sim/sim/src/bot/model.rs`\
 `sim/sim/src/bot/motors.rs`\
 `sim/sim/src/app_builder.rs`
 
-<!-- pause -->
-*drive* with **WASD**
-
-<!-- pause -->
+*drive* with **WASD**\
 the *debug renderer* shows **every** collider
+
+---
+
+🍝 Lunch 🍝
+---
+
+<!-- alignment: right -->
+<span class="time">13:00–14:30</span>
+
+<!-- alignment: center -->
+
+back at **14:30**
 
 ---
 
@@ -753,7 +799,7 @@ the *debug renderer* shows **every** collider
 ---
 
 <!-- alignment: right -->
-<span class="time">12:15 – 13:00</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
 
 <!-- alignment: center -->
 
@@ -780,23 +826,11 @@ the **whole program**
 
 ---
 
-🍝 Lunch 🍝
----
-
-<!-- alignment: right -->
-<span class="time">13:00 – 14:30</span>
-
-<!-- alignment: center -->
-
-back at **14:30**
-
----
-
 👀 Seeing the Line 👀
 ---
 
 <!-- alignment: right -->
-<span class="time">14:30 – 15:15</span>
+<span class="time">[05] 14:46–15:36</span>
 
 <!-- alignment: center -->
 
@@ -823,7 +857,7 @@ Physics or Geometry?
 ---
 
 <!-- alignment: right -->
-<span class="time">14:30 – 15:15</span>
+<span class="time">[05] 14:46–15:36</span>
 
 <!-- alignment: center -->
 
@@ -846,13 +880,18 @@ the *ray-cast* finds the **segment**
 
 ---
 
-Your Turn: Sensors
+⌨️ Now Coding ⌨️
 ---
 
 <!-- alignment: right -->
-<span class="time">14:30 – 15:15</span>
+<span class="time">[05] 14:46–15:36</span>
 
 <!-- alignment: center -->
+
+## 05-sensors
+
+coding **14:53–15:21**\
+➡ walkthrough at **15:21**
 
 ```bash
 ./workshops/simulator/lesson.sh 05
@@ -860,13 +899,9 @@ cd sim && cargo test -p sim
 cargo run --release -p sim -- test
 ```
 
-<!-- pause -->
 `sim/sim/src/bot/sensors/line_sensors.rs`
 
-<!-- pause -->
-*worked example*: `compute_bot_position`
-
-<!-- pause -->
+*worked example*: `compute_bot_position`\
 **ray-cast** ➡ **distance** ➡ **perception**
 
 ---
@@ -875,7 +910,7 @@ cargo run --release -p sim -- test
 ---
 
 <!-- alignment: right -->
-<span class="time">15:15 – 16:00</span>
+<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
 
 <!-- alignment: center -->
 
@@ -902,7 +937,7 @@ Same Robot, Two Layouts
 ---
 
 <!-- alignment: right -->
-<span class="time">15:15 – 16:00</span>
+<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
 
 <!-- alignment: center -->
 
@@ -930,38 +965,31 @@ the **leader** *floats* to the **top**
 
 ---
 
-Your Turn: Replay
+⌨️ Now Coding ⌨️
 ---
 
 <!-- alignment: right -->
-<span class="time">15:15 – 16:00</span>
+<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
 
 <!-- alignment: center -->
+
+## 06-replay
+
+coding **15:43–16:00**\
+☕ break **16:00–16:30**\
+coding **16:30–16:39**\
+➡ walkthrough at **16:39**
 
 ```bash
 ./workshops/simulator/lesson.sh 06
 cd sim && cargo run --release -p sim -- run -i bots/bot.wasm
 ```
 
-<!-- pause -->
 `sim/execution-data/src/lib.rs`\
 `sim/sim/src/data.rs`\
 `sim/sim/src/visualizer.rs`
 
-<!-- pause -->
 *the* **cheapest** *function of the day*
-
----
-
-☕ Break ☕
----
-
-<!-- alignment: right -->
-<span class="time">16:00 – 16:30</span>
-
-<!-- alignment: center -->
-
-back at **16:30**
 
 ---
 
@@ -969,7 +997,7 @@ back at **16:30**
 ---
 
 <!-- alignment: right -->
-<span class="time">16:30 – 17:50</span>
+<span class="time">[07–12] 16:51–17:50</span>
 
 <!-- alignment: center -->
 
@@ -999,7 +1027,7 @@ What We Built
 ---
 
 <!-- alignment: right -->
-<span class="time">17:50 – 18:00</span>
+<span class="time">[00] 17:50–18:00</span>
 
 <!-- alignment: center -->
 
@@ -1024,7 +1052,7 @@ vs ROS 2 + Gazebo
 ---
 
 <!-- alignment: right -->
-<span class="time">17:50 – 18:00</span>
+<span class="time">[00] 17:50–18:00</span>
 
 <!-- column_layout: [1, 1] -->
 
@@ -1073,7 +1101,7 @@ The Honest Summary
 ---
 
 <!-- alignment: right -->
-<span class="time">17:50 – 18:00</span>
+<span class="time">[00] 17:50–18:00</span>
 
 <!-- alignment: center -->
 
@@ -1099,7 +1127,7 @@ as the **simulation clock**
 ---
 
 <!-- alignment: right -->
-<span class="time">17:50 – 18:00</span>
+<span class="time">[00] 17:50–18:00</span>
 
 <!-- alignment: center -->
 
