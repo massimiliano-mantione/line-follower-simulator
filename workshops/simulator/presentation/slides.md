@@ -5,13 +5,25 @@ location: Bologna
 date: November 1 2026
 authors:
   -  Massimiliano Mantione
+  -  Michele Mantione
+  -  Claude Code
 theme:
   path: style.yaml
 options:
   end_slide_shorthand: true
 ---
 
-Who am I?
+Who are we?
+---
+
+**two passionate software engineers**
+
+*one a bit more senior than the other*
+
+*(questions about Claude later, but welcome)*
+
+---
+Massimiliano
 ---
 
 *things I worked on*
@@ -24,6 +36,22 @@ interactive, collaborative VR
 
 🦀 distributed systems and blockchains 🦀\
 🦀 operational research (vehicle routing) 🦀
+
+---
+
+Michele
+---
+
+Too many interests to list them!
+
+embedded systems\
+sound engineering\
+visualization\
+robotics
+
+last year I got my Software Engineering degree
+
+next one will be the Master's degree
 
 ---
 
@@ -45,21 +73,100 @@ About this Workshop
 <!-- alignment: center -->
 
 <!-- pause -->
-last time: *program* a **line follower**
+previous workshop: *program* a **line follower**
 
 <!-- pause -->
 today: **build** the *simulator*\
-*that ran it*
+*that **runs** it*
 
 <!-- pause -->
-a line follower: *simple* robot\
-**hard** *control loop*
+🔧 **simulate** 🔧\
+line follower: *simple* robot\
+**hard real time** *control loop*
 
 <!-- pause -->
 **2㎳** late ➡ **4㎜** wrong
 
 <!-- pause -->
 🎯 *see* what the robot **decided**, and **why** 🎯
+
+---
+
+Tools we will Use
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+🎮 Bevy game engine 🎮
+
+<!-- pause -->
+💪 Rapier physics engine 💪
+
+<!-- pause -->
+⚙️ Wasmtime WASM runtime ⚙️
+
+---
+
+What is Bevy?
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+a *database (in RAM)* + a *scheduler*
+
+<!-- pause -->
+**entity** ➡ *row id*
+
+<!-- pause -->
+**component** ➡ *column*
+
+<!-- pause -->
+**resource** ➡ *one-row table (singleton)*
+
+<!-- pause -->
+**system** ➡ *function* over **columns**
+
+<!-- pause -->
+**schedule** ➡ *ordered* set of **systems**
+
+<!-- pause -->
+**Rapier** ➡ lives *inside* **Bevy**
+
+---
+
+What is WASM?
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+an *abstract* **machine instruction set**
+
+<!-- pause -->
+easy to
+
+<!-- pause -->
+embed\
+interpret\
+sandbox
+
+<!-- pause -->
+**Rust** can compile to *WASM*\
+*(also to WASM components)*
+
+<!-- pause -->
+**Wasmtime** ➡ the *WASM* **engine** we use
 
 ---
 
@@ -113,6 +220,16 @@ a *clock* that is...
 <!-- pause -->
 *charged* for the **work done**
 
+<!-- pause -->
+**accurate** *(high resolution)*
+
+<!-- pause -->
+a **deterministic** *clock* \
+means \
+a **deterministic** *physics simulation* \
+
+
+
 ---
 
 💡 WASM Fuel 💡
@@ -136,87 +253,11 @@ fuel *consumed* **is** *elapsed* **time**
 the robot's **fuel** *is* the **clock**
 
 <!-- pause -->
+clock *resolution* ➡ **50ns**
+
+<!-- pause -->
 *physics* only **ticks**\
 when the **robot** *asks*
-
----
-
-Architecture
----
-
-<!-- alignment: right -->
-<span class="time">[00] 09:30–10:00</span>
-
-<!-- alignment: center -->
-
-```
-          ┌─────────────────────────────────────────┐
-  bot/    │  robot logic (PID, async tasks)         │   wasm32-wasip2
-          └──────────────────┬──────────────────────┘
-  wit/    ═══════════  world.wit  ═══════════════════   the contract
-          ┌──────────────────┴──────────────────────┐
- executor │  BotHost<S>   engine, store, linker     │   fuel -> time
-          └──────────────────┬──────────────────────┘
-          ═══════  trait SimulationStepper  ═════════   the seam
-          ┌──────────────────┴──────────────────────┐
-  sim/    │  RunnerStepper -> AppWrapper -> Bevy App│   physics
-          │  recording -> ExecutionData -> replay UI│   replay
-          └─────────────────────────────────────────┘
-```
-
----
-
-Four Ideas
----
-
-<!-- alignment: right -->
-<span class="time">[00] 09:30–10:00</span>
-
-<!-- alignment: center -->
-
-<!-- pause -->
-the robot is a *sandboxed*\
-**WASM component**
-
-<!-- pause -->
-`SimulationStepper` is the **seam**\
-*(no Bevy behind it in the tests)*
-
-<!-- pause -->
-**no** *game loop*\
-*the robot drives the schedules*
-
-<!-- pause -->
-*simulation* and *visualization*\
-two **worlds**, bridged by **data**
-
----
-
-Five Bevy Words
----
-
-<!-- alignment: right -->
-<span class="time">[00] 09:30–10:00</span>
-
-<!-- alignment: center -->
-
-<!-- pause -->
-a *database* + a *scheduler*
-
-<!-- pause -->
-**entity** ➡ *row id*
-
-<!-- pause -->
-**component** ➡ *column*
-
-<!-- pause -->
-**resource** ➡ *one-row table*
-
-<!-- pause -->
-**system** ➡ *function* over **columns**
-
-<!-- pause -->
-**schedule** ➡ *ordered* set of **systems**
 
 ---
 
@@ -236,6 +277,10 @@ time comes from **fuel**
 *1㎑ to 10㎑, default 500µs*
 
 <!-- pause -->
+**100µs** is **doable**\
+*but then the simulation is **slow***
+
+<!-- pause -->
 *seeded* sensor **noise**
 
 <!-- pause -->
@@ -243,7 +288,59 @@ replay reads a **recording**\
 *it does not re-simulate*
 
 <!-- pause -->
-✅ a **bug** is **reproducible** ✅
+✅ everything *(including **bugs**)* is **reproducible** ✅
+
+---
+
+Four Ideas
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+the robot logic is a *sandboxed*\
+**WASM component**
+
+<!-- pause -->
+a *trait* (`SimulationStepper`) is the **seam**\
+between the **executor** and the **simulator**\
+*(no Bevy behind it in the tests)*
+
+<!-- pause -->
+**no** *game **loop***\
+*(the robot drives the schedules)*
+
+<!-- pause -->
+*simulation* and *visualization*\
+two distinct **worlds**, bridged by **data**
+
+---
+
+Architecture
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+```
+           ┌─────────────────────────────────────────┐
+   bot/    │  robot logic (PID, async tasks)         │   wasm32-wasip2
+           └──────────────────┬──────────────────────┘
+   wit/    ═══════════  world.wit  ═══════════════════   the contract
+           ┌──────────────────┴──────────────────────┐
+ executor  │  BotHost<S>   engine, store, linker     │   fuel -> time
+           └──────────────────┬──────────────────────┘
+   sim/    ═══════  trait SimulationStepper  ═════════   the seam
+           ┌──────────────────┴──────────────────────┐
+ simulator │  RunnerStepper -> AppWrapper -> Bevy App│   physics
+           │  recording -> ExecutionData -> replay UI│   replay
+           └─────────────────────────────────────────┘
+```
 
 ---
 
@@ -509,10 +606,15 @@ the robot's **calls**\
 `sleep_for(1000)` at **1300µs**
 
 <!-- pause -->
-read the **fuel**\
-*when* is it **ready**?\
-**step** the physics up to it\
-*move* the **clock**
+```
+robot: sleep_for(2000) at 1300                returns (resumes) at 3300
+                  |                                       |
+time(µs):--+---------+---------+---------+---------+---------+----+----
+        1000      1500      2000      2500      3000      3500
+ physics:            |         |         |         |
+                  tick      tick      tick      tick      |
+                                      (stop: 3500 would overshoot 3300)
+```
 
 <!-- pause -->
 **no** *frame* rendered
@@ -523,7 +625,7 @@ Bevy is a **subroutine**\
 
 ---
 
-📡 Sampling 📡
+📡 Sampling Sensor Values 📡
 ---
 
 <!-- alignment: right -->
@@ -551,7 +653,7 @@ polling *faster* **gains nothing**
 
 ---
 
-Order Matters
+Apply Motor Power: Order Matters
 ---
 
 <!-- alignment: right -->
