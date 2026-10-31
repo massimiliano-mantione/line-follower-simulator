@@ -68,12 +68,13 @@ There are no unit tests here — the feedback is the window.
 
 Y-up thinking. Look at the gravity vector in 4.5.
 
-### Hint 2 — the robot explodes the instant it spawns
+### Hint 2 — what the collision group is for
 
-The wheels are colliding with the chassis they are jointed to. Every bot part needs
-to be in `BOT_COLLISION_GROUP` and to collide with everything *except* that group.
-`CollisionGroups::new(memberships, filter)` — and `!group` is how you say "not this
-one".
+The wheel spheres overlap the chassis, and Rapier does not skip contacts between
+bodies joined by a joint, so without a group the wheels collide with the chassis they
+are jointed to. Every bot part needs to be in `BOT_COLLISION_GROUP` and to collide
+with everything *except* that group. `CollisionGroups::new(memberships, filter)` — and
+`!group` is how you say "not this one".
 
 ### Hint 3 — the wheels orbit the robot instead of spinning
 
@@ -101,7 +102,7 @@ axle has to be rotated by the wheel's transform first.
 
 Once it works, try these — they are more instructive than the working version:
 
-- delete the collision groups;
+- delete the collision groups, and work out why nothing visibly breaks;
 - give the track segments friction 0.8;
 - delete the chassis reaction torque;
 - set the length unit to 1.0;

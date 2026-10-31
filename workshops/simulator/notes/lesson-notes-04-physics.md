@@ -192,10 +192,21 @@ orbits the robot instead of spinning on it.
 
 **Collision groups.** `CollisionGroups::new(BOT_COLLISION_GROUP, !BOT_COLLISION_GROUP)`
 on every bot part: "I am in group 1, and I collide with everything *except* group 1."
-Without it the wheels collide with the body they are joined to, and the robot
-explodes on spawn.
+Rapier does not skip contacts between bodies joined by a joint (`contacts_enabled`
+defaults to `true`), and our wheel spheres do overlap the chassis: with the default
+config, by almost 10 mm. The group is what keeps the robot from colliding with itself.
 
-*(Delete the line live and show it: it is spectacular.)*
+If you delete it, though, nothing dramatic happens, and the reason is a nice lesson in
+contact geometry. The wheel's centre sits inside the chassis box's side-face slab, so
+the contact normal runs along the axle and the contact point lies *on* the axle line.
+The push is axial, which the revolute joint already resists, and it is mirrored on the
+other wheel, so the forces cancel. Friction at a point on the rotation axis produces
+no torque, so the wheel spins freely. Rapier also caps how fast it corrects
+penetration, so the fight between contact and joint stays gentle. The robot drives.
+Change the geometry (a cylinder wheel, or a chassis that ends below the axle) and the
+contact moves off the axle and starts braking the wheel.
+
+*(Delete the line live and ask why nothing breaks.)*
 
 **Friction is where the robot's character lives.** Four different values, all
 deliberate:
@@ -278,7 +289,8 @@ anchors are in the wrong frames.
 Let me drive the reference robot, and then break it live, one line at a time. Each
 of these is worth seeing once:
 
-- drop `CollisionGroups` → the robot self-destructs on spawn;
+- drop `CollisionGroups` → surprisingly, nothing visible: the wheel–chassis contact
+  sits on the axle line, so it neither moves nor brakes anything;
 - give the track segments friction 0.8 → it stumbles over the line;
 - delete the body reaction torque → no squat under acceleration;
 - set the length unit to 1.0 → the visible tremble.
