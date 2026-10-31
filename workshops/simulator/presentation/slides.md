@@ -81,8 +81,8 @@ today: **build** the *simulator*\
 
 <!-- pause -->
 🔧 **simulate** 🔧\
-line follower: *simple* robot\
-**hard real time** *control loop*
+a line follower: a *simple* robot\
+with a **hard real time** *control loop*
 
 <!-- pause -->
 **2㎳** late ➡ **4㎜** wrong
@@ -108,6 +108,9 @@ Tools we will Use
 
 <!-- pause -->
 ⚙️ Wasmtime WASM runtime ⚙️
+
+<!-- pause -->
+💻 EGUI GUI framework 💻
 
 ---
 
@@ -137,9 +140,6 @@ a *database (in RAM)* + a *scheduler*
 <!-- pause -->
 **schedule** ➡ *ordered* set of **systems**
 
-<!-- pause -->
-**Rapier** ➡ lives *inside* **Bevy**
-
 ---
 
 What is WASM?
@@ -162,6 +162,9 @@ interpret\
 sandbox
 
 <!-- pause -->
+efficient execution
+
+<!-- pause -->
 **Rust** can compile to *WASM*\
 *(also to WASM components)*
 
@@ -170,7 +173,7 @@ sandbox
 
 ---
 
-🤔 Simulating a Robot 🤔
+Other Tools
 ---
 
 <!-- alignment: right -->
@@ -179,10 +182,30 @@ sandbox
 <!-- alignment: center -->
 
 <!-- pause -->
-a robot has a **CPU**
+physics engine\
+**Rapier** ➡ provides **Bevy** *components* and *systems*\
+simulates colliders, forces, friction, gravity...
 
 <!-- pause -->
-its *loop* **latency** *is* **behaviour**
+GUI framework\
+**EGUI** ➡ has a **Bevy** *integration*\
+*immediate* mode: *simple* to use
+
+---
+
+🤔 Simulating a Robot: what about Time? 🤔
+---
+
+<!-- alignment: right -->
+<span class="time">[00] 09:30–10:00</span>
+
+<!-- alignment: center -->
+
+<!-- pause -->
+a robot has a **CPU**, *running* code takes **time**
+
+<!-- pause -->
+the robot *event loop* **latency** *is* **behaviour**
 
 <!-- pause -->
 how do we *simulate* it **honestly**?
@@ -224,10 +247,9 @@ a *clock* that is...
 **accurate** *(high resolution)*
 
 <!-- pause -->
-a **deterministic** *clock* \
-means \
-a **deterministic** *physics simulation* \
-
+a **deterministic** *clock* makes\
+a **deterministic** *physics simulation*\
+**possible**
 
 
 ---
@@ -241,7 +263,7 @@ a **deterministic** *physics simulation* \
 <!-- alignment: center -->
 
 <!-- pause -->
-one **instruction** ➡ one *fuel unit*
+one **WASM instruction** ➡ one *fuel unit*
 
 <!-- pause -->
 a **20㎒** CPU ➡ *50ns* per instruction
@@ -274,7 +296,7 @@ time comes from **fuel**
 
 <!-- pause -->
 *fixed* physics **step**\
-*1㎑ to 10㎑, default 500µs*
+*1㎑ to 10㎑, default 2㎑ (500µs)*
 
 <!-- pause -->
 **100µs** is **doable**\
@@ -477,7 +499,7 @@ live coding **10:04–10:13**
 
 <!-- pause -->
 `consume_fuel(true)`\
-*the whole workshop is here*
+*to allow using fuel as time*
 
 <!-- pause -->
 `Store` holds `BotHost<S>`\
@@ -490,8 +512,9 @@ live coding **10:04–10:13**
 *unknown* imports ➡ **traps**
 
 <!-- pause -->
-a *runaway* robot\
-**runs out of fuel**
+`setup()` runs on a **mock** stepper\
+`run()` runs on **Bevy**
+
 
 ---
 
@@ -504,6 +527,12 @@ a *runaway* robot\
 <!-- alignment: center -->
 
 <!-- pause -->
+we know that\
+a *runaway* robot\
+**runs out of fuel**
+
+
+<!-- pause -->
 *instantiation* **burns fuel**
 
 <!-- pause -->
@@ -511,10 +540,6 @@ set the fuel **before** `instantiate`
 
 <!-- pause -->
 **reset** it *after*
-
-<!-- pause -->
-`setup()` runs on a **mock**\
-`run()` runs on **Bevy**
 
 ---
 
@@ -526,28 +551,28 @@ set the fuel **before** `instantiate`
 
 <!-- alignment: center -->
 
+<!-- pause -->
+what we measure:\
 `total_simulation_time`\
-`current_fuel`\
-`skipped_fuel`
+`current_fuel` `skipped_fuel`
 
 <!-- pause -->
 the clock runs **backwards**\
-*total* − *unspent*
+*time = total − unspent*
 
 <!-- pause -->
 `skipped_fuel`: a **debit** *account*
 
 <!-- pause -->
-*host* work **costs** *time*\
-*logging is **not** free*
+*host* work **costs** *time* (*e.g. logging is **not** free*)\
+***WASM** does not see it: account as `skipped_fuel`*
 
 <!-- pause -->
-*setting* the clock ➡\
-**solving** for `skipped_fuel`
+*setting* the clock ➡ **solving** for `skipped_fuel`
 
 <!-- pause -->
-read the fuel at the **top**\
-of *every* **host call**
+read the fuel at the **top** of *every* **host call**\
+*(so you know the current time)*
 
 <!-- pause -->
 *out of fuel* ➡ **trap** ➡ race **ends**
@@ -603,6 +628,25 @@ the robot's **calls**\
 *advance* the **world**
 
 <!-- pause -->
+
+robot **execution** *(fuel)* drives the **time**
+
+<!-- pause -->
+
+robot **interactions** with the *world*\
+drives the **physics** simulation\
+*(using the **stepper**)*
+
+---
+
+⏱️ A Timeline Example ⏱️
+---
+
+<!-- alignment: right -->
+<span class="time">[03] 11:30–12:20</span>
+
+<!-- alignment: center -->
+
 `sleep_for(1000)` at **1300µs**
 
 <!-- pause -->
@@ -719,7 +763,8 @@ cargo run --release -p sim -- run --cli -i bots/bot.wasm
 
 <!-- pause -->
 **entity** ➡ *row id*\
-*our robot: three of them*
+*our robot: three of them*\
+two **wheels**, one **robot body**
 
 <!-- pause -->
 **component** ➡ *column*\
@@ -978,7 +1023,7 @@ the *ray-cast* finds the **segment**
 
 <!-- pause -->
 *seeded* **noise**\
-*or* `KD` *explodes on real hardware*
+*real hardware is noisy*
 
 ---
 
@@ -1021,7 +1066,7 @@ cargo run --release -p sim -- test
 *visualizer*: **60** *fps*
 
 <!-- pause -->
-*drawing live* ➡ **costs** *the robot time*
+⛔ *drawing live* ➡ **costs** *the robot time* ⛔
 
 <!-- pause -->
 per tick: **one** `Transform`\
