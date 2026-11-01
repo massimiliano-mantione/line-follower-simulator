@@ -645,12 +645,14 @@ impl DeviceOperationExt for DeviceOperation {
             | DeviceOperation::ReadMotorAngles
             | DeviceOperation::ReadGyro
             | DeviceOperation::ReadImuFusedData => {
-                let step_time = stepper.step_us();
-                let stray_time = current_time % step_time;
+                // Slow devices sample every `ready_steps()` steps (see `step()`),
+                // so round up to the next instant of the device's own period.
+                let sample_period = stepper.step_us() * self.ready_steps();
+                let stray_time = current_time % sample_period;
                 let trigger_time = if stray_time == 0 {
                     current_time
                 } else {
-                    current_time + (step_time * self.ready_steps()) - stray_time
+                    current_time + sample_period - stray_time
                 };
                 FutureReadyCondition::ReadyAt(trigger_time)
             }

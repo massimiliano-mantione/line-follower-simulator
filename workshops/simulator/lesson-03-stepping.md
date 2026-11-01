@@ -97,10 +97,11 @@ you never overshoot. `SimulationStepper` has a method for exactly that.
 
 ### Hint 2 — 3.1, rounding to a boundary
 
-You need the distance from the current clock to the previous boundary. Modulo the step
-period gives you that. If it is zero you are already on a boundary and the value is
-available now; otherwise move forward to the next one — and for a slow device, out by
-`ready_steps()` periods rather than one.
+You need the distance from the current clock to the previous sample instant. Modulo the
+device's sample period gives you that. If it is zero you are already on a sample instant
+and the value is available now; otherwise move forward to the next one. For most devices
+the sample period is one step; a slow device only samples every `ready_steps()` steps, so
+its period is that many steps long.
 
 ### Hint 3 — 3.3, the value comes out wrong / the clock is off by a tick
 

@@ -91,8 +91,9 @@ catches it.
 
 **`ready_condition`** — per-operation:
 
-- sensor reads: round the clock up to the next step boundary (and out by
-  `ready_steps()` for the slow devices);
+- sensor reads: round the clock up to the next sample instant, using the device's
+  sample period (`step_us() * ready_steps()`), so slow devices land on the same steps
+  that `step()` latches them on;
 - `SleepFor(d)`: `current + d`; `SleepUntil(t)`: `t.max(current)`;
 - `GetTime` / `GetPeriod` / `GetEnabled`: ready *now*, no stepping — these are reads
   of host state, not devices;

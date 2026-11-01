@@ -159,6 +159,38 @@ fn ready_condition_rounds_up_to_a_step_boundary() {
 }
 
 #[test]
+fn slow_devices_round_up_to_their_own_sample_period() {
+    let stepper = MockStepper::new(PERIOD);
+    let gyro_period = PERIOD * READY_STEPS_GYRO;
+    let imu_period = PERIOD * READY_STEPS_IMU_FUSED;
+
+    // On a sample instant of the device: available now.
+    assert!(matches!(
+        DeviceOperation::ReadGyro.ready_condition(2 * gyro_period, &stepper),
+        FutureReadyCondition::ReadyAt(t) if t == 2 * gyro_period
+    ));
+    // On a step boundary that is not a gyro sample: wait for the next sample.
+    assert!(matches!(
+        DeviceOperation::ReadGyro.ready_condition(2 * gyro_period + PERIOD, &stepper),
+        FutureReadyCondition::ReadyAt(t) if t == 3 * gyro_period
+    ));
+    // Late within the gyro period: wait only until the next sample, not a full period.
+    assert!(matches!(
+        DeviceOperation::ReadGyro.ready_condition(2 * gyro_period + PERIOD + 200, &stepper),
+        FutureReadyCondition::ReadyAt(t) if t == 3 * gyro_period
+    ));
+    // Same for the IMU, deep inside its period.
+    assert!(matches!(
+        DeviceOperation::ReadImuFusedData.ready_condition(imu_period + 4 * PERIOD + 100, &stepper),
+        FutureReadyCondition::ReadyAt(t) if t == 2 * imu_period
+    ));
+    assert!(matches!(
+        DeviceOperation::ReadImuFusedData.ready_condition(imu_period, &stepper),
+        FutureReadyCondition::ReadyAt(t) if t == imu_period
+    ));
+}
+
+#[test]
 fn host_state_reads_are_always_ready() {
     let stepper = MockStepper::new(PERIOD);
     for op in [
