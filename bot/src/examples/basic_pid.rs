@@ -1,5 +1,6 @@
 use crate::blocking_api::{
-    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, sleep_for, wait_remote_enabled,
+    console_log, get_line_sensors, get_time_us, remote_enabled, set_motors_pwm, sleep_for,
+    wait_remote_enabled,
 };
 
 const PWM_MAX: i16 = 400;
@@ -85,6 +86,7 @@ impl Pid {
         (pwm_left, pwm_right)
     }
 
+    #[allow(unused)]
     fn log_vars(&self) {
         console_log(&format!(
             "STEER < {:.2} > ERR {:.2} DER {:.10} INT {:.0}",

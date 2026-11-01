@@ -147,9 +147,8 @@ pub fn run(sensor_spacing_mm: f32) {
         let vals = get_line_sensors();
         let (pwm_l, pwm_r) = pid.compute_pwm(vals);
 
-        
         set_motors_pwm(pwm_l, pwm_r);
-        
+
         // console_log(&format!("LINE {:?}", vals));
         // pid.log_vars();
         sleep_for(500);
