@@ -121,7 +121,7 @@ brief while sitting on lesson 2.
 | `workshops/simulator/notes/lesson-notes-NN-slug.md` | the thirteen speaker scripts (00 is the intro and the ROS wrap-up) |
 | `workshops/simulator/samples/telemetry-example.csv` | 14k rows of real telemetry, for lesson 09 |
 | `sim/bots/bot.wasm` | prebuilt robot — see below |
-| `sim/executor/src/wasm_host_tests.rs` | 19 tests: the clock, the stepping engine, the futures registry (over `MockStepper`) |
+| `sim/executor/src/wasm_host_tests.rs` | 20 tests: the clock, the stepping engine, the futures registry (over `MockStepper`) |
 | `sim/sim/src/bot/sensors/line_sensors_tests.rs` | 10 tests: the light model and per-segment distance |
 | `sim/execution-data/tests/replay.rs` | 9 tests: replay indexing, activity status, ranking |
 
@@ -138,13 +138,13 @@ swapped without touching a single path. It lives with the simulator rather than 
 replace that one file on `main`, commit, and rebase the lesson branches (§7).
 
 **Tests.** The repo had zero tests before this. Without a red-to-green signal you
-spend each slot answering "is this right?". All 38 pass on `main`; each lesson branch
+spend each slot answering "is this right?". All 39 pass on `main`; each lesson branch
 turns a known subset red:
 
 | Lesson | Red | Lesson | Red |
 |---|---|---|---|
-| `02-fuel` | 16 of 19 executor | `06-replay` | 8 of 9 execution-data |
-| `03-stepping` | 11 of 19 executor | `07-async-host` | 5 of 19 executor |
+| `02-fuel` | 16 of 20 executor | `06-replay` | 8 of 9 execution-data |
+| `03-stepping` | 12 of 20 executor | `07-async-host` | 5 of 20 executor |
 | `05-sensors` | 10 of 10 sim | `12-new-device` | none — see §5a |
 
 `01-wasmtime`, `04-physics`, `08`–`11` have no red tests; they are verified by
@@ -662,7 +662,7 @@ git switch -q main
 ```
 
 Expected: **zero warnings and zero rustfmt diffs everywhere**, and red-test counts
-matching the table in §4 (02→16, 03→11, 05→10, 06→8, 07→5, everything else 0).
+matching the table in §4 (02→16, 03→12, 05→10, 06→8, 07→5, everything else 0).
 
 A rustfmt diff on a lesson branch but not on `main` usually means a removal changed
 the shape of the surrounding code (dropping two names from an import can let it fit
