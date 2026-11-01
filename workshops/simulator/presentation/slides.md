@@ -428,12 +428,12 @@ The Day
 | 11:30–12:20 | `03` on-demand physics ticks |
 | 12:20–13:00 | `04` bodies, joints, motors |
 | 13:00–14:30 | 🍝 *lunch* |
-| 14:30–14:46 | `04` *continued* |
-| 14:46–15:36 | `05` light sensors |
-| 15:36–16:00 | `06` record and replay |
+| 14:30–14:45 | `04` *continued* |
+| 14:45–15:35 | `05` light sensors |
+| 15:35–16:00 | `06` record and replay |
 | 16:00–16:30 | ☕ *break* |
-| 16:30–16:51 | `06` *continued* |
-| 16:51–17:50 | *open lab* |
+| 16:30–16:50 | `06` *continued* |
+| 16:50–17:50 | *open lab* |
 | 17:50–18:00 | *wrap-up* |
 
 ---
@@ -757,7 +757,7 @@ cargo run --release -p sim -- run --cli -i bots/bot.wasm
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -786,7 +786,7 @@ Systems are Queries
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -821,7 +821,7 @@ at **app startup**
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -850,7 +850,7 @@ a robot = *columns* + **systems**
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -880,7 +880,7 @@ a *revolute* **joint**\
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -907,7 +907,7 @@ a *DC motor*: torque **falls** with *speed*
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -946,7 +946,7 @@ back at **14:30**
 ---
 
 <!-- alignment: right -->
-<span class="time">[04] 12:20–13:00 · 14:30–14:46</span>
+<span class="time">[04] 12:20–13:00 · 14:30–14:45</span>
 
 <!-- alignment: center -->
 
@@ -977,7 +977,7 @@ the **whole program**
 ---
 
 <!-- alignment: right -->
-<span class="time">[05] 14:46–15:36</span>
+<span class="time">[05] 14:45–15:35</span>
 
 <!-- alignment: center -->
 
@@ -1004,7 +1004,7 @@ Physics or Geometry?
 ---
 
 <!-- alignment: right -->
-<span class="time">[05] 14:46–15:36</span>
+<span class="time">[05] 14:45–15:35</span>
 
 <!-- alignment: center -->
 
@@ -1031,14 +1031,14 @@ the *ray-cast* finds the **segment**
 ---
 
 <!-- alignment: right -->
-<span class="time">[05] 14:46–15:36</span>
+<span class="time">[05] 14:45–15:35</span>
 
 <!-- alignment: center -->
 
 ## 05-sensors
 
-coding **14:53–15:21**\
-➡ walkthrough at **15:21**
+coding **14:52–15:20**\
+➡ walkthrough at **15:20**
 
 ```bash
 ./workshops/simulator/lesson.sh 05
@@ -1057,7 +1057,7 @@ cargo run --release -p sim -- test
 ---
 
 <!-- alignment: right -->
-<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
+<span class="time">[06] 15:35–16:00 · 16:30–16:50</span>
 
 <!-- alignment: center -->
 
@@ -1084,7 +1084,7 @@ Same Robot, Two Layouts
 ---
 
 <!-- alignment: right -->
-<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
+<span class="time">[06] 15:35–16:00 · 16:30–16:50</span>
 
 <!-- alignment: center -->
 
@@ -1116,16 +1116,16 @@ the **leader** *floats* to the **top**
 ---
 
 <!-- alignment: right -->
-<span class="time">[06] 15:36–16:00 · 16:30–16:51</span>
+<span class="time">[06] 15:35–16:00 · 16:30–16:50</span>
 
 <!-- alignment: center -->
 
 ## 06-replay
 
-coding **15:43–16:00**\
+coding **15:42–16:00**\
 ☕ break **16:00–16:30**\
-coding **16:30–16:39**\
-➡ walkthrough at **16:39**
+coding **16:30–16:38**\
+➡ walkthrough at **16:38**
 
 ```bash
 ./workshops/simulator/lesson.sh 06
@@ -1144,7 +1144,7 @@ cd sim && cargo run --release -p sim -- run -i bots/bot.wasm
 ---
 
 <!-- alignment: right -->
-<span class="time">[07–12] 16:51–17:50</span>
+<span class="time">[07–12] 16:50–17:50</span>
 
 <!-- alignment: center -->
 
