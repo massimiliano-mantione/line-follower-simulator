@@ -76,24 +76,35 @@ are jointed to. Every bot part needs to be in `BOT_COLLISION_GROUP` and to colli
 with everything *except* that group. `CollisionGroups::new(memberships, filter)` — and
 `!group` is how you say "not this one".
 
-### Hint 3 — the wheels orbit the robot instead of spinning
+### Hint 3 — it flips over backwards, or sits on its belly
+
+The two bumpers are not decoration. The front one sits exactly on the ground
+(`front_bumper_world` has a height of half its diameter), so the robot rests on three
+points: two wheels and the front bumper. The back one hangs `clearing_back` above the
+ground. When you accelerate hard the chassis pitches backwards around the axle, and
+that bumper touches down before the robot can tip over. If the robot rests on its
+belly, or jumps when the simulation starts, check that every part subtracts
+`body_world`. If it flips over on a hard start, check that the back bumper is in the
+compound.
+
+### Hint 4 — the wheels orbit the robot instead of spinning
 
 The two joint anchors are in different frames. `local_anchor1` is in the *body's*
 frame, so it is where the axle sits relative to the body's origin; `local_anchor2` is
 in the *wheel's* own frame, so it is the wheel's centre. One of them is not the value
 you think it is.
 
-### Hint 4 — it trembles, or the joints look springy
+### Hint 5 — it trembles, or the joints look springy
 
 The length unit in 4.5. Our robot is two orders of magnitude smaller than what
 Rapier's default tolerances assume.
 
-### Hint 5 — it drives, but it never squats under acceleration
+### Hint 6 — it drives, but it never squats under acceleration
 
 You are applying torque to the wheels but not the reaction to the chassis. Sum the
 negated wheel torques and put the total on the `Motors` entity's `ExternalForce`.
 
-### Hint 6 — it drives straight but goes wrong in turns
+### Hint 7 — it drives straight but goes wrong in turns
 
 You are applying torque along a world axis instead of the wheel's current axle. The
 axle has to be rotated by the wheel's transform first.
